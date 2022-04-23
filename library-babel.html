@@ -1,0 +1,677 @@
+<!DOCTYPE html>
+<html lang="en-US">
+  <head>
+    <meta charset="utf-8" />
+    <meta content="LaTeX Lwarp package" name="generator" />
+    <meta content="width=device-width, initial-scale=1.0" name="viewport" />
+    <!--[if lt IE 9]>
+      <script src="http://html5shiv.googlecode.com/svn/trunk/html5.js"></script>
+    <![endif]-->
+    <title>Babel Library - PGF/TikZ Manual</title>
+    <link href="style.css" rel="stylesheet" type="text/css" />
+
+    <script src="pgfmanual.js"></script>
+
+    <link href="https://unpkg.com/@docsearch/css@alpha" rel="stylesheet" />
+    <link href="/favicon-16x16.png" rel="icon" sizes="16x16" type="image/png" />
+    <link href="/favicon-32x32.png" rel="icon" sizes="32x32" type="image/png" />
+    <link
+      href="/apple-touch-icon.png"
+      rel="apple-touch-icon"
+      sizes="180x180"
+      type="image/png"
+    />
+    <link href="/site.webmanifest" rel="manifest" />
+  </head>
+  <body>
+    <a id="pgfmanual-autopage-4972"></a>
+
+    <div class="bodyandsidetoc grid-container">
+      <header>
+        <strong><a href="/">PGF/Ti<i>k</i>Z Manual</a></strong>
+        <div id="search"></div>
+      </header>
+      <div class="sidetoccontainer" id="local-toc-container">
+        <nav class="sidetoc">
+          <div class="sidetoctitle"><p>On this page</p></div>
+          <div class="sidetoccontents"></div>
+        </nav>
+      </div>
+      <div class="sidetoccontainer" id="chapter-toc-container">
+        <nav class="sidetoc">
+          <div class="sidetoctitle">
+            <p>
+              <span class="sidetocthetitle"
+                >The <span class="tikzname">TikZ</span> and PGF Packages<br />
+                Manual for version 3.1.9a</span
+              >
+            </p>
+
+            <p>Contents</p>
+          </div>
+
+          <div class="sidetoccontents">
+            <p></p>
+
+            <p>
+              <a class="linkintro" href="/">Introduction</a>
+            </p>
+
+            <p>
+              <a class="tocpart" href="tutorials-guidelines"
+                >Tutorials and Guidelines</a
+              >
+            </p>
+
+            <p>
+              <a class="tocpart" href="install"
+                >Installation and Configuration</a
+              >
+            </p>
+
+            <p>
+              <a class="tocpart" href="tikz">Ti<em>k</em>Z</a>
+            </p>
+
+            <p>
+              <a class="tocpart" href="gd">Graph Drawing</a>
+            </p>
+
+            <p class="current-part">
+              <a class="tocpart" href="libraries">Libraries</a>
+            </p>
+
+            <p class="current-part">
+              <a class="tocsection" href="library-3d"
+                >Three Dimensional Drawing Library</a
+              >
+            </p>
+
+            <p class="current-part">
+              <a class="tocsection" href="library-angle">Angle Library</a>
+            </p>
+
+            <p class="current-part">
+              <a class="tocsection" href="library-arrows">Arrow Tip Library</a>
+            </p>
+
+            <p class="current-part">
+              <a class="tocsection" href="library-automata"
+                >Automata Drawing Library</a
+              >
+            </p>
+
+            <p class="current current-part">
+              <a class="tocsection" href="library-babel">Babel Library</a>
+            </p>
+
+            <p class="current-part">
+              <a class="tocsection" href="library-backgrounds"
+                >Background Library</a
+              >
+            </p>
+
+            <p class="current-part">
+              <a class="tocsection" href="library-calc">Calc Library</a>
+            </p>
+
+            <p class="current-part">
+              <a class="tocsection" href="library-calender">Calendar Library</a>
+            </p>
+
+            <p class="current-part">
+              <a class="tocsection" href="library-chains">Chains</a>
+            </p>
+
+            <p class="current-part">
+              <a class="tocsection" href="library-circuits"
+                >Circuit Libraries</a
+              >
+            </p>
+
+            <p class="current-part">
+              <a class="tocsection" href="library-decorations"
+                >Decoration Library</a
+              >
+            </p>
+
+            <p class="current-part">
+              <a class="tocsection" href="library-er"
+                >Entity-Relationship Diagram Drawing Library</a
+              >
+            </p>
+
+            <p class="current-part">
+              <a class="tocsection" href="library-external"
+                >Externalization Library</a
+              >
+            </p>
+
+            <p class="current-part">
+              <a class="tocsection" href="library-fadings">Fading Library</a>
+            </p>
+
+            <p class="current-part">
+              <a class="tocsection" href="library-fit">Fitting Library</a>
+            </p>
+
+            <p class="current-part">
+              <a class="tocsection" href="library-fixedpoint"
+                >Fixed Point Arithmetic Library</a
+              >
+            </p>
+
+            <p class="current-part">
+              <a class="tocsection" href="library-fpu"
+                >Floating Point Unit Library</a
+              >
+            </p>
+
+            <p class="current-part">
+              <a class="tocsection" href="library-lsystems"
+                >Lindenmayer System Drawing Library</a
+              >
+            </p>
+
+            <p class="current-part">
+              <a class="tocsection" href="library-math">Math Library</a>
+            </p>
+
+            <p class="current-part">
+              <a class="tocsection" href="library-matrix">Matrix Library</a>
+            </p>
+
+            <p class="current-part">
+              <a class="tocsection" href="library-mindmaps"
+                >Mindmap Drawing Library</a
+              >
+            </p>
+
+            <p class="current-part">
+              <a class="tocsection" href="library-folding"
+                >Paper-Folding Diagrams Library</a
+              >
+            </p>
+
+            <p class="current-part">
+              <a class="tocsection" href="library-patterns">Pattern Library</a>
+            </p>
+
+            <p class="current-part">
+              <a class="tocsection" href="library-perspective"
+                >Three Point Perspective Drawing Library</a
+              >
+            </p>
+
+            <p class="current-part">
+              <a class="tocsection" href="library-petri"
+                >Petri-Net Drawing Library</a
+              >
+            </p>
+
+            <p class="current-part">
+              <a class="tocsection" href="library-plot-handlers"
+                >Plot Handler Library</a
+              >
+            </p>
+
+            <p class="current-part">
+              <a class="tocsection" href="library-plot-marks"
+                >Plot Mark Library</a
+              >
+            </p>
+
+            <p class="current-part">
+              <a class="tocsection" href="library-profiler">Profiler Library</a>
+            </p>
+
+            <p class="current-part">
+              <a class="tocsection" href="library-shadings">Shadings Library</a>
+            </p>
+
+            <p class="current-part">
+              <a class="tocsection" href="library-shadows">Shadows Library</a>
+            </p>
+
+            <p class="current-part">
+              <a class="tocsection" href="library-shapes">Shape Library</a>
+            </p>
+
+            <p class="current-part">
+              <a class="tocsection" href="library-spy"
+                >Spy Library: Magnifying Parts of Pictures</a
+              >
+            </p>
+
+            <p class="current-part">
+              <a class="tocsection" href="library-svg-path">SVG-Path Library</a>
+            </p>
+
+            <p class="current-part">
+              <a class="tocsection" href="library-edges">To Path Library</a>
+            </p>
+
+            <p class="current-part">
+              <a class="tocsection" href="library-through">Through Library</a>
+            </p>
+
+            <p class="current-part">
+              <a class="tocsection" href="library-trees">Tree Library</a>
+            </p>
+
+            <p class="current-part">
+              <a class="tocsection" href="library-turtle"
+                >Turtle Graphics Library</a
+              >
+            </p>
+
+            <p class="current-part">
+              <a class="tocsection" href="library-views">Views Library</a>
+            </p>
+
+            <p>
+              <a class="tocpart" href="dv">Data Visualization</a>
+            </p>
+
+            <p>
+              <a class="tocpart" href="utilities">Utilities</a>
+            </p>
+
+            <p>
+              <a class="tocpart" href="math"
+                >Mathematical and Object-Oriented Engines</a
+              >
+            </p>
+
+            <p>
+              <a class="tocpart" href="base">The Basic Layer</a>
+            </p>
+
+            <p>
+              <a class="tocpart" href="pgfsys">The System Layer</a>
+            </p>
+          </div>
+        </nav>
+      </div>
+
+      <main class="bodycontainer">
+        <section class="textbody">
+          <h1>
+            The <span class="tikzname">TikZ</span> and PGF Packages<br />
+            Manual for version 3.1.9a
+          </h1>
+          <h2 class="inserted">Libraries</h2>
+
+          <!--MathJax customizations:-->
+
+          <p></p>
+          <h4 id="autosec-4973">
+            <a id="section-library-babel"></a
+            ><span class="sectionnumber">44&emsp;</span>Babel Library
+          </h4>
+          <a id="pgfmanual-autopage-4973"></a>
+          <a id="pgfmanual-autofile-49"></a>
+
+          <div class="manualentry">
+            <div class="entryheadline">
+              <p>
+                <a id="pgf.babel"></a>
+                <span class="hl-def"
+                  ><b><span class="tikzname">TikZ</span> Library</b>
+                  <kbd
+                    ><span class="textcolor" style="color: #bf0000"
+                      >babel</span
+                    ></kbd
+                  ></span
+                >
+                <a class="anchor-link" href="#pgf.babel">&para;</a>
+              </p>
+            </div>
+            <p>
+              <kbd
+                >\usetikzlibrary{<span class="textcolor" style="color: #bf0000"
+                  >babel</span
+                >} %
+                <span class="latexlogofont"
+                  ><span class="latexlogo"
+                    >L<span class="latexlogosup">a</span>T<span
+                      class="latexlogosub"
+                      >e</span
+                    >X</span
+                  ></span
+                >
+                and plain
+                <span class="latexlogofont"
+                  ><span class="latexlogo"
+                    >T<span class="latexlogosub">e</span>X</span
+                  ></span
+                ></kbd
+              ><br />
+              <kbd
+                >\usetikzlibrary[<span class="textcolor" style="color: #bf0000"
+                  >babel</span
+                >] % Con<span class="latexlogofont"
+                  ><span class="latexlogo"
+                    >T<span class="latexlogosub">e</span>X</span
+                  ></span
+                >t</kbd
+              ><br />
+              <br />
+              A tiny library that make the interaction with the
+              <span class="texttt">babel</span> package easier. Despite the
+              name, it may also be useful in other contexts, namely whenever the
+              catcodes of important symbols are changed globally. Normally,
+              using this library is always a good idea; it is not always loaded
+              by default since in some rare cases it may break old code.
+            </p>
+          </div>
+
+          <p>
+            The problems this library tries to fix have to do with the so-called
+            &ldquo;catcodes&rdquo; of symbols used inside
+            <span class="tikzname">TikZ</span>. In normal
+            <span class="latexlogofont"
+              ><span class="latexlogo"
+                >T<span class="latexlogosub">e</span>X</span
+              ></span
+            >
+            operation, symbols like <span class="texttt">!</span> or
+            <span class="texttt">"</span> are &ldquo;normal&rdquo; characters
+            and the <span class="tikzname">TikZ</span> parser expects them to
+            be. Some packages, most noticeably the
+            <span class="texttt">babel</span> package, aggressively change these
+            character codes so that for instance a semicolon gets a little extra
+            space in <span class="texttt">french</span> mode or a quotation mark
+            followed by a vertical bar breaks ligatures in
+            <span class="texttt">german</span> mode.
+          </p>
+
+          <p>
+            Unfortunately, <span class="tikzname">TikZ</span> expects the
+            character codes of some symbols to be &ldquo;normal&rdquo;. In some
+            important cases it will tolerate changed character codes, but when
+            the changes made by <span class="texttt">babel</span> (or some other
+            package) are too &ldquo;aggressive&rdquo;, compilation of
+            <span class="tikzname">TikZ</span> code will fail.
+          </p>
+
+          <p>
+            The <span class="texttt">babel</span> library of
+            <span class="tikzname">TikZ</span> is intended to help out in this
+            situation. All this library does is to set the following two keys to
+            <span class="texttt">true</span>. You can, however, also set these
+            keys directly and also switch them off or on individually and
+            independently of this library.
+          </p>
+
+          <div class="manualentry">
+            <div class="entryheadline">
+              <p>
+                <a id="pgf./tikz/handle:active:characters:in:code"></a
+                ><a id="pgf.handle:active:characters:in:code"></a>
+                <span class="hl-def"
+                  ><kbd
+                    ><span class="keyname"
+                      ><span class="textcolor" style="color: #bf0000"
+                        >/tikz/handle active characters in code</span
+                      ></span
+                    >=</kbd
+                  ><span class="textcolor" style="color: #008000"
+                    ><span class="angle">&langle;</span><i>true or false</i
+                    ><span class="angle">&rangle;</span></span
+                  > </span
+                ><span class="hl-default"
+                  >(no default, initially <kbd>false</kbd>)</span
+                >
+                <a
+                  class="anchor-link"
+                  href="#pgf./tikz/handle:active:characters:in:code"
+                  >&para;</a
+                >
+              </p>
+            </div>
+            <p>
+              When this key is set, at the beginning of every
+              <span class="texttt">\tikz</span> command and every
+              <span class="texttt">{tikzpicture}</span>, the character codes of
+              all symbols used by <span class="tikzname">TikZ</span> are reset
+              to their normal values. Furthermore, at the beginning of each
+              node, the catcodes are restored to the values they had prior to
+              the current picture.
+            </p>
+            <p>
+              The net effect of this is that, in most cases, symbols having a
+              special character code can be used nicely both in
+              <span class="tikzname">TikZ</span> code and also in node texts.
+            </p>
+            <p>
+              In the following, slightly silly, example we make the dot an
+              active character and define it in some strange way. Now, in the
+              later <span class="tikzname">TikZ</span> command, the dot in
+              <span class="texttt">3.0cm</span> may no longer be active and
+              setting the <span class="texttt">handle...</span> option achieves
+              exactly this. However, as can be seen, the dot is once more active
+              inside the node.
+            </p>
+
+            <figure class="example">
+              <div class="example-image">
+                <p>
+                  <span class="lateximagesource" id="lateximage-pgfmanual-2060"
+                    ><!--
+hallø peøple
+   -->
+                    <img
+                      alt="(-tikz-&nbsp;diagram)"
+                      class="lateximage"
+                      height="23.848"
+                      loading="lazy"
+                      src="pgfmanual-images/image-2060.png"
+                      style
+                      width="116.585"
+                  /></span>
+                </p>
+              </div>
+
+              <div class="example-code">
+                <button class="clipboardButton" type="button">copy</button>
+                <code>
+                  <br />
+                  <span class="textcolor" style="color: #0000b2">\catcode</span
+                  ><span class="textcolor" style="color: #000000">`</span
+                  ><span class="textcolor" style="color: #0000b2">\</span>.<span
+                    class="textcolor"
+                    style="color: #000000"
+                    >=</span
+                  ><span class="textcolor" style="color: #0000b2">\active</span
+                  ><br />
+                  <span class="textcolor" style="color: #0000b2">\def</span
+                  >.{<span class="textcolor" style="color: #0000b2">\o</span
+                  >}<br />
+                  <br />
+                  <span class="textcolor" style="color: #0000b2"
+                    ><a href="tikz-scopes#pgf.back/tikz">\tikz</a></span
+                  >&numsp;[<span class="textcolor" style="color: #008000"
+                    ><a
+                      href="library-babel#pgf.handle:active:characters:in:code"
+                      >handle active characters in code</a
+                    ></span
+                  >]<br />
+                  &numsp;&numsp;<span class="textcolor" style="color: #0000b2"
+                    ><a href="tikz-shapes#pgf.back/node">\node</a></span
+                  >&numsp;[<span class="textcolor" style="color: #008000"
+                    ><a href="tikz-actions#pgf.draw">draw</a></span
+                  >,&numsp;<span class="textcolor" style="color: #008000"
+                    ><a href="tikz-shapes#pgf.minimum:width"
+                      >minimum width</a
+                    ></span
+                  >=<span class="textcolor" style="color: #008000">3.0cm</span
+                  >]&numsp;{<span class="textcolor" style="color: #000000"
+                    >hall</span
+                  >.&numsp;<span class="textcolor" style="color: #000000"
+                    >pe</span
+                  >.<span class="textcolor" style="color: #000000">ple</span
+                  >};<br />
+                </code>
+              </div>
+            </figure>
+          </div>
+
+          <div class="manualentry">
+            <div class="entryheadline">
+              <p>
+                <a id="pgf./tikz/handle:active:characters:in:nodes"></a
+                ><a id="pgf.handle:active:characters:in:nodes"></a>
+                <span class="hl-def"
+                  ><kbd
+                    ><span class="keyname"
+                      ><span class="textcolor" style="color: #bf0000"
+                        >/tikz/handle active characters in nodes</span
+                      ></span
+                    >=</kbd
+                  ><span class="textcolor" style="color: #008000"
+                    ><span class="angle">&langle;</span><i>true or false</i
+                    ><span class="angle">&rangle;</span></span
+                  > </span
+                ><span class="hl-default"
+                  >(no default, initially <kbd>false</kbd>)</span
+                >
+                <a
+                  class="anchor-link"
+                  href="#pgf./tikz/handle:active:characters:in:nodes"
+                  >&para;</a
+                >
+              </p>
+            </div>
+            <p>
+              This key is needed for a special situation: As explained for the
+              <span class="texttt">handle ... code</span> key, that key switches
+              off all special meaning of symbols and switches them back on again
+              at the beginning of nodes. However, there is one situation when
+              this is not possible: When some text has already been read by
+              <span class="latexlogofont"
+                ><span class="latexlogo"
+                  >T<span class="latexlogosub">e</span>X</span
+                ></span
+              >, the catcodes can no longer change. Now, for normal nodes this
+              is not a problem since their contents has not been read at the
+              moment the catcodes are restored. In contrast for label nodes for
+              edges, nodes produced by the <span class="texttt">graph</span> and
+              <span class="texttt">quotes</span> libraries, and some others
+              nodes, their text <em>has</em> already been read when the catcodes
+              get adjusted.
+            </p>
+            <p>
+              The present key may help in such situations: It causes the text of
+              all such &ldquo;indirectly created&rdquo; nodes to be surrounded
+              by a call to the <span class="texttt">\scantokens</span> command.
+              This command attempts to reread an already read text, but allows
+              catcodes to change. As users of this command will know, it is not
+              a perfect substitute for directly reading the text by
+              <span class="latexlogofont"
+                ><span class="latexlogo"
+                  >T<span class="latexlogosub">e</span>X</span
+                ></span
+              >, but it normally has the desired effect.
+            </p>
+
+            <figure class="example">
+              <div class="example-image">
+                <p>
+                  <span class="lateximagesource" id="lateximage-pgfmanual-2061"
+                    ><!--
+    føø
+hallø peøple
+-->
+                    <img
+                      alt="(-tikz-&nbsp;diagram)"
+                      class="lateximage"
+                      height="39.225"
+                      loading="lazy"
+                      src="pgfmanual-images/image-2061.png"
+                      style
+                      width="92.445"
+                  /></span>
+                </p>
+              </div>
+
+              <div class="example-code">
+                <button class="clipboardButton" type="button">copy</button>
+                <code>
+                  <br />
+                  <span class="textcolor" style="color: #0000b2">\catcode</span
+                  ><span class="textcolor" style="color: #000000">`</span
+                  ><span class="textcolor" style="color: #0000b2">\</span>.<span
+                    class="textcolor"
+                    style="color: #000000"
+                    >=</span
+                  ><span class="textcolor" style="color: #0000b2">\active</span
+                  ><br />
+                  <span class="textcolor" style="color: #0000b2">\def</span
+                  >.{<span class="textcolor" style="color: #0000b2">\o</span
+                  >}<br />
+                  <br />
+                  <span class="textcolor" style="color: #0000b2"
+                    ><a href="tikz-scopes#pgf.back/tikz">\tikz</a></span
+                  >&numsp;[<span class="textcolor" style="color: #008000"
+                    ><a
+                      href="library-babel#pgf.handle:active:characters:in:code"
+                      >handle active characters in code</a
+                    ></span
+                  >,<br />
+                  &numsp;&numsp;&numsp;&numsp;&numsp;&numsp;&numsp;<span
+                    class="textcolor"
+                    style="color: #008000"
+                    ><a
+                      href="library-babel#pgf.handle:active:characters:in:nodes"
+                      >handle active characters in nodes</a
+                    ></span
+                  >]<br />
+                  &numsp;&numsp;<span class="textcolor" style="color: #0000b2"
+                    ><a href="tikz-shapes#pgf.back/node">\node</a></span
+                  >&numsp;[<span class="textcolor" style="color: #008000"
+                    ><a href="tikz-actions#pgf.draw">draw</a></span
+                  >,&numsp;<span class="textcolor" style="color: #008000"
+                    ><a href="tikz-shapes#pgf.label">label</a></span
+                  >=<span class="textcolor" style="color: #008000">f..</span
+                  >]&numsp;{<span class="textcolor" style="color: #000000"
+                    >hall</span
+                  >.&numsp;<span class="textcolor" style="color: #000000"
+                    >pe</span
+                  >.<span class="textcolor" style="color: #000000">ple</span
+                  >};<br />
+                </code>
+              </div>
+            </figure>
+          </div>
+        </section>
+      </main>
+
+      <footer>
+        <div class_="footer-left">
+          <a href="https://github.com/pgf-tikz/pgf">Github</a> &middot;
+          <a href="/license">License</a> &middot;
+          <a href="https://ctan.org/pkg/pgf">CTAN</a> &middot;
+          <a href="https://pgf-tikz.github.io/pgf/pgfmanual.pdf">PDF version</a>
+          &middot;
+          <a href="https://github.com/DominikPeters/pgf-tikz-html-manual"
+            >About this HTML version</a
+          >
+        </div>
+        <div class_="footer-right">
+          <em>Manual last updated: 2022-04-23</em>
+        </div>
+      </footer>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/@docsearch/js@alpha"></script>
+    <script>
+      docsearch({
+        apiKey: "ae66ec3fc9df4b52b4d6f24fc8508fd3",
+        indexName: "tikz.dev",
+        appId: "Q70NNMA9GC",
+        container: "#search",
+      });
+    </script>
+  </body>
+</html>

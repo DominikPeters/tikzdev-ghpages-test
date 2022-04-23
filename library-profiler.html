@@ -1,0 +1,1547 @@
+<!DOCTYPE html>
+<html lang="en-US">
+  <head>
+    <meta charset="utf-8" />
+    <meta content="LaTeX Lwarp package" name="generator" />
+    <meta content="width=device-width, initial-scale=1.0" name="viewport" />
+    <!--[if lt IE 9]>
+      <script src="http://html5shiv.googlecode.com/svn/trunk/html5.js"></script>
+    <![endif]-->
+    <title>Profiler Library - PGF/TikZ Manual</title>
+    <link href="style.css" rel="stylesheet" type="text/css" />
+
+    <script>
+      // Lwarp MathJax emulation code
+      //
+      // Based on code by Davide P. Cervone.
+      // Equation numbering: https://github.com/mathjax/MathJax/issues/2427
+      // Starred and ifnextchar macros: https://github.com/mathjax/MathJax/issues/2428
+      // \left, \right delimiters: https://github.com/mathjax/MathJax/issues/2535
+      //
+      // Modified by Brian Dunn to adjust equation numbering and add subequations.
+      //
+      // LaTeX can use \seteqnumber{subequations?}{section}{number} before each equation.
+      // subequations? is 0 usually, 1 if inside subequations.
+      // section is a string printed as-is, or empty.
+      // number is auto-incremented by MathJax between equations.
+      //
+      MathJax = {
+        subequations: "0",
+        section: "",
+        loader: {
+          load: ["[tex]/tagformat", "[tex]/textmacros"],
+        },
+        startup: {
+          ready() {
+            // These would be replaced by import commands if you wanted to make
+            // a proper extension.
+            const Configuration =
+              MathJax._.input.tex.Configuration.Configuration;
+            const CommandMap = MathJax._.input.tex.SymbolMap.CommandMap;
+            const Macro = MathJax._.input.tex.Symbol.Macro;
+            const TexError = MathJax._.input.tex.TexError.default;
+            const ParseUtil = MathJax._.input.tex.ParseUtil.default;
+            const expandable = MathJax._.util.Options.expandable;
+
+            // Insert the replacement string into the TeX string, and check
+            // that there haven't been too many maxro substitutions (prevents
+            // infinite loops).
+            const useArgument = (parser, text) => {
+              parser.string = ParseUtil.addArgs(
+                parser,
+                text,
+                parser.string.slice(parser.i)
+              );
+              parser.i = 0;
+              if (
+                ++parser.macroCount > parser.configuration.options.maxMacros
+              ) {
+                throw new TexError(
+                  "MaxMacroSub1",
+                  "MathJax maximum macro substitution count exceeded; " +
+                    "is there a recursive macro call?"
+                );
+              }
+            };
+
+            // Create the command map for:
+            // \ifstar, \ifnextchar, \ifblank, \ifstrequal, \seteqnumber
+            new CommandMap(
+              "Lwarp-macros",
+              {
+                ifstar: "IfstarFunction",
+                ifnextchar: "IfnextcharFunction",
+                ifblank: "IfblankFunction",
+                ifstrequal: "IfstrequalFunction",
+                seteqnumber: "SeteqnumberFunction",
+              },
+              {
+                // This function implements an ifstar macro.
+                IfstarFunction(parser, name) {
+                  const resultstar = parser.GetArgument(name);
+                  const resultnostar = parser.GetArgument(name);
+                  const star = parser.GetStar(); // true if there is a *
+                  useArgument(parser, star ? resultstar : resultnostar);
+                },
+
+                // This function implements an ifnextchar macro.
+                IfnextcharFunction(parser, name) {
+                  let whichchar = parser.GetArgument(name);
+                  if (whichchar.match(/^(?:0x[0-9A-F]+|[0-9]+)$/i)) {
+                    // $ syntax highlighting
+                    whichchar = String.fromCodePoint(parseInt(whichchar));
+                  }
+                  const resultnextchar = parser.GetArgument(name);
+                  const resultnotnextchar = parser.GetArgument(name);
+                  const gotchar = parser.GetNext() === whichchar;
+                  useArgument(
+                    parser,
+                    gotchar ? resultnextchar : resultnotnextchar
+                  );
+                },
+
+                // This function implements an ifblank macro.
+                IfblankFunction(parser, name) {
+                  const blankarg = parser.GetArgument(name);
+                  const resultblank = parser.GetArgument(name);
+                  const resultnotblank = parser.GetArgument(name);
+                  const isblank = blankarg.trim() == "";
+                  useArgument(parser, isblank ? resultblank : resultnotblank);
+                },
+
+                // This function implements an ifstrequal macro.
+                IfstrequalFunction(parser, name) {
+                  const strequalfirst = parser.GetArgument(name);
+                  const strequalsecond = parser.GetArgument(name);
+                  const resultequal = parser.GetArgument(name);
+                  const resultnotequal = parser.GetArgument(name);
+                  const isequal = strequalfirst == strequalsecond;
+                  useArgument(parser, isequal ? resultequal : resultnotequal);
+                },
+
+                // This function modifies the equation numbers.
+                SeteqnumberFunction(parser, name) {
+                  // Get the macro parameters
+                  const star = parser.GetStar(); // true if there is a *
+                  const optBrackets = parser.GetBrackets(name); // contents of optional brackets
+                  const newsubequations = parser.GetArgument(name); // the subequations argument
+                  const neweqsection = parser.GetArgument(name); // the eq section argument
+                  const neweqnumber = parser.GetArgument(name); // the eq number argument
+                  MathJax.config.subequations = newsubequations; // a string with boolean meaning
+                  MathJax.config.section = neweqsection; // a string with numeric meaning
+                  parser.tags.counter = parser.tags.allCounter = neweqnumber;
+                },
+              }
+            );
+
+            // Create the Lwarp-macros package
+            Configuration.create("Lwarp-macros", {
+              handler: { macro: ["Lwarp-macros"] },
+            });
+
+            MathJax.startup.defaultReady();
+
+            // For forward references:
+            MathJax.startup.input[0].preFilters.add(({ math }) => {
+              if (math.inputData.recompile) {
+                MathJax.config.subequations =
+                  math.inputData.recompile.subequations;
+                MathJax.config.section = math.inputData.recompile.section;
+              }
+            });
+            MathJax.startup.input[0].postFilters.add(({ math }) => {
+              if (math.inputData.recompile) {
+                math.inputData.recompile.subequations =
+                  MathJax.config.subequations;
+                math.inputData.recompile.section = MathJax.config.section;
+              }
+            });
+
+            // For \left, \right with unicode-math:
+            const { DelimiterMap } = MathJax._.input.tex.SymbolMap;
+            const { Symbol } = MathJax._.input.tex.Symbol;
+            const { MapHandler } = MathJax._.input.tex.MapHandler;
+            const delimiter = MapHandler.getMap("delimiter");
+            delimiter.add("\\lBrack", new Symbol("\\lBrack", "\u27E6"));
+            delimiter.add("\\rBrack", new Symbol("\\rBrack", "\u27E7"));
+            delimiter.add("\\lAngle", new Symbol("\\lAngle", "\u27EA"));
+            delimiter.add("\\rAngle", new Symbol("\\rAngle", "\u27EB"));
+            delimiter.add("\\lbrbrak", new Symbol("\\lbrbrak", "\u2772"));
+            delimiter.add("\\rbrbrak", new Symbol("\\rbrbrak", "\u2773"));
+            delimiter.add("\\lbag", new Symbol("\\lbag", "\u27C5"));
+            delimiter.add("\\rbag", new Symbol("\\rbag", "\u27C6"));
+            delimiter.add(
+              "\\llparenthesis",
+              new Symbol("\\llparenthesis", "\u2987")
+            );
+            delimiter.add(
+              "\\rrparenthesis",
+              new Symbol("\\rrparenthesis", "\u2988")
+            );
+            delimiter.add("\\llangle", new Symbol("\\llangle", "\u2989"));
+            delimiter.add("\\rrangle", new Symbol("\\rrangle", "\u298A"));
+            delimiter.add("\\Lbrbrak", new Symbol("\\Lbrbrak", "\u27EC"));
+            delimiter.add("\\Rbrbrak", new Symbol("\\Rbrbrak", "\u27ED"));
+            delimiter.add("\\lBrace", new Symbol("\\lBrace", "\u2983"));
+            delimiter.add("\\rBrace", new Symbol("\\rBrace", "\u2984"));
+            delimiter.add("\\lParen", new Symbol("\\lParen", "\u2985"));
+            delimiter.add("\\rParen", new Symbol("\\rParen", "\u2986"));
+            delimiter.add("\\lbrackubar", new Symbol("\\lbrackubar", "\u298B"));
+            delimiter.add("\\rbrackubar", new Symbol("\\rbrackubar", "\u298C"));
+            delimiter.add(
+              "\\lbrackultick",
+              new Symbol("\\lbrackultick", "\u298D")
+            );
+            delimiter.add(
+              "\\rbracklrtick",
+              new Symbol("\\rbracklrtick", "\u298E")
+            );
+            delimiter.add(
+              "\\lbracklltick",
+              new Symbol("\\lbracklltick", "\u298F")
+            );
+            delimiter.add(
+              "\\rbrackurtick",
+              new Symbol("\\rbrackurtick", "\u2990")
+            );
+            delimiter.add("\\langledot", new Symbol("\\langledot", "\u2991"));
+            delimiter.add("\\rangledot", new Symbol("\\rangledot", "\u2992"));
+            delimiter.add("\\lparenless", new Symbol("\\lparenless", "\u2993"));
+            delimiter.add("\\rparengtr", new Symbol("\\rparengtr", "\u2994"));
+            delimiter.add("\\Lparengtr", new Symbol("\\Lparengtr", "\u2995"));
+            delimiter.add("\\Rparenless", new Symbol("\\Rparenless", "\u2996"));
+            delimiter.add("\\lblkbrbrak", new Symbol("\\lblkbrbrak", "\u2997"));
+            delimiter.add("\\rblkbrbrak", new Symbol("\\rblkbrbrak", "\u2998"));
+            delimiter.add("\\lvzigzag", new Symbol("\\lvzigzag", "\u29D8"));
+            delimiter.add("\\rvzigzag", new Symbol("\\rvzigzag", "\u29D9"));
+            delimiter.add("\\Lvzigzag", new Symbol("\\Lvzigzag", "\u29DA"));
+            delimiter.add("\\Rvzigzag", new Symbol("\\Rvzigzag", "\u29DB"));
+            delimiter.add(
+              "\\lcurvyangle",
+              new Symbol("\\lcurvyangle", "\u29FC")
+            );
+            delimiter.add(
+              "\\rcurvyangle",
+              new Symbol("\\rcurvyangle", "\u29FD")
+            );
+            delimiter.add("\\Vvert", new Symbol("\\Vvert", "\u2980"));
+          }, // ready
+        }, // startup
+
+        tex: {
+          packages: { "[+]": ["tagformat", "Lwarp-macros", "textmacros"] },
+          tags: "ams",
+          tagformat: {
+            number: function (n) {
+              if (MathJax.config.subequations == 0)
+                return MathJax.config.section + n;
+              else return MathJax.config.section + String.fromCharCode(96 + n);
+            },
+          },
+        },
+      };
+    </script>
+
+    <script
+      async
+      id="MathJax-script"
+      src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-chtml.js"
+    ></script>
+
+    <script src="pgfmanual.js"></script>
+
+    <link href="https://unpkg.com/@docsearch/css@alpha" rel="stylesheet" />
+    <link href="/favicon-16x16.png" rel="icon" sizes="16x16" type="image/png" />
+    <link href="/favicon-32x32.png" rel="icon" sizes="32x32" type="image/png" />
+    <link
+      href="/apple-touch-icon.png"
+      rel="apple-touch-icon"
+      sizes="180x180"
+      type="image/png"
+    />
+    <link href="/site.webmanifest" rel="manifest" />
+  </head>
+  <body>
+    <a id="pgfmanual-autopage-6211"></a>
+
+    <div class="bodyandsidetoc grid-container">
+      <header>
+        <strong><a href="/">PGF/Ti<i>k</i>Z Manual</a></strong>
+        <div id="search"></div>
+      </header>
+      <div class="sidetoccontainer" id="local-toc-container">
+        <nav class="sidetoc">
+          <div class="sidetoctitle"><p>On this page</p></div>
+          <div class="sidetoccontents">
+            <p><a class="tocsubsection" href="#sec-67.1">Overview</a></p>
+            <p><a class="tocsubsection" href="#sec-67.2">Requirements</a></p>
+            <p>
+              <a class="tocsubsection" href="#sec-67.3"
+                >Defining Profiler Entries</a
+              >
+            </p>
+          </div>
+        </nav>
+      </div>
+      <div class="sidetoccontainer" id="chapter-toc-container">
+        <nav class="sidetoc">
+          <div class="sidetoctitle">
+            <p>
+              <span class="sidetocthetitle"
+                >The <span class="tikzname">TikZ</span> and PGF Packages<br />
+                Manual for version 3.1.9a</span
+              >
+            </p>
+
+            <p>Contents</p>
+          </div>
+
+          <div class="sidetoccontents">
+            <p></p>
+
+            <p>
+              <a class="linkintro" href="/">Introduction</a>
+            </p>
+
+            <p>
+              <a class="tocpart" href="tutorials-guidelines"
+                >Tutorials and Guidelines</a
+              >
+            </p>
+
+            <p>
+              <a class="tocpart" href="install"
+                >Installation and Configuration</a
+              >
+            </p>
+
+            <p>
+              <a class="tocpart" href="tikz">Ti<em>k</em>Z</a>
+            </p>
+
+            <p>
+              <a class="tocpart" href="gd">Graph Drawing</a>
+            </p>
+
+            <p class="current-part">
+              <a class="tocpart" href="libraries">Libraries</a>
+            </p>
+
+            <p class="current-part">
+              <a class="tocsection" href="library-3d"
+                >Three Dimensional Drawing Library</a
+              >
+            </p>
+
+            <p class="current-part">
+              <a class="tocsection" href="library-angle">Angle Library</a>
+            </p>
+
+            <p class="current-part">
+              <a class="tocsection" href="library-arrows">Arrow Tip Library</a>
+            </p>
+
+            <p class="current-part">
+              <a class="tocsection" href="library-automata"
+                >Automata Drawing Library</a
+              >
+            </p>
+
+            <p class="current-part">
+              <a class="tocsection" href="library-babel">Babel Library</a>
+            </p>
+
+            <p class="current-part">
+              <a class="tocsection" href="library-backgrounds"
+                >Background Library</a
+              >
+            </p>
+
+            <p class="current-part">
+              <a class="tocsection" href="library-calc">Calc Library</a>
+            </p>
+
+            <p class="current-part">
+              <a class="tocsection" href="library-calender">Calendar Library</a>
+            </p>
+
+            <p class="current-part">
+              <a class="tocsection" href="library-chains">Chains</a>
+            </p>
+
+            <p class="current-part">
+              <a class="tocsection" href="library-circuits"
+                >Circuit Libraries</a
+              >
+            </p>
+
+            <p class="current-part">
+              <a class="tocsection" href="library-decorations"
+                >Decoration Library</a
+              >
+            </p>
+
+            <p class="current-part">
+              <a class="tocsection" href="library-er"
+                >Entity-Relationship Diagram Drawing Library</a
+              >
+            </p>
+
+            <p class="current-part">
+              <a class="tocsection" href="library-external"
+                >Externalization Library</a
+              >
+            </p>
+
+            <p class="current-part">
+              <a class="tocsection" href="library-fadings">Fading Library</a>
+            </p>
+
+            <p class="current-part">
+              <a class="tocsection" href="library-fit">Fitting Library</a>
+            </p>
+
+            <p class="current-part">
+              <a class="tocsection" href="library-fixedpoint"
+                >Fixed Point Arithmetic Library</a
+              >
+            </p>
+
+            <p class="current-part">
+              <a class="tocsection" href="library-fpu"
+                >Floating Point Unit Library</a
+              >
+            </p>
+
+            <p class="current-part">
+              <a class="tocsection" href="library-lsystems"
+                >Lindenmayer System Drawing Library</a
+              >
+            </p>
+
+            <p class="current-part">
+              <a class="tocsection" href="library-math">Math Library</a>
+            </p>
+
+            <p class="current-part">
+              <a class="tocsection" href="library-matrix">Matrix Library</a>
+            </p>
+
+            <p class="current-part">
+              <a class="tocsection" href="library-mindmaps"
+                >Mindmap Drawing Library</a
+              >
+            </p>
+
+            <p class="current-part">
+              <a class="tocsection" href="library-folding"
+                >Paper-Folding Diagrams Library</a
+              >
+            </p>
+
+            <p class="current-part">
+              <a class="tocsection" href="library-patterns">Pattern Library</a>
+            </p>
+
+            <p class="current-part">
+              <a class="tocsection" href="library-perspective"
+                >Three Point Perspective Drawing Library</a
+              >
+            </p>
+
+            <p class="current-part">
+              <a class="tocsection" href="library-petri"
+                >Petri-Net Drawing Library</a
+              >
+            </p>
+
+            <p class="current-part">
+              <a class="tocsection" href="library-plot-handlers"
+                >Plot Handler Library</a
+              >
+            </p>
+
+            <p class="current-part">
+              <a class="tocsection" href="library-plot-marks"
+                >Plot Mark Library</a
+              >
+            </p>
+
+            <p class="current current-part">
+              <a class="tocsection" href="library-profiler">Profiler Library</a>
+            </p>
+
+            <p class="current-part">
+              <a class="tocsection" href="library-shadings">Shadings Library</a>
+            </p>
+
+            <p class="current-part">
+              <a class="tocsection" href="library-shadows">Shadows Library</a>
+            </p>
+
+            <p class="current-part">
+              <a class="tocsection" href="library-shapes">Shape Library</a>
+            </p>
+
+            <p class="current-part">
+              <a class="tocsection" href="library-spy"
+                >Spy Library: Magnifying Parts of Pictures</a
+              >
+            </p>
+
+            <p class="current-part">
+              <a class="tocsection" href="library-svg-path">SVG-Path Library</a>
+            </p>
+
+            <p class="current-part">
+              <a class="tocsection" href="library-edges">To Path Library</a>
+            </p>
+
+            <p class="current-part">
+              <a class="tocsection" href="library-through">Through Library</a>
+            </p>
+
+            <p class="current-part">
+              <a class="tocsection" href="library-trees">Tree Library</a>
+            </p>
+
+            <p class="current-part">
+              <a class="tocsection" href="library-turtle"
+                >Turtle Graphics Library</a
+              >
+            </p>
+
+            <p class="current-part">
+              <a class="tocsection" href="library-views">Views Library</a>
+            </p>
+
+            <p>
+              <a class="tocpart" href="dv">Data Visualization</a>
+            </p>
+
+            <p>
+              <a class="tocpart" href="utilities">Utilities</a>
+            </p>
+
+            <p>
+              <a class="tocpart" href="math"
+                >Mathematical and Object-Oriented Engines</a
+              >
+            </p>
+
+            <p>
+              <a class="tocpart" href="base">The Basic Layer</a>
+            </p>
+
+            <p>
+              <a class="tocpart" href="pgfsys">The System Layer</a>
+            </p>
+          </div>
+        </nav>
+      </div>
+
+      <main class="bodycontainer">
+        <section class="textbody">
+          <h1>
+            The <span class="tikzname">TikZ</span> and PGF Packages<br />
+            Manual for version 3.1.9a
+          </h1>
+          <h2 class="inserted">Libraries</h2>
+
+          <!--MathJax customizations:-->
+
+          <div class="hidden">
+            \(\newcommand{\footnotename}{footnote}\) \(\def \LWRfootnote {1}\)
+            \(\newcommand {\footnote }[2][\LWRfootnote ]{{}^{\mathrm {#1}}}\)
+            \(\newcommand {\footnotemark }[1][\LWRfootnote ]{{}^{\mathrm
+            {#1}}}\) \(\let \LWRorighspace \hspace \) \(\renewcommand {\hspace
+            }{\ifstar \LWRorighspace \LWRorighspace }\) \(\newcommand
+            {\mathnormal }[1]{{#1}}\) \(\newcommand \ensuremath [1]{#1}\)
+            \(\newcommand {\LWRframebox }[2][]{\fbox {#2}} \newcommand
+            {\framebox }[1][]{\LWRframebox } \) \(\newcommand {\setlength
+            }[2]{}\) \(\newcommand {\addtolength }[2]{}\) \(\newcommand
+            {\setcounter }[2]{}\) \(\newcommand {\addtocounter }[2]{}\)
+            \(\newcommand {\arabic }[1]{}\) \(\newcommand {\number }[1]{}\)
+            \(\newcommand {\noalign }[1]{\text {#1}\notag \\}\) \(\newcommand
+            {\cline }[1]{}\) \(\newcommand {\directlua }[1]{\text
+            {(directlua)}}\) \(\newcommand {\luatexdirectlua }[1]{\text
+            {(directlua)}}\) \(\newcommand {\protect }{}\) \(\def
+            \LWRabsorbnumber #1 {}\) \(\def \LWRabsorbquotenumber "#1 {}\)
+            \(\newcommand {\LWRabsorboption }[1][]{}\) \(\newcommand
+            {\LWRabsorbtwooptions }[1][]{\LWRabsorboption }\) \(\def \mathchar
+            {\ifnextchar "\LWRabsorbquotenumber \LWRabsorbnumber }\) \(\def
+            \mathcode #1={\mathchar }\) \(\let \delcode \mathcode \) \(\let
+            \delimiter \mathchar \) \(\def \oe {\unicode {x0153}}\) \(\def \OE
+            {\unicode {x0152}}\) \(\def \ae {\unicode {x00E6}}\) \(\def \AE
+            {\unicode {x00C6}}\) \(\def \aa {\unicode {x00E5}}\) \(\def \AA
+            {\unicode {x00C5}}\) \(\def \o {\unicode {x00F8}}\) \(\def \O
+            {\unicode {x00D8}}\) \(\def \l {\unicode {x0142}}\) \(\def \L
+            {\unicode {x0141}}\) \(\def \ss {\unicode {x00DF}}\) \(\def \SS
+            {\unicode {x1E9E}}\) \(\def \dag {\unicode {x2020}}\) \(\def \ddag
+            {\unicode {x2021}}\) \(\def \P {\unicode {x00B6}}\) \(\def
+            \copyright {\unicode {x00A9}}\) \(\def \pounds {\unicode {x00A3}}\)
+            \(\let \LWRref \ref \) \(\renewcommand {\ref }{\ifstar \LWRref
+            \LWRref }\) \( \newcommand {\multicolumn }[3]{#3}\) \(\require
+            {textcomp}\) \( \newcommand {\meta }[1]{\langle \textit {#1}\rangle
+            } \) \(\newcommand {\intertext }[1]{\text {#1}\notag \\}\) \(\let
+            \Hat \hat \) \(\let \Check \check \) \(\let \Tilde \tilde \) \(\let
+            \Acute \acute \) \(\let \Grave \grave \) \(\let \Dot \dot \) \(\let
+            \Ddot \ddot \) \(\let \Breve \breve \) \(\let \Bar \bar \) \(\let
+            \Vec \vec \)
+          </div>
+
+          <p></p>
+          <h4 id="autosec-6212">
+            <span class="sectionnumber">67&emsp;</span>Profiler Library
+          </h4>
+          <a id="pgfmanual-autopage-6212"></a>
+          <a id="pgfmanual-autofile-72"></a>
+
+          <p>
+            <em>by Christian Feuers&auml;nger</em>
+          </p>
+
+          <div class="manualentry">
+            <div class="entryheadline">
+              <p>
+                <a id="pgf.profiler"></a>
+                <span class="hl-def"
+                  ><b><span class="tikzname">TikZ</span> Library</b>
+                  <kbd
+                    ><span class="textcolor" style="color: #bf0000"
+                      >profiler</span
+                    ></kbd
+                  ></span
+                >
+                <a class="anchor-link" href="#pgf.profiler">&para;</a>
+              </p>
+            </div>
+
+            <p>
+              <kbd
+                >\usepgflibrary{<span class="textcolor" style="color: #bf0000"
+                  >profiler</span
+                >} %
+                <span class="latexlogofont"
+                  ><span class="latexlogo"
+                    >L<span class="latexlogosup">a</span>T<span
+                      class="latexlogosub"
+                      >e</span
+                    >X</span
+                  ></span
+                >
+                and plain
+                <span class="latexlogofont"
+                  ><span class="latexlogo"
+                    >T<span class="latexlogosub">e</span>X</span
+                  ></span
+                >
+                and pure pgf</kbd
+              ><br />
+              <kbd
+                >\usepgflibrary[<span class="textcolor" style="color: #bf0000"
+                  >profiler</span
+                >] % Con<span class="latexlogofont"
+                  ><span class="latexlogo"
+                    >T<span class="latexlogosub">e</span>X</span
+                  ></span
+                >t and pure pgf</kbd
+              ><br />
+              <kbd
+                >\usetikzlibrary{<span class="textcolor" style="color: #bf0000"
+                  >profiler</span
+                >} %
+                <span class="latexlogofont"
+                  ><span class="latexlogo"
+                    >L<span class="latexlogosup">a</span>T<span
+                      class="latexlogosub"
+                      >e</span
+                    >X</span
+                  ></span
+                >
+                and plain
+                <span class="latexlogofont"
+                  ><span class="latexlogo"
+                    >T<span class="latexlogosub">e</span>X</span
+                  ></span
+                >
+                when using <span class="tikzname">TikZ</span></kbd
+              ><br />
+              <kbd
+                >\usetikzlibrary[<span class="textcolor" style="color: #bf0000"
+                  >profiler</span
+                >] % Con<span class="latexlogofont"
+                  ><span class="latexlogo"
+                    >T<span class="latexlogosub">e</span>X</span
+                  ></span
+                >t when using <span class="tikzname">TikZ</span></kbd
+              ><br />
+              <br />
+              A library to simplify the optimization of runtime speed of
+              <span class="latexlogofont"
+                ><span class="latexlogo"
+                  >T<span class="latexlogosub">e</span>X</span
+                ></span
+              >
+              programs.
+            </p>
+            <p>
+              <a id="pgf.back/pdfelapsedtime"></a>
+              It relies on the <span class="texttt">pdftex</span> primitive
+              <kbd
+                ><span class="textcolor" style="color: #bf0000"
+                  >\pdfelapsedtime</span
+                ></kbd
+              ><sup>13</sup><a id="pgfmanual-autopage-6213"></a> to count
+              (fractional) seconds and counts total time and self time for macro
+              invocations.
+            </p>
+          </div>
+          <div class="footnotes" role="note">
+            <a id="pgfmanual-autopage-6214"></a>
+
+            <p>
+              <sup>13</sup>&nbsp;The primitive is emulated in lua<span
+                class="latexlogofont"
+                ><span class="latexlogo"
+                  >T<span class="latexlogosub">e</span>X</span
+                ></span
+              >.
+            </p>
+          </div>
+          <h5 id="autosec-6215">
+            <span class="sectionnumber" id="sec-67.1">67.1&emsp;</span
+            >Overview<a class="anchor-link" href="#sec-67.1">&para;</a>
+          </h5>
+          <a id="pgfmanual-autopage-6215"></a>
+
+          <p>
+            The intended audience for this library are people writing
+            <span class="latexlogofont"
+              ><span class="latexlogo"
+                >T<span class="latexlogosub">e</span>X</span
+              ></span
+            >
+            code which should be optimized. It is certainly <em>not</em> useful
+            for the end-user.
+          </p>
+
+          <p>
+            The work flow for the optimization is simple: the preamble contains
+            configuration commands like
+          </p>
+
+          <figure class="example">
+            <div class="example-code">
+              <button class="clipboardButton" type="button">copy</button>
+
+              <code>
+                <br />
+                <a href="base-scopes#pgf.back/usepgflibrary">\usepgflibrary</a
+                >{<a href="library-profiler#pgf.profiler">profiler</a>}<br />
+                <span class="textcolor" style="color: #0000b2"
+                  ><a
+                    href="library-profiler#pgf.back/pgfprofilenewforenvironment"
+                    >\pgfprofilenewforenvironment</a
+                  ></span
+                >{<span class="textcolor" style="color: #000000"
+                  ><a href="tikz-scopes#pgf.tikzpicture">tikzpicture</a></span
+                >}<br />
+                <span class="textcolor" style="color: #0000b2"
+                  ><a href="library-profiler#pgf.back/pgfprofilenewforcommand"
+                    >\pgfprofilenewforcommand</a
+                  ></span
+                >{<span class="textcolor" style="color: #0000b2"
+                  ><a href="pgfkeys#pgf.back/pgfkeys">\pgfkeys</a></span
+                >}<span class="textcolor" style="color: #000000">1</span>}<br />
+              </code>
+            </div>
+          </figure>
+
+          <p>
+            and then, the time between
+            <span class="texttt">\begin{tikzpicture}</span> and
+            <span class="texttt">\end{tikzpicture}</span> and the time required
+            to call <span class="texttt">\pgfkeys</span> will be collected.
+          </p>
+
+          <p>At the end, a short usage summary like</p>
+
+          <figure class="example">
+            <div class="example-code">
+              <button class="clipboardButton" type="button">copy</button>
+
+              <code>
+                <br />
+                &numsp;<span class="textcolor" style="color: #000000"
+                  >pgflibraryprofiler</span
+                ><span class="textcolor" style="color: #800080">(main job)</span
+                >&numsp;{<span class="textcolor" style="color: #000000"
+                  ><a href="tikz-coordinates#pgf.total">total</a></span
+                >
+                <span class="textcolor" style="color: #000000">time=1</span
+                >.<span class="textcolor" style="color: #000000">07378sec</span
+                >;&numsp;<span class="textcolor" style="color: #800080"
+                  >(100.0122<span class="example-code-comment"
+                    >%) self time=0.034sec; (3.1662%)}</span
+                  ><br />
+                  pgflibraryprofiler(<env>tikzpicture)</env></span
+                >&numsp;{<span class="textcolor" style="color: #000000"
+                  ><a href="tikz-coordinates#pgf.total">total</a></span
+                >
+                <span class="textcolor" style="color: #000000">time=1</span
+                >.<span class="textcolor" style="color: #000000">03978sec</span
+                >;&numsp;<span class="textcolor" style="color: #800080"
+                  >(96.84601<span class="example-code-comment"
+                    >%) self time=1.00415sec; (93.52722%)}</span
+                  ><br />
+                  pgflibraryprofiler(<cs>pgfkeys)</cs></span
+                >&numsp;{<span class="textcolor" style="color: #000000"
+                  ><a href="tikz-coordinates#pgf.total">total</a></span
+                >
+                <span class="textcolor" style="color: #000000">time=0</span
+                >.<span class="textcolor" style="color: #000000">03563sec</span
+                >;&numsp;<span class="textcolor" style="color: #800080"
+                  >(3.31726<span class="example-code-comment"
+                    >%) self time=0.03563sec; (3.31726%)}</span
+                  ><br />
+                </span>
+              </code>
+            </div>
+          </figure>
+
+          <p>
+            will be provided in the log file, furthermore, the same information
+            is available in a text table called
+            <span class="texttt">\jobname.profiler.</span
+            ><span class="angle">&langle;</span><i>datetime</i
+            ><span class="angle">&rangle;</span
+            ><span class="texttt">.dat</span> which is of the form:
+          </p>
+
+          <figure class="example">
+            <div class="example-code">
+              <button class="clipboardButton" type="button">copy</button>
+
+              <code>
+                <br />
+                <span class="textcolor" style="color: #000000"
+                  >profilerentry</span
+                >
+                &numsp;&numsp;&numsp;&numsp;&numsp;&numsp;<span
+                  class="textcolor"
+                  style="color: #000000"
+                  >totaltime</span
+                >[<span class="textcolor" style="color: #008000">s</span
+                >]&numsp;&numsp;&numsp;&numsp;&numsp;&numsp;&numsp;&numsp;<span
+                  class="textcolor"
+                  style="color: #000000"
+                  >totaltime</span
+                >[<span class="textcolor" style="color: #008000">percent</span
+                >]&numsp;&numsp;<span class="textcolor" style="color: #000000"
+                  >selftime</span
+                >[<span class="textcolor" style="color: #008000">s</span
+                >]&numsp;&numsp;&numsp;&numsp;&numsp;&numsp;&numsp;&numsp;&numsp;<span
+                  class="textcolor"
+                  style="color: #000000"
+                  >selftime</span
+                >[<span class="textcolor" style="color: #008000">percent</span
+                >]<br />
+                <span class="textcolor" style="color: #000000">main</span>
+                <span class="textcolor" style="color: #000000">job</span>
+                &numsp;&numsp;&numsp;&numsp;&numsp;&numsp;&numsp;&numsp;&numsp;&numsp;&numsp;<span
+                  class="textcolor"
+                  style="color: #000000"
+                  >1</span
+                >.<span class="textcolor" style="color: #000000">07378</span>
+                &numsp;&numsp;&numsp;&numsp;&numsp;&numsp;&numsp;&numsp;&numsp;&numsp;&numsp;&numsp;<span
+                  class="textcolor"
+                  style="color: #000000"
+                  >100</span
+                >.<span class="textcolor" style="color: #000000">0122</span>
+                &numsp;&numsp;&numsp;&numsp;&numsp;&numsp;&numsp;&numsp;&numsp;&numsp;&numsp;<span
+                  class="textcolor"
+                  style="color: #000000"
+                  >0</span
+                >.<span class="textcolor" style="color: #000000">034</span>
+                &numsp;&numsp;&numsp;&numsp;&numsp;&numsp;&numsp;&numsp;&numsp;&numsp;&numsp;&numsp;&numsp;&numsp;<span
+                  class="textcolor"
+                  style="color: #000000"
+                  >3</span
+                >.<span class="textcolor" style="color: #000000">1662</span
+                ><br />
+                <span class="textcolor" style="color: #000000"
+                  ><env>tikzpicture</env></span
+                >
+                &numsp;&numsp;&numsp;<span
+                  class="textcolor"
+                  style="color: #000000"
+                  >1</span
+                >.<span class="textcolor" style="color: #000000">03978</span>
+                &numsp;&numsp;&numsp;&numsp;&numsp;&numsp;&numsp;&numsp;&numsp;&numsp;&numsp;&numsp;<span
+                  class="textcolor"
+                  style="color: #000000"
+                  >96</span
+                >.<span class="textcolor" style="color: #000000">84601</span>
+                &numsp;&numsp;&numsp;&numsp;&numsp;&numsp;&numsp;&numsp;&numsp;&numsp;&numsp;<span
+                  class="textcolor"
+                  style="color: #000000"
+                  >1</span
+                >.<span class="textcolor" style="color: #000000">00415</span>
+                &numsp;&numsp;&numsp;&numsp;&numsp;&numsp;&numsp;&numsp;&numsp;&numsp;&numsp;&numsp;<span
+                  class="textcolor"
+                  style="color: #000000"
+                  >93</span
+                >.<span class="textcolor" style="color: #000000">52722</span
+                ><br />
+                <span class="textcolor" style="color: #000000"
+                  ><cs>pgfkeys</cs></span
+                >
+                &numsp;&numsp;&numsp;&numsp;&numsp;&numsp;&numsp;&numsp;<span
+                  class="textcolor"
+                  style="color: #000000"
+                  >0</span
+                >.<span class="textcolor" style="color: #000000">03563</span>
+                &numsp;&numsp;&numsp;&numsp;&numsp;&numsp;&numsp;&numsp;&numsp;&numsp;&numsp;&numsp;<span
+                  class="textcolor"
+                  style="color: #000000"
+                  >3</span
+                >.<span class="textcolor" style="color: #000000">31726</span>
+                &numsp;&numsp;&numsp;&numsp;&numsp;&numsp;&numsp;&numsp;&numsp;&numsp;&numsp;&numsp;<span
+                  class="textcolor"
+                  style="color: #000000"
+                  >0</span
+                >.<span class="textcolor" style="color: #000000">03563</span>
+                &numsp;&numsp;&numsp;&numsp;&numsp;&numsp;&numsp;&numsp;&numsp;&numsp;&numsp;&numsp;<span
+                  class="textcolor"
+                  style="color: #000000"
+                  >3</span
+                >.<span class="textcolor" style="color: #000000">31726</span
+                ><br />
+              </code>
+            </div>
+          </figure>
+
+          <p>
+            Here, the <span class="texttt">totaltime</span> means the time used
+            for all invocations of the respective profiler entry (one row in the
+            table). The <span class="texttt">selftime</span> measures time which
+            is not already counted for in another profiler entry which has been
+            invoked within the current one. The example above is not very
+            exciting: the main job consists only of several (quite complex)
+            pictures and nothing else. Thus, its total time is large. However,
+            the self time is very small because the
+            <span class="texttt">tikzpicture</span>s are counted separately, and
+            they have been invoked within the
+            <span class="texttt">main job</span>. The
+            <span class="texttt">\pgfkeys</span> control sequence has been
+            invoked within the <span class="texttt">tikzpicture</span>,
+            that&rsquo;s why the <span class="texttt">selftime</span> for the
+            <span class="texttt">tikzpicture</span> is a little bit smaller than
+            its <span class="texttt">totaltime</span>.
+          </p>
+          <h5 id="autosec-6216">
+            <span class="sectionnumber" id="sec-67.2">67.2&emsp;</span
+            >Requirements<a class="anchor-link" href="#sec-67.2">&para;</a>
+          </h5>
+          <a id="pgfmanual-autopage-6216"></a>
+
+          <p>
+            The library works with <span class="texttt">pdftex</span> and
+            <span class="texttt">luatex</span>. Furthermore, it requires a more
+            or less recent version of <span class="texttt">pdftex</span> which
+            supports the <span class="texttt">\pdfelapsedtime</span> directive.
+          </p>
+          <h5 id="autosec-6217">
+            <span class="sectionnumber" id="sec-67.3">67.3&emsp;</span>Defining
+            Profiler Entries<a class="anchor-link" href="#sec-67.3">&para;</a>
+          </h5>
+          <a id="pgfmanual-autopage-6217"></a>
+
+          <p>
+            Unlike profilers for C/C++ or java, this library doesn&rsquo;t
+            extract information about every
+            <span class="latexlogofont"
+              ><span class="latexlogo"
+                >T<span class="latexlogosub">e</span>X</span
+              ></span
+            >
+            macro automatically, nor does it collect information for each of
+            them. Instead, every profiler entry needs to be defined explicitly.
+            Only defined profiler entries will be processed.
+          </p>
+
+          <div class="manualentry">
+            <div class="entryheadline">
+              <p>
+                <a id="pgf.back/pgfprofilenew"></a>
+                <span class="hl-def"
+                  ><span class="textcolor" style="color: #bf0000"
+                    ><kbd>\pgfprofilenew</kbd></span
+                  >{<span class="angle">&langle;</span><i>name</i
+                  ><span class="angle">&rangle;</span>}</span
+                >
+                <a class="anchor-link" href="#pgf.back/pgfprofilenew">&para;</a>
+              </p>
+            </div>
+            <p>
+              Defines a new profiler entry named
+              <span class="angle">&langle;</span><i>name</i
+              ><span class="angle">&rangle;</span>.
+            </p>
+            <p>
+              This updates a set of internal registers used to track the
+              profiler entry. The <span class="angle">&langle;</span><i>name</i
+              ><span class="angle">&rangle;</span> can be arbitrary, it
+              doesn&rsquo;t need to be related to any
+              <span class="latexlogofont"
+                ><span class="latexlogo"
+                  >T<span class="latexlogosub">e</span>X</span
+                ></span
+              >
+              macro.
+            </p>
+            <p>
+              The actual job of counting seconds is accomplished using
+              <span class="texttt">\pgfprofilestart</span>{<span class="angle"
+                >&langle;</span
+              ><i>name</i><span class="angle">&rangle;</span>} followed
+              eventually by the command
+              <span class="texttt">\pgfprofileend</span>{<span class="angle"
+                >&langle;</span
+              ><i>name</i><span class="angle">&rangle;</span>}.
+            </p>
+            <p>
+              It doesn&rsquo;t hurt if
+              <span class="texttt">\pgfprofilenew</span> is called multiple
+              times with the same name.
+            </p>
+          </div>
+
+          <div class="manualentry">
+            <div class="entryheadline">
+              <p>
+                <a id="pgf.back/pgfprofilenewforcommand"></a>
+                <span class="hl-def"
+                  ><span class="textcolor" style="color: #bf0000"
+                    ><kbd>\pgfprofilenewforcommand</kbd></span
+                  >[<span class="angle">&langle;</span><i>profiler entry name</i
+                  ><span class="angle">&rangle;</span>]{<span class="angle"
+                    >&langle;</span
+                  ><i>\macro</i><span class="angle">&rangle;</span>}{<span
+                    class="angle"
+                    >&langle;</span
+                  ><i>arguments</i><span class="angle">&rangle;</span>}</span
+                >
+                <a class="anchor-link" href="#pgf.back/pgfprofilenewforcommand"
+                  >&para;</a
+                >
+              </p>
+            </div>
+            <p>
+              Defines a new profiler entry which will measure the time spent in
+              <span class="angle">&langle;</span><i>\macro</i
+              ><span class="angle">&rangle;</span>. This calls
+              <span class="texttt">\pgfprofilenew</span> and replaces the
+              current definition of <span class="angle">&langle;</span
+              ><i>\macro</i><span class="angle">&rangle;</span> with a new one.
+            </p>
+            <p>
+              If [<span class="angle">&langle;</span><i>profiler entry name</i
+              ><span class="angle">&rangle;</span>] has been provided, this
+              defines the argument for
+              <span class="texttt">\pgfprofilenew</span>. It is allowed to use
+              the same name for
+              <a id="pgf.back/pgfprofilecs"></a>
+              multiple commands; in this case, they are treated as if it where
+              the same command. If the optional argument is not used, the
+              profiler entry will be called &lsquo;
+              <kbd
+                ><span class="textcolor" style="color: #bf0000"
+                  >\pgfprofilecs</span
+                ></kbd
+              ><span class="angle">&langle;</span><i>macro</i
+              ><span class="angle">&rangle;</span>&rsquo; (<span class="angle"
+                >&langle;</span
+              ><i>macro</i><span class="angle">&rangle;</span> without
+              backslash) where <span class="texttt">\pgfprofilecs</span> is
+              predefined to be <span class="texttt"><cs></cs></span>.
+            </p>
+            <p>
+              The replacement macro will collect all required arguments, start
+              counting, invoke the original macro definition and stop counting.
+            </p>
+            <p>
+              The following macro types are supported within
+              <span class="texttt">\pgfprofilenewforcommand</span>:
+            </p>
+
+            <p>
+              &bull; commands which take one (optional) argument in square
+              brackets followed by one optional argument which has to be
+              delimited by curly braces (use an empty argument for
+              <span class="angle">&langle;</span><i>arguments</i
+              ><span class="angle">&rangle;</span> in this case),
+            </p>
+
+            <p>
+              &bull; commands which take one (optional) argument in square
+              brackets and <em>exactly</em> <span class="angle">&langle;</span
+              ><i>arguments</i><span class="angle">&rangle;</span> arguments
+              afterwards.
+            </p>
+
+            <p>
+              Take a look at
+              <span class="texttt">\pgfprofilenewforcommandpattern</span> in
+              case you have more complicated commands.
+            </p>
+            <p>
+              Note that the library can&rsquo;t detect if a command has been
+              redefined somewhere.
+            </p>
+          </div>
+
+          <div class="manualentry">
+            <div class="entryheadline">
+              <p>
+                <a id="pgf.back/pgfprofilenewforcommandpattern"></a>
+                <span class="hl-def"
+                  ><span class="textcolor" style="color: #bf0000"
+                    ><kbd>\pgfprofilenewforcommandpattern</kbd></span
+                  >[<span class="angle">&langle;</span><i>profiler entry name</i
+                  ><span class="angle">&rangle;</span>]{<span class="angle"
+                    >&langle;</span
+                  ><i>\macro</i><span class="angle">&rangle;</span>}{<span
+                    class="angle"
+                    >&langle;</span
+                  ><i>argument pattern</i
+                  ><span class="angle">&rangle;</span>}{<span class="angle"
+                    >&langle;</span
+                  ><i>invocation pattern</i
+                  ><span class="angle">&rangle;</span>}</span
+                >
+                <a
+                  class="anchor-link"
+                  href="#pgf.back/pgfprofilenewforcommandpattern"
+                  >&para;</a
+                >
+              </p>
+            </div>
+            <p>
+              A variant of
+              <span class="texttt">\pgfprofilenewforcommand</span> which can be
+              used with arbitrary <span class="angle">&langle;</span
+              ><i>argument patterns</i><span class="angle">&rangle;</span>.
+              Example:
+            </p>
+
+            <figure class="example">
+              <div class="example-code">
+                <button class="clipboardButton" type="button">copy</button>
+                <code>
+                  <br />
+                  <span class="textcolor" style="color: #0000b2">\def</span
+                  ><span class="textcolor" style="color: #0000b2">\mymacro</span
+                  ><span class="textcolor" style="color: #000000">#1</span
+                  ><span class="textcolor" style="color: #0000b2">\to</span
+                  ><span class="textcolor" style="color: #000000">#2</span
+                  ><span class="textcolor" style="color: #0000b2">\in</span
+                  ><span class="textcolor" style="color: #000000">#3</span
+                  >{&numsp;...&numsp;}<br />
+                  <span class="textcolor" style="color: #0000b2"
+                    ><a
+                      href="library-profiler#pgf.back/pgfprofilenewforcommandpattern"
+                      >\pgfprofilenewforcommandpattern</a
+                    ></span
+                  >{<span class="textcolor" style="color: #0000b2"
+                    >\mymacro</span
+                  >}{<span class="textcolor" style="color: #000000">#1</span
+                  ><span class="textcolor" style="color: #0000b2">\to</span
+                  ><span class="textcolor" style="color: #000000">#2</span
+                  ><span class="textcolor" style="color: #0000b2">\in</span
+                  ><span class="textcolor" style="color: #000000">#3</span
+                  >}{{<span class="textcolor" style="color: #000000">#1</span
+                  >}<span class="textcolor" style="color: #0000b2">\to</span
+                  >{<span class="textcolor" style="color: #000000">#2</span
+                  >}<span class="textcolor" style="color: #0000b2">\in</span
+                  >{<span class="textcolor" style="color: #000000">#3</span
+                  >}}<br />
+                </code>
+              </div>
+            </figure>
+            <p>
+              Note that <span class="texttt">\pgfprofilenewforcommand</span> is
+              a special case of
+              <span class="texttt">\pgfprofilenewforcommandpattern</span>:
+            </p>
+
+            <figure class="example">
+              <div class="example-code">
+                <button class="clipboardButton" type="button">copy</button>
+                <code>
+                  <br />
+                  <span class="textcolor" style="color: #0000b2">\def</span
+                  ><span class="textcolor" style="color: #0000b2">\mymacro</span
+                  ><span class="textcolor" style="color: #000000">#1#2</span
+                  >{&numsp;...&numsp;}<br />
+                  <span class="textcolor" style="color: #0000b2"
+                    ><a href="library-profiler#pgf.back/pgfprofilenewforcommand"
+                      >\pgfprofilenewforcommand</a
+                    ></span
+                  ><span class="textcolor" style="color: #0000b2">\macro</span
+                  >{<span class="textcolor" style="color: #000000">2</span
+                  >}<br />
+                  <span class="textcolor" style="color: #0000b2"
+                    ><a
+                      href="library-profiler#pgf.back/pgfprofilenewforcommandpattern"
+                      >\pgfprofilenewforcommandpattern</a
+                    ></span
+                  >{<span class="textcolor" style="color: #0000b2"
+                    >\mymacro</span
+                  >}{<span class="textcolor" style="color: #000000">#1#2</span
+                  >}{{<span class="textcolor" style="color: #000000">#1</span
+                  >}{<span class="textcolor" style="color: #000000">#2</span
+                  >}}<br />
+                </code>
+              </div>
+            </figure>
+            <p>
+              Thus, <span class="angle">&langle;</span><i>argument pattern</i
+              ><span class="angle">&rangle;</span> is a copy-paste from the
+              definition of your command. The <span class="angle">&langle;</span
+              ><i>invocation pattern</i><span class="angle">&rangle;</span> is
+              used by the <span class="texttt">profiler</span> library to invoke
+              the <em>original</em> command, so it is closely related to
+              <span class="angle">&langle;</span><i>argument pattern</i
+              ><span class="angle">&rangle;</span>, but it needs extra curly
+              braces around each argument.
+            </p>
+            <p>
+              The behavior of
+              <span class="texttt">\pgfprofilenewforcommandpattern</span> is the
+              same as discussed above: it defines a new profiler entry which
+              will measure the time spent in <span class="angle">&langle;</span
+              ><i>\macro</i><span class="angle">&rangle;</span>. The details
+              about this definition has already been described. Note that up to
+              one optional argument in square brackets is also checked
+              automatically.
+            </p>
+            <p>
+              If you like to profile a command which doesn&rsquo;t match here
+              for whatever reasons, you&rsquo;ll have to redefine it manually
+              and insert <span class="texttt">\pgfprofilestart</span> and
+              <span class="texttt">\pgfprofileend</span> in appropriate places.
+            </p>
+          </div>
+
+          <div class="manualentry">
+            <div class="entryheadline">
+              <p>
+                <a id="pgf.back/pgfprofileshowinvocationsfor"></a>
+                <span class="hl-def"
+                  ><span class="textcolor" style="color: #bf0000"
+                    ><kbd>\pgfprofileshowinvocationsfor</kbd></span
+                  >{<span class="angle">&langle;</span><i>profiler entry name</i
+                  ><span class="angle">&rangle;</span>}</span
+                >
+                <a
+                  class="anchor-link"
+                  href="#pgf.back/pgfprofileshowinvocationsfor"
+                  >&para;</a
+                >
+              </p>
+            </div>
+            <p>
+              Enables verbose output for <em>every</em> invocation of
+              <span class="angle">&langle;</span><i>profiler entry name</i
+              ><span class="angle">&rangle;</span>.
+            </p>
+            <p>
+              This is only available for profiler entries for commands (those
+              created by
+              <span class="texttt">\pgfprofilenewforcommand</span> for example).
+              It will also show all given arguments.
+            </p>
+          </div>
+
+          <div class="manualentry">
+            <div class="entryheadline">
+              <p>
+                <a id="pgf.back/pgfprofileshowinvocationsexpandedfor"></a>
+                <span class="hl-def"
+                  ><span class="textcolor" style="color: #bf0000"
+                    ><kbd>\pgfprofileshowinvocationsexpandedfor</kbd></span
+                  >{<span class="angle">&langle;</span><i>profiler entry name</i
+                  ><span class="angle">&rangle;</span>}</span
+                >
+                <a
+                  class="anchor-link"
+                  href="#pgf.back/pgfprofileshowinvocationsexpandedfor"
+                  >&para;</a
+                >
+              </p>
+            </div>
+            <p>
+              A variant of
+              <span class="texttt">\pgfprofileshowinvocationsfor</span> which
+              will expand all arguments for <span class="angle">&langle;</span
+              ><i>profiler entry name</i
+              ><span class="angle">&rangle;</span> before showing them. The
+              invocation as such is not affected by this expansion.
+            </p>
+            <p>
+              This expansion (with <span class="texttt">\edef</span>) might
+              yield unrecoverable errors for some commands. Handle with care.
+            </p>
+          </div>
+
+          <div class="manualentry">
+            <div class="entryheadline">
+              <p>
+                <a id="pgf.back/pgfprofilenewforenvironment"></a>
+                <span class="hl-def"
+                  ><span class="textcolor" style="color: #bf0000"
+                    ><kbd>\pgfprofilenewforenvironment</kbd></span
+                  >[<span class="angle">&langle;</span><i>profiler entry name</i
+                  ><span class="angle">&rangle;</span>]{<span class="angle"
+                    >&langle;</span
+                  ><i>environment name</i
+                  ><span class="angle">&rangle;</span>}</span
+                >
+                <a
+                  class="anchor-link"
+                  href="#pgf.back/pgfprofilenewforenvironment"
+                  >&para;</a
+                >
+              </p>
+            </div>
+            <p>
+              Defines a new profiler entry which measures time spent in the
+              environment <span class="angle">&langle;</span
+              ><i>environment name</i><span class="angle">&rangle;</span>.
+            </p>
+            <p>
+              This calls <span class="texttt">\pgfprofilenew</span> and handles
+              the begin/end of the environment automatically.
+            </p>
+            <p>
+              The argument for <span class="texttt">\pgfprofilenew</span> is
+              <span class="angle">&langle;</span><i>profiler entry name</i
+              ><span class="angle">&rangle;</span>, or, if this optional
+              argument is not used, it is
+              <a id="pgf.back/pgfprofileenv"></a>
+              &lsquo;
+              <kbd
+                ><span class="textcolor" style="color: #bf0000"
+                  >\pgfprofileenv</span
+                ></kbd
+              ><span class="angle">&langle;</span><i>environment name</i
+              ><span class="angle">&rangle;</span>&rsquo; where
+              <span class="texttt">\pgfprofileenv</span> is predefined as
+              <span class="texttt"><env></env></span>. Again, it is permitted to
+              use the same <span class="angle">&langle;</span
+              ><i>profiler entry name</i
+              ><span class="angle">&rangle;</span> multiple times to merge
+              different commands into one output section.
+            </p>
+          </div>
+
+          <div class="manualentry">
+            <div class="entryheadline">
+              <p>
+                <a id="pgf.back/pgfprofilestart"></a>
+                <span class="hl-def"
+                  ><span class="textcolor" style="color: #bf0000"
+                    ><kbd>\pgfprofilestart</kbd></span
+                  >{<span class="angle">&langle;</span><i>profiler entry name</i
+                  ><span class="angle">&rangle;</span>}</span
+                >
+                <a class="anchor-link" href="#pgf.back/pgfprofilestart"
+                  >&para;</a
+                >
+              </p>
+            </div>
+            <p>
+              Starts (or resumes) timing of <span class="angle">&langle;</span
+              ><i>profiler entry name</i><span class="angle">&rangle;</span>.
+              The argument must have been declared in the preamble using
+              <span class="texttt">\pgfprofilenew</span>.
+            </p>
+            <p>
+              Nested calls of <span class="texttt">\pgfprofilestart</span> with
+              the same argument will be ignored.
+            </p>
+            <p>
+              The invocation of this command doesn&rsquo;t change the
+              environment: it doesn&rsquo;t introduce any
+              <span class="latexlogofont"
+                ><span class="latexlogo"
+                  >T<span class="latexlogosub">e</span>X</span
+                ></span
+              >
+              groups nor does it modify the token list.
+            </p>
+          </div>
+
+          <div class="manualentry">
+            <div class="entryheadline">
+              <p>
+                <a id="pgf.back/pgfprofileend"></a>
+                <span class="hl-def"
+                  ><span class="textcolor" style="color: #bf0000"
+                    ><kbd>\pgfprofileend</kbd></span
+                  >{<span class="angle">&langle;</span><i>profiler entry name</i
+                  ><span class="angle">&rangle;</span>}</span
+                >
+                <a class="anchor-link" href="#pgf.back/pgfprofileend">&para;</a>
+              </p>
+            </div>
+            <p>
+              Stops (or interrupts) timing of <span class="angle">&langle;</span
+              ><i>profiler entry name</i><span class="angle">&rangle;</span>.
+            </p>
+            <p>
+              This command finishes a preceding call to
+              <span class="texttt">\pgfprofilestart</span>.
+            </p>
+          </div>
+
+          <div class="manualentry">
+            <div class="entryheadline">
+              <p>
+                <a id="pgf.back/pgfprofilepostprocess"></a>
+                <span class="hl-def"
+                  ><span class="textcolor" style="color: #bf0000"
+                    ><kbd>\pgfprofilepostprocess</kbd></span
+                  ></span
+                >
+                <a class="anchor-link" href="#pgf.back/pgfprofilepostprocess"
+                  >&para;</a
+                >
+              </p>
+            </div>
+            <p>
+              For
+              <span class="latexlogofont"
+                ><span class="latexlogo"
+                  >L<span class="latexlogosup">a</span>T<span
+                    class="latexlogosub"
+                    >e</span
+                  >X</span
+                ></span
+              >, this command is installed automatically in
+              <span class="texttt">\end{document}</span>. It stops all running
+              timings, evaluates them and returns the result into the logfile.
+              Furthermore, it generates a text table called
+              <span class="texttt">\jobname.profiler.</span
+              ><span class="angle">&langle;</span><i>YYYY</i
+              ><span class="angle">&rangle;</span><span class="texttt">-</span
+              ><span class="angle">&langle;</span><i>MM</i
+              ><span class="angle">&rangle;</span><span class="texttt">-</span
+              ><span class="angle">&langle;</span><i>DD</i
+              ><span class="angle">&rangle;</span><span class="texttt">_</span
+              ><span class="angle">&langle;</span><i>HH</i
+              ><span class="angle">&rangle;</span><span class="texttt">h_</span
+              ><span class="angle">&langle;</span><i>MM</i
+              ><span class="angle">&rangle;</span
+              ><span class="texttt">m.dat</span> with the same information.
+            </p>
+            <p>
+              Note that the <span class="texttt">profiler</span> library
+              predefines two profiler entries, namely
+              <span class="texttt">main job</span> which counts time from the
+              beginning of the document until
+              <span class="texttt">\pgfprofilepostprocess</span> and
+              <span class="texttt">preamble</span> which counts time from the
+              beginning of the document until
+              <span class="texttt">\begin{document}</span>.
+            </p>
+          </div>
+
+          <div class="manualentry">
+            <div class="entryheadline">
+              <p>
+                <a id="pgf.back/pgfprofilesetrel"></a>
+                <span class="hl-def"
+                  ><span class="textcolor" style="color: #bf0000"
+                    ><kbd>\pgfprofilesetrel</kbd></span
+                  >{<span class="angle">&langle;</span><i>profiler entry name</i
+                  ><span class="angle">&rangle;</span>} (initially main
+                  job)</span
+                >
+                <a class="anchor-link" href="#pgf.back/pgfprofilesetrel"
+                  >&para;</a
+                >
+              </p>
+            </div>
+            <p>
+              Sets the profiler entry whose total time will be used to compute
+              all other relative times. Thus, <span class="angle">&langle;</span
+              ><i>profiler entry name</i
+              ><span class="angle">&rangle;</span> will use \(100\%\) of the
+              total time per definition, all other relative times are relative
+              to this one.
+            </p>
+          </div>
+
+          <div class="manualentry">
+            <div class="entryheadline">
+              <p>
+                <a id="pgf.back/pgfprofileifisrunning"></a>
+                <span class="hl-def"
+                  ><span class="textcolor" style="color: #bf0000"
+                    ><kbd>\pgfprofileifisrunning</kbd></span
+                  >{<span class="angle">&langle;</span><i>profiler entry name</i
+                  ><span class="angle">&rangle;</span>}{<span class="angle"
+                    >&langle;</span
+                  ><i>true code</i><span class="angle">&rangle;</span>}{<span
+                    class="angle"
+                    >&langle;</span
+                  ><i>false code</i><span class="angle">&rangle;</span>}</span
+                >
+                <a class="anchor-link" href="#pgf.back/pgfprofileifisrunning"
+                  >&para;</a
+                >
+              </p>
+            </div>
+            <p>
+              Invokes {<span class="angle">&langle;</span><i>true code</i
+              ><span class="angle">&rangle;</span>} if {<span class="angle"
+                >&langle;</span
+              ><i>profiler entry name</i><span class="angle">&rangle;</span>} is
+              currently running and {<span class="angle">&langle;</span
+              ><i>false code</i><span class="angle">&rangle;</span>} otherwise.
+            </p>
+          </div>
+        </section>
+      </main>
+
+      <footer>
+        <div class_="footer-left">
+          <a href="https://github.com/pgf-tikz/pgf">Github</a> &middot;
+          <a href="/license">License</a> &middot;
+          <a href="https://ctan.org/pkg/pgf">CTAN</a> &middot;
+          <a href="https://pgf-tikz.github.io/pgf/pgfmanual.pdf">PDF version</a>
+          &middot;
+          <a href="https://github.com/DominikPeters/pgf-tikz-html-manual"
+            >About this HTML version</a
+          >
+        </div>
+        <div class_="footer-right">
+          <em>Manual last updated: 2022-04-23</em>
+        </div>
+      </footer>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/@docsearch/js@alpha"></script>
+    <script>
+      docsearch({
+        apiKey: "ae66ec3fc9df4b52b4d6f24fc8508fd3",
+        indexName: "tikz.dev",
+        appId: "Q70NNMA9GC",
+        container: "#search",
+      });
+    </script>
+  </body>
+</html>

@@ -1,0 +1,394 @@
+<!DOCTYPE html>
+<html lang="en-US">
+  <head>
+    <meta charset="utf-8" />
+    <meta content="LaTeX Lwarp package" name="generator" />
+    <meta content="width=device-width, initial-scale=1.0" name="viewport" />
+    <!--[if lt IE 9]>
+      <script src="http://html5shiv.googlecode.com/svn/trunk/html5.js"></script>
+    <![endif]-->
+    <title>Calc Library - PGF/TikZ Manual</title>
+    <link href="style.css" rel="stylesheet" type="text/css" />
+
+    <script src="pgfmanual.js"></script>
+
+    <link href="https://unpkg.com/@docsearch/css@alpha" rel="stylesheet" />
+    <link href="/favicon-16x16.png" rel="icon" sizes="16x16" type="image/png" />
+    <link href="/favicon-32x32.png" rel="icon" sizes="32x32" type="image/png" />
+    <link
+      href="/apple-touch-icon.png"
+      rel="apple-touch-icon"
+      sizes="180x180"
+      type="image/png"
+    />
+    <link href="/site.webmanifest" rel="manifest" />
+  </head>
+  <body>
+    <a id="pgfmanual-autopage-5008"></a>
+
+    <div class="bodyandsidetoc grid-container">
+      <header>
+        <strong><a href="/">PGF/Ti<i>k</i>Z Manual</a></strong>
+        <div id="search"></div>
+      </header>
+      <div class="sidetoccontainer" id="local-toc-container">
+        <nav class="sidetoc">
+          <div class="sidetoctitle"><p>On this page</p></div>
+          <div class="sidetoccontents"></div>
+        </nav>
+      </div>
+      <div class="sidetoccontainer" id="chapter-toc-container">
+        <nav class="sidetoc">
+          <div class="sidetoctitle">
+            <p>
+              <span class="sidetocthetitle"
+                >The <span class="tikzname">TikZ</span> and PGF Packages<br />
+                Manual for version 3.1.9a</span
+              >
+            </p>
+
+            <p>Contents</p>
+          </div>
+
+          <div class="sidetoccontents">
+            <p></p>
+
+            <p>
+              <a class="linkintro" href="/">Introduction</a>
+            </p>
+
+            <p>
+              <a class="tocpart" href="tutorials-guidelines"
+                >Tutorials and Guidelines</a
+              >
+            </p>
+
+            <p>
+              <a class="tocpart" href="install"
+                >Installation and Configuration</a
+              >
+            </p>
+
+            <p>
+              <a class="tocpart" href="tikz">Ti<em>k</em>Z</a>
+            </p>
+
+            <p>
+              <a class="tocpart" href="gd">Graph Drawing</a>
+            </p>
+
+            <p class="current-part">
+              <a class="tocpart" href="libraries">Libraries</a>
+            </p>
+
+            <p class="current-part">
+              <a class="tocsection" href="library-3d"
+                >Three Dimensional Drawing Library</a
+              >
+            </p>
+
+            <p class="current-part">
+              <a class="tocsection" href="library-angle">Angle Library</a>
+            </p>
+
+            <p class="current-part">
+              <a class="tocsection" href="library-arrows">Arrow Tip Library</a>
+            </p>
+
+            <p class="current-part">
+              <a class="tocsection" href="library-automata"
+                >Automata Drawing Library</a
+              >
+            </p>
+
+            <p class="current-part">
+              <a class="tocsection" href="library-babel">Babel Library</a>
+            </p>
+
+            <p class="current-part">
+              <a class="tocsection" href="library-backgrounds"
+                >Background Library</a
+              >
+            </p>
+
+            <p class="current current-part">
+              <a class="tocsection" href="library-calc">Calc Library</a>
+            </p>
+
+            <p class="current-part">
+              <a class="tocsection" href="library-calender">Calendar Library</a>
+            </p>
+
+            <p class="current-part">
+              <a class="tocsection" href="library-chains">Chains</a>
+            </p>
+
+            <p class="current-part">
+              <a class="tocsection" href="library-circuits"
+                >Circuit Libraries</a
+              >
+            </p>
+
+            <p class="current-part">
+              <a class="tocsection" href="library-decorations"
+                >Decoration Library</a
+              >
+            </p>
+
+            <p class="current-part">
+              <a class="tocsection" href="library-er"
+                >Entity-Relationship Diagram Drawing Library</a
+              >
+            </p>
+
+            <p class="current-part">
+              <a class="tocsection" href="library-external"
+                >Externalization Library</a
+              >
+            </p>
+
+            <p class="current-part">
+              <a class="tocsection" href="library-fadings">Fading Library</a>
+            </p>
+
+            <p class="current-part">
+              <a class="tocsection" href="library-fit">Fitting Library</a>
+            </p>
+
+            <p class="current-part">
+              <a class="tocsection" href="library-fixedpoint"
+                >Fixed Point Arithmetic Library</a
+              >
+            </p>
+
+            <p class="current-part">
+              <a class="tocsection" href="library-fpu"
+                >Floating Point Unit Library</a
+              >
+            </p>
+
+            <p class="current-part">
+              <a class="tocsection" href="library-lsystems"
+                >Lindenmayer System Drawing Library</a
+              >
+            </p>
+
+            <p class="current-part">
+              <a class="tocsection" href="library-math">Math Library</a>
+            </p>
+
+            <p class="current-part">
+              <a class="tocsection" href="library-matrix">Matrix Library</a>
+            </p>
+
+            <p class="current-part">
+              <a class="tocsection" href="library-mindmaps"
+                >Mindmap Drawing Library</a
+              >
+            </p>
+
+            <p class="current-part">
+              <a class="tocsection" href="library-folding"
+                >Paper-Folding Diagrams Library</a
+              >
+            </p>
+
+            <p class="current-part">
+              <a class="tocsection" href="library-patterns">Pattern Library</a>
+            </p>
+
+            <p class="current-part">
+              <a class="tocsection" href="library-perspective"
+                >Three Point Perspective Drawing Library</a
+              >
+            </p>
+
+            <p class="current-part">
+              <a class="tocsection" href="library-petri"
+                >Petri-Net Drawing Library</a
+              >
+            </p>
+
+            <p class="current-part">
+              <a class="tocsection" href="library-plot-handlers"
+                >Plot Handler Library</a
+              >
+            </p>
+
+            <p class="current-part">
+              <a class="tocsection" href="library-plot-marks"
+                >Plot Mark Library</a
+              >
+            </p>
+
+            <p class="current-part">
+              <a class="tocsection" href="library-profiler">Profiler Library</a>
+            </p>
+
+            <p class="current-part">
+              <a class="tocsection" href="library-shadings">Shadings Library</a>
+            </p>
+
+            <p class="current-part">
+              <a class="tocsection" href="library-shadows">Shadows Library</a>
+            </p>
+
+            <p class="current-part">
+              <a class="tocsection" href="library-shapes">Shape Library</a>
+            </p>
+
+            <p class="current-part">
+              <a class="tocsection" href="library-spy"
+                >Spy Library: Magnifying Parts of Pictures</a
+              >
+            </p>
+
+            <p class="current-part">
+              <a class="tocsection" href="library-svg-path">SVG-Path Library</a>
+            </p>
+
+            <p class="current-part">
+              <a class="tocsection" href="library-edges">To Path Library</a>
+            </p>
+
+            <p class="current-part">
+              <a class="tocsection" href="library-through">Through Library</a>
+            </p>
+
+            <p class="current-part">
+              <a class="tocsection" href="library-trees">Tree Library</a>
+            </p>
+
+            <p class="current-part">
+              <a class="tocsection" href="library-turtle"
+                >Turtle Graphics Library</a
+              >
+            </p>
+
+            <p class="current-part">
+              <a class="tocsection" href="library-views">Views Library</a>
+            </p>
+
+            <p>
+              <a class="tocpart" href="dv">Data Visualization</a>
+            </p>
+
+            <p>
+              <a class="tocpart" href="utilities">Utilities</a>
+            </p>
+
+            <p>
+              <a class="tocpart" href="math"
+                >Mathematical and Object-Oriented Engines</a
+              >
+            </p>
+
+            <p>
+              <a class="tocpart" href="base">The Basic Layer</a>
+            </p>
+
+            <p>
+              <a class="tocpart" href="pgfsys">The System Layer</a>
+            </p>
+          </div>
+        </nav>
+      </div>
+
+      <main class="bodycontainer">
+        <section class="textbody">
+          <h1>
+            The <span class="tikzname">TikZ</span> and PGF Packages<br />
+            Manual for version 3.1.9a
+          </h1>
+          <h2 class="inserted">Libraries</h2>
+
+          <!--MathJax customizations:-->
+
+          <p></p>
+          <h4 id="autosec-5009">
+            <span class="sectionnumber">46&emsp;</span>Calc Library
+          </h4>
+          <a id="pgfmanual-autopage-5009"></a>
+          <a id="pgfmanual-autofile-51"></a>
+
+          <div class="manualentry">
+            <div class="entryheadline">
+              <p>
+                <span class="hl-def"
+                  ><b><span class="tikzname">TikZ</span> Library</b>
+                  <kbd
+                    ><span class="textcolor" style="color: #bf0000"
+                      >calc</span
+                    ></kbd
+                  ></span
+                >
+              </p>
+            </div>
+            <p>
+              <kbd
+                >\usetikzlibrary{<span class="textcolor" style="color: #bf0000"
+                  >calc</span
+                >} %
+                <span class="latexlogofont"
+                  ><span class="latexlogo"
+                    >L<span class="latexlogosup">a</span>T<span
+                      class="latexlogosub"
+                      >e</span
+                    >X</span
+                  ></span
+                >
+                and plain
+                <span class="latexlogofont"
+                  ><span class="latexlogo"
+                    >T<span class="latexlogosub">e</span>X</span
+                  ></span
+                ></kbd
+              ><br />
+              <kbd
+                >\usetikzlibrary[<span class="textcolor" style="color: #bf0000"
+                  >calc</span
+                >] % Con<span class="latexlogofont"
+                  ><span class="latexlogo"
+                    >T<span class="latexlogosub">e</span>X</span
+                  ></span
+                >t</kbd
+              ><br />
+              <br />
+              The library allows advanced Coordinate Calculations. It is
+              documented in all detail in Section&nbsp;<a
+                href="tikz-coordinates#tikz-lib-calc"
+                >13.5</a
+              >.
+            </p>
+          </div>
+        </section>
+      </main>
+
+      <footer>
+        <div class_="footer-left">
+          <a href="https://github.com/pgf-tikz/pgf">Github</a> &middot;
+          <a href="/license">License</a> &middot;
+          <a href="https://ctan.org/pkg/pgf">CTAN</a> &middot;
+          <a href="https://pgf-tikz.github.io/pgf/pgfmanual.pdf">PDF version</a>
+          &middot;
+          <a href="https://github.com/DominikPeters/pgf-tikz-html-manual"
+            >About this HTML version</a
+          >
+        </div>
+        <div class_="footer-right">
+          <em>Manual last updated: 2022-04-23</em>
+        </div>
+      </footer>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/@docsearch/js@alpha"></script>
+    <script>
+      docsearch({
+        apiKey: "ae66ec3fc9df4b52b4d6f24fc8508fd3",
+        indexName: "tikz.dev",
+        appId: "Q70NNMA9GC",
+        container: "#search",
+      });
+    </script>
+  </body>
+</html>

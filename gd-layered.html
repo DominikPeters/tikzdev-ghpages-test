@@ -1,0 +1,1950 @@
+<!DOCTYPE html>
+<html lang="en-US">
+  <head>
+    <meta charset="utf-8" />
+    <meta content="LaTeX Lwarp package" name="generator" />
+    <meta content="width=device-width, initial-scale=1.0" name="viewport" />
+    <!--[if lt IE 9]>
+      <script src="http://html5shiv.googlecode.com/svn/trunk/html5.js"></script>
+    <![endif]-->
+    <title>Graph Drawing Algorithms: Layered Layouts - PGF/TikZ Manual</title>
+    <link href="style.css" rel="stylesheet" type="text/css" />
+
+    <script>
+      // Lwarp MathJax emulation code
+      //
+      // Based on code by Davide P. Cervone.
+      // Equation numbering: https://github.com/mathjax/MathJax/issues/2427
+      // Starred and ifnextchar macros: https://github.com/mathjax/MathJax/issues/2428
+      // \left, \right delimiters: https://github.com/mathjax/MathJax/issues/2535
+      //
+      // Modified by Brian Dunn to adjust equation numbering and add subequations.
+      //
+      // LaTeX can use \seteqnumber{subequations?}{section}{number} before each equation.
+      // subequations? is 0 usually, 1 if inside subequations.
+      // section is a string printed as-is, or empty.
+      // number is auto-incremented by MathJax between equations.
+      //
+      MathJax = {
+        subequations: "0",
+        section: "",
+        loader: {
+          load: ["[tex]/tagformat", "[tex]/textmacros"],
+        },
+        startup: {
+          ready() {
+            // These would be replaced by import commands if you wanted to make
+            // a proper extension.
+            const Configuration =
+              MathJax._.input.tex.Configuration.Configuration;
+            const CommandMap = MathJax._.input.tex.SymbolMap.CommandMap;
+            const Macro = MathJax._.input.tex.Symbol.Macro;
+            const TexError = MathJax._.input.tex.TexError.default;
+            const ParseUtil = MathJax._.input.tex.ParseUtil.default;
+            const expandable = MathJax._.util.Options.expandable;
+
+            // Insert the replacement string into the TeX string, and check
+            // that there haven't been too many maxro substitutions (prevents
+            // infinite loops).
+            const useArgument = (parser, text) => {
+              parser.string = ParseUtil.addArgs(
+                parser,
+                text,
+                parser.string.slice(parser.i)
+              );
+              parser.i = 0;
+              if (
+                ++parser.macroCount > parser.configuration.options.maxMacros
+              ) {
+                throw new TexError(
+                  "MaxMacroSub1",
+                  "MathJax maximum macro substitution count exceeded; " +
+                    "is there a recursive macro call?"
+                );
+              }
+            };
+
+            // Create the command map for:
+            // \ifstar, \ifnextchar, \ifblank, \ifstrequal, \seteqnumber
+            new CommandMap(
+              "Lwarp-macros",
+              {
+                ifstar: "IfstarFunction",
+                ifnextchar: "IfnextcharFunction",
+                ifblank: "IfblankFunction",
+                ifstrequal: "IfstrequalFunction",
+                seteqnumber: "SeteqnumberFunction",
+              },
+              {
+                // This function implements an ifstar macro.
+                IfstarFunction(parser, name) {
+                  const resultstar = parser.GetArgument(name);
+                  const resultnostar = parser.GetArgument(name);
+                  const star = parser.GetStar(); // true if there is a *
+                  useArgument(parser, star ? resultstar : resultnostar);
+                },
+
+                // This function implements an ifnextchar macro.
+                IfnextcharFunction(parser, name) {
+                  let whichchar = parser.GetArgument(name);
+                  if (whichchar.match(/^(?:0x[0-9A-F]+|[0-9]+)$/i)) {
+                    // $ syntax highlighting
+                    whichchar = String.fromCodePoint(parseInt(whichchar));
+                  }
+                  const resultnextchar = parser.GetArgument(name);
+                  const resultnotnextchar = parser.GetArgument(name);
+                  const gotchar = parser.GetNext() === whichchar;
+                  useArgument(
+                    parser,
+                    gotchar ? resultnextchar : resultnotnextchar
+                  );
+                },
+
+                // This function implements an ifblank macro.
+                IfblankFunction(parser, name) {
+                  const blankarg = parser.GetArgument(name);
+                  const resultblank = parser.GetArgument(name);
+                  const resultnotblank = parser.GetArgument(name);
+                  const isblank = blankarg.trim() == "";
+                  useArgument(parser, isblank ? resultblank : resultnotblank);
+                },
+
+                // This function implements an ifstrequal macro.
+                IfstrequalFunction(parser, name) {
+                  const strequalfirst = parser.GetArgument(name);
+                  const strequalsecond = parser.GetArgument(name);
+                  const resultequal = parser.GetArgument(name);
+                  const resultnotequal = parser.GetArgument(name);
+                  const isequal = strequalfirst == strequalsecond;
+                  useArgument(parser, isequal ? resultequal : resultnotequal);
+                },
+
+                // This function modifies the equation numbers.
+                SeteqnumberFunction(parser, name) {
+                  // Get the macro parameters
+                  const star = parser.GetStar(); // true if there is a *
+                  const optBrackets = parser.GetBrackets(name); // contents of optional brackets
+                  const newsubequations = parser.GetArgument(name); // the subequations argument
+                  const neweqsection = parser.GetArgument(name); // the eq section argument
+                  const neweqnumber = parser.GetArgument(name); // the eq number argument
+                  MathJax.config.subequations = newsubequations; // a string with boolean meaning
+                  MathJax.config.section = neweqsection; // a string with numeric meaning
+                  parser.tags.counter = parser.tags.allCounter = neweqnumber;
+                },
+              }
+            );
+
+            // Create the Lwarp-macros package
+            Configuration.create("Lwarp-macros", {
+              handler: { macro: ["Lwarp-macros"] },
+            });
+
+            MathJax.startup.defaultReady();
+
+            // For forward references:
+            MathJax.startup.input[0].preFilters.add(({ math }) => {
+              if (math.inputData.recompile) {
+                MathJax.config.subequations =
+                  math.inputData.recompile.subequations;
+                MathJax.config.section = math.inputData.recompile.section;
+              }
+            });
+            MathJax.startup.input[0].postFilters.add(({ math }) => {
+              if (math.inputData.recompile) {
+                math.inputData.recompile.subequations =
+                  MathJax.config.subequations;
+                math.inputData.recompile.section = MathJax.config.section;
+              }
+            });
+
+            // For \left, \right with unicode-math:
+            const { DelimiterMap } = MathJax._.input.tex.SymbolMap;
+            const { Symbol } = MathJax._.input.tex.Symbol;
+            const { MapHandler } = MathJax._.input.tex.MapHandler;
+            const delimiter = MapHandler.getMap("delimiter");
+            delimiter.add("\\lBrack", new Symbol("\\lBrack", "\u27E6"));
+            delimiter.add("\\rBrack", new Symbol("\\rBrack", "\u27E7"));
+            delimiter.add("\\lAngle", new Symbol("\\lAngle", "\u27EA"));
+            delimiter.add("\\rAngle", new Symbol("\\rAngle", "\u27EB"));
+            delimiter.add("\\lbrbrak", new Symbol("\\lbrbrak", "\u2772"));
+            delimiter.add("\\rbrbrak", new Symbol("\\rbrbrak", "\u2773"));
+            delimiter.add("\\lbag", new Symbol("\\lbag", "\u27C5"));
+            delimiter.add("\\rbag", new Symbol("\\rbag", "\u27C6"));
+            delimiter.add(
+              "\\llparenthesis",
+              new Symbol("\\llparenthesis", "\u2987")
+            );
+            delimiter.add(
+              "\\rrparenthesis",
+              new Symbol("\\rrparenthesis", "\u2988")
+            );
+            delimiter.add("\\llangle", new Symbol("\\llangle", "\u2989"));
+            delimiter.add("\\rrangle", new Symbol("\\rrangle", "\u298A"));
+            delimiter.add("\\Lbrbrak", new Symbol("\\Lbrbrak", "\u27EC"));
+            delimiter.add("\\Rbrbrak", new Symbol("\\Rbrbrak", "\u27ED"));
+            delimiter.add("\\lBrace", new Symbol("\\lBrace", "\u2983"));
+            delimiter.add("\\rBrace", new Symbol("\\rBrace", "\u2984"));
+            delimiter.add("\\lParen", new Symbol("\\lParen", "\u2985"));
+            delimiter.add("\\rParen", new Symbol("\\rParen", "\u2986"));
+            delimiter.add("\\lbrackubar", new Symbol("\\lbrackubar", "\u298B"));
+            delimiter.add("\\rbrackubar", new Symbol("\\rbrackubar", "\u298C"));
+            delimiter.add(
+              "\\lbrackultick",
+              new Symbol("\\lbrackultick", "\u298D")
+            );
+            delimiter.add(
+              "\\rbracklrtick",
+              new Symbol("\\rbracklrtick", "\u298E")
+            );
+            delimiter.add(
+              "\\lbracklltick",
+              new Symbol("\\lbracklltick", "\u298F")
+            );
+            delimiter.add(
+              "\\rbrackurtick",
+              new Symbol("\\rbrackurtick", "\u2990")
+            );
+            delimiter.add("\\langledot", new Symbol("\\langledot", "\u2991"));
+            delimiter.add("\\rangledot", new Symbol("\\rangledot", "\u2992"));
+            delimiter.add("\\lparenless", new Symbol("\\lparenless", "\u2993"));
+            delimiter.add("\\rparengtr", new Symbol("\\rparengtr", "\u2994"));
+            delimiter.add("\\Lparengtr", new Symbol("\\Lparengtr", "\u2995"));
+            delimiter.add("\\Rparenless", new Symbol("\\Rparenless", "\u2996"));
+            delimiter.add("\\lblkbrbrak", new Symbol("\\lblkbrbrak", "\u2997"));
+            delimiter.add("\\rblkbrbrak", new Symbol("\\rblkbrbrak", "\u2998"));
+            delimiter.add("\\lvzigzag", new Symbol("\\lvzigzag", "\u29D8"));
+            delimiter.add("\\rvzigzag", new Symbol("\\rvzigzag", "\u29D9"));
+            delimiter.add("\\Lvzigzag", new Symbol("\\Lvzigzag", "\u29DA"));
+            delimiter.add("\\Rvzigzag", new Symbol("\\Rvzigzag", "\u29DB"));
+            delimiter.add(
+              "\\lcurvyangle",
+              new Symbol("\\lcurvyangle", "\u29FC")
+            );
+            delimiter.add(
+              "\\rcurvyangle",
+              new Symbol("\\rcurvyangle", "\u29FD")
+            );
+            delimiter.add("\\Vvert", new Symbol("\\Vvert", "\u2980"));
+          }, // ready
+        }, // startup
+
+        tex: {
+          packages: { "[+]": ["tagformat", "Lwarp-macros", "textmacros"] },
+          tags: "ams",
+          tagformat: {
+            number: function (n) {
+              if (MathJax.config.subequations == 0)
+                return MathJax.config.section + n;
+              else return MathJax.config.section + String.fromCharCode(96 + n);
+            },
+          },
+        },
+      };
+    </script>
+
+    <script
+      async
+      id="MathJax-script"
+      src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-chtml.js"
+    ></script>
+
+    <script src="pgfmanual.js"></script>
+
+    <link href="https://unpkg.com/@docsearch/css@alpha" rel="stylesheet" />
+    <link href="/favicon-16x16.png" rel="icon" sizes="16x16" type="image/png" />
+    <link href="/favicon-32x32.png" rel="icon" sizes="32x32" type="image/png" />
+    <link
+      href="/apple-touch-icon.png"
+      rel="apple-touch-icon"
+      sizes="180x180"
+      type="image/png"
+    />
+    <link href="/site.webmanifest" rel="manifest" />
+  </head>
+  <body>
+    <a id="pgfmanual-autopage-4671"></a>
+
+    <div class="bodyandsidetoc grid-container">
+      <header>
+        <strong><a href="/">PGF/Ti<i>k</i>Z Manual</a></strong>
+        <div id="search"></div>
+      </header>
+      <div class="sidetoccontainer" id="local-toc-container">
+        <nav class="sidetoc">
+          <div class="sidetoctitle"><p>On this page</p></div>
+          <div class="sidetoccontents">
+            <p>
+              <a class="tocsubsection" href="#sec-31.1"
+                >The Modular Sugiyama Method</a
+              >
+            </p>
+            <p><a class="tocsubsection" href="#sec-31.2">Cycle Removal</a></p>
+            <p>
+              <a class="tocsubsection" href="#sec-31.3"
+                >Layer Assignment (Node Ranking)</a
+              >
+            </p>
+            <p>
+              <a class="tocsubsection" href="#sec-31.4"
+                >Crossing Minimization (Node Ordering)</a
+              >
+            </p>
+            <p>
+              <a class="tocsubsection" href="#sec-31.5"
+                >Node Positioning (Coordinate Assignment)</a
+              >
+            </p>
+            <p><a class="tocsubsection" href="#sec-31.6">Edge Routing</a></p>
+          </div>
+        </nav>
+      </div>
+      <div class="sidetoccontainer" id="chapter-toc-container">
+        <nav class="sidetoc">
+          <div class="sidetoctitle">
+            <p>
+              <span class="sidetocthetitle"
+                >The <span class="tikzname">TikZ</span> and PGF Packages<br />
+                Manual for version 3.1.9a</span
+              >
+            </p>
+
+            <p>Contents</p>
+          </div>
+
+          <div class="sidetoccontents">
+            <p></p>
+
+            <p>
+              <a class="linkintro" href="/">Introduction</a>
+            </p>
+
+            <p>
+              <a class="tocpart" href="tutorials-guidelines"
+                >Tutorials and Guidelines</a
+              >
+            </p>
+
+            <p>
+              <a class="tocpart" href="install"
+                >Installation and Configuration</a
+              >
+            </p>
+
+            <p>
+              <a class="tocpart" href="tikz">Ti<em>k</em>Z</a>
+            </p>
+
+            <p class="current-part">
+              <a class="tocpart" href="gd">Graph Drawing</a>
+            </p>
+
+            <p class="current-part">
+              <a class="tocsection" href="gd-overview"
+                >Introduction to Algorithmic Graph Drawing</a
+              >
+            </p>
+
+            <p class="current-part">
+              <a class="tocsection" href="gd-usage-tikz"
+                >Using Graph Drawing in <span class="tikzname">TikZ</span></a
+              >
+            </p>
+
+            <p class="current-part">
+              <a class="tocsection" href="gd-usage-pgf"
+                >Using Graph Drawing in PGF</a
+              >
+            </p>
+
+            <p class="current-part">
+              <a class="tocsection" href="gd-trees"
+                >Graph Drawing Layouts: Trees</a
+              >
+            </p>
+
+            <p class="current current-part">
+              <a class="tocsection" href="gd-layered"
+                >Graph Drawing Algorithms: Layered Layouts</a
+              >
+            </p>
+
+            <p class="current-part">
+              <a class="tocsection" href="gd-force"
+                >Graph Drawing Algorithms: Force-Based Methods</a
+              >
+            </p>
+
+            <p class="current-part">
+              <a class="tocsection" href="gd-circular"
+                >Graph Drawing Algorithms: Circular Layouts</a
+              >
+            </p>
+
+            <p class="current-part">
+              <a class="tocsection" href="gd-phylogenetics"
+                >Graph Drawing Layouts: Phylogenetic Trees</a
+              >
+            </p>
+
+            <p class="current-part">
+              <a class="tocsection" href="gd-edge-routing"
+                >Graph Drawing Algorithms: Edge Routing</a
+              >
+            </p>
+
+            <p class="current-part">
+              <a class="tocsection" href="gd-algorithm-layer"
+                >The Algorithm Layer</a
+              >
+            </p>
+
+            <p class="current-part">
+              <a class="tocsection" href="gd-algorithms-in-c"
+                >Writing Graph Drawing Algorithms in C</a
+              >
+            </p>
+
+            <p class="current-part">
+              <a class="tocsection" href="gd-display-layer"
+                >The Display Layer</a
+              >
+            </p>
+
+            <p class="current-part">
+              <a class="tocsection" href="gd-binding-layer"
+                >The Binding Layer</a
+              >
+            </p>
+
+            <p>
+              <a class="tocpart" href="libraries">Libraries</a>
+            </p>
+
+            <p>
+              <a class="tocpart" href="dv">Data Visualization</a>
+            </p>
+
+            <p>
+              <a class="tocpart" href="utilities">Utilities</a>
+            </p>
+
+            <p>
+              <a class="tocpart" href="math"
+                >Mathematical and Object-Oriented Engines</a
+              >
+            </p>
+
+            <p>
+              <a class="tocpart" href="base">The Basic Layer</a>
+            </p>
+
+            <p>
+              <a class="tocpart" href="pgfsys">The System Layer</a>
+            </p>
+          </div>
+        </nav>
+      </div>
+
+      <main class="bodycontainer">
+        <section class="textbody">
+          <h1>
+            The <span class="tikzname">TikZ</span> and PGF Packages<br />
+            Manual for version 3.1.9a
+          </h1>
+          <h2 class="inserted">Graph Drawing</h2>
+
+          <!--MathJax customizations:-->
+
+          <div class="hidden">
+            \(\newcommand{\footnotename}{footnote}\) \(\def \LWRfootnote {1}\)
+            \(\newcommand {\footnote }[2][\LWRfootnote ]{{}^{\mathrm {#1}}}\)
+            \(\newcommand {\footnotemark }[1][\LWRfootnote ]{{}^{\mathrm
+            {#1}}}\) \(\let \LWRorighspace \hspace \) \(\renewcommand {\hspace
+            }{\ifstar \LWRorighspace \LWRorighspace }\) \(\newcommand
+            {\mathnormal }[1]{{#1}}\) \(\newcommand \ensuremath [1]{#1}\)
+            \(\newcommand {\LWRframebox }[2][]{\fbox {#2}} \newcommand
+            {\framebox }[1][]{\LWRframebox } \) \(\newcommand {\setlength
+            }[2]{}\) \(\newcommand {\addtolength }[2]{}\) \(\newcommand
+            {\setcounter }[2]{}\) \(\newcommand {\addtocounter }[2]{}\)
+            \(\newcommand {\arabic }[1]{}\) \(\newcommand {\number }[1]{}\)
+            \(\newcommand {\noalign }[1]{\text {#1}\notag \\}\) \(\newcommand
+            {\cline }[1]{}\) \(\newcommand {\directlua }[1]{\text
+            {(directlua)}}\) \(\newcommand {\luatexdirectlua }[1]{\text
+            {(directlua)}}\) \(\newcommand {\protect }{}\) \(\def
+            \LWRabsorbnumber #1 {}\) \(\def \LWRabsorbquotenumber "#1 {}\)
+            \(\newcommand {\LWRabsorboption }[1][]{}\) \(\newcommand
+            {\LWRabsorbtwooptions }[1][]{\LWRabsorboption }\) \(\def \mathchar
+            {\ifnextchar "\LWRabsorbquotenumber \LWRabsorbnumber }\) \(\def
+            \mathcode #1={\mathchar }\) \(\let \delcode \mathcode \) \(\let
+            \delimiter \mathchar \) \(\def \oe {\unicode {x0153}}\) \(\def \OE
+            {\unicode {x0152}}\) \(\def \ae {\unicode {x00E6}}\) \(\def \AE
+            {\unicode {x00C6}}\) \(\def \aa {\unicode {x00E5}}\) \(\def \AA
+            {\unicode {x00C5}}\) \(\def \o {\unicode {x00F8}}\) \(\def \O
+            {\unicode {x00D8}}\) \(\def \l {\unicode {x0142}}\) \(\def \L
+            {\unicode {x0141}}\) \(\def \ss {\unicode {x00DF}}\) \(\def \SS
+            {\unicode {x1E9E}}\) \(\def \dag {\unicode {x2020}}\) \(\def \ddag
+            {\unicode {x2021}}\) \(\def \P {\unicode {x00B6}}\) \(\def
+            \copyright {\unicode {x00A9}}\) \(\def \pounds {\unicode {x00A3}}\)
+            \(\let \LWRref \ref \) \(\renewcommand {\ref }{\ifstar \LWRref
+            \LWRref }\) \( \newcommand {\multicolumn }[3]{#3}\) \(\require
+            {textcomp}\) \( \newcommand {\meta }[1]{\langle \textit {#1}\rangle
+            } \) \(\newcommand {\intertext }[1]{\text {#1}\notag \\}\) \(\let
+            \Hat \hat \) \(\let \Check \check \) \(\let \Tilde \tilde \) \(\let
+            \Acute \acute \) \(\let \Grave \grave \) \(\let \Dot \dot \) \(\let
+            \Ddot \ddot \) \(\let \Breve \breve \) \(\let \Bar \bar \) \(\let
+            \Vec \vec \)
+          </div>
+
+          <p></p>
+          <h4 id="autosec-4672">
+            <span class="sectionnumber">31&emsp;</span>Graph Drawing Algorithms:
+            Layered Layouts
+          </h4>
+          <a id="pgfmanual-autopage-4672"></a>
+          <a id="pgfmanual-autofile-35"></a>
+
+          <p>
+            <em>by Till Tantau and Jannis Pohlmann</em>
+          </p>
+
+          <div class="manualentry">
+            <div class="entryheadline">
+              <p>
+                <a id="pgf.layered"></a>
+                <span class="hl-def"
+                  ><b>Graph Drawing Library</b>
+                  <kbd
+                    ><span class="textcolor" style="color: #bf0000"
+                      >layered</span
+                    ></kbd
+                  ></span
+                >
+                <a class="anchor-link" href="#pgf.layered">&para;</a>
+              </p>
+            </div>
+
+            <p>
+              <kbd
+                >\usegdlibrary{<span class="textcolor" style="color: #bf0000"
+                  >layered</span
+                >} %
+                <span class="latexlogofont"
+                  ><span class="latexlogo"
+                    >L<span class="latexlogosup">a</span>T<span
+                      class="latexlogosub"
+                      >e</span
+                    >X</span
+                  ></span
+                >
+                and plain
+                <span class="latexlogofont"
+                  ><span class="latexlogo"
+                    >T<span class="latexlogosub">e</span>X</span
+                  ></span
+                ></kbd
+              ><br />
+              <kbd
+                >\usegdlibrary[<span class="textcolor" style="color: #bf0000"
+                  >layered</span
+                >] % Con<span class="latexlogofont"
+                  ><span class="latexlogo"
+                    >T<span class="latexlogosub">e</span>X</span
+                  ></span
+                >t</kbd
+              >
+            </p>
+            <p>
+              A &ldquo;layered&rdquo; layout of a graph tries to arrange the
+              nodes in consecutive horizontal layers (naturally, by rotating the
+              graph, this can be changed in to vertical layers) such that edges
+              tend to be only between nodes on adjacent layers. Trees, for
+              instance, can always be laid out in this way. This method of
+              laying out a graph is especially useful for hierarchical graphs.
+            </p>
+            <p>
+              The method implemented in this library is often called the
+              <em>Sugiyama method</em>, which is a rather advanced method of
+              assigning nodes to layers and positions on these layers. The same
+              method is also used in the popular GraphViz program, indeed, the
+              implementation in <span class="tikzname">TikZ</span> is based on
+              the same pseudo-code from the same paper as the implementation
+              used in GraphViz and both programs will often generate the same
+              layout (but not always, as explained below). The current
+              implementation is due to Jannis Pohlmann, who implemented it as
+              part of his Diploma thesis. Please consult this thesis for a
+              detailed explanation of the Sugiyama method and its history:
+            </p>
+
+            <p>
+              &bull; Jannis Pohlmann,
+              <em
+                >Configurable Graph Drawing Algorithms for the
+                <span class="tikzname">TikZ</span> Graphics Description
+                Language,</em
+              >
+              Diploma Thesis, Institute of Theoretical Computer Science,
+              Universit&auml;t zu L&uuml;beck, 2011.<br />
+              <br />
+              Available online via
+              <a
+                href="http://www.tcs.uni-luebeck.de/downloads/papers/2011/"
+                target="_blank"
+                >http://www.tcs.uni-luebeck.de/downloads/papers/2011/</a
+              ><br />
+              <a
+                href="2011-configurable-graph-drawing-algorithms-jannis-pohlmann.pdf"
+                target="_blank"
+                >2011-configurable-graph-drawing-algorithms-jannis-pohlmann.pdf</a
+              ><br />
+              <br />
+              (Note that since the publication of this thesis some option names
+              have been changed. Most noticeably, the option name
+              <span class="texttt">layered drawing</span> was changed to
+              <span class="texttt">layered layout</span>, which is somewhat more
+              consistent with other names used in the graph drawing libraries.
+              Furthermore, the keys for choosing individual algorithms for the
+              different algorithm phases, have all changed.)
+            </p>
+
+            <p>The Sugiyama methods lays out a graph in five steps:</p>
+
+            <p>1. Cycle removal.</p>
+
+            <p>2. Layer assignment (sometimes called node ranking).</p>
+
+            <p>3. Crossing minimization (also referred to as node ordering).</p>
+
+            <p>4. Node positioning (or coordinate assignment).</p>
+
+            <p>5. Edge routing.</p>
+
+            <p>
+              It turns out that behind each of these steps there lurks an
+              NP-complete problem, which means, in practice, that each step is
+              impossible to perform optimally for larger graphs. For this
+              reason, heuristics and approximation algorithms are used to find a
+              &ldquo;good&rdquo; way of performing the steps.
+            </p>
+            <p>
+              A distinctive feature of Pohlmann&rsquo;s implementation of the
+              Sugiyama method for <span class="tikzname">TikZ</span> is that the
+              algorithms used for each of the steps can easily be exchanged,
+              just specify a different option. For the user, this means that by
+              specifying a different option and thereby using a different
+              heuristic for one of the steps, a better layout can often be
+              found. For the researcher, this means that one can very easily
+              test new approaches and new heuristics without having to implement
+              all of the other steps anew.
+            </p>
+          </div>
+          <h5 id="autosec-4674">
+            <span class="sectionnumber" id="sec-31.1">31.1&emsp;</span>The
+            Modular Sugiyama Method<a class="anchor-link" href="#sec-31.1"
+              >&para;</a
+            >
+          </h5>
+          <a id="pgfmanual-autopage-4674"></a>
+
+          <div class="manualentry">
+            <div class="entryheadline">
+              <p>
+                <a id="pgf.layered:layout"></a>
+                <span class="hl-def"
+                  ><kbd
+                    >/graph drawing/<span
+                      class="textcolor"
+                      style="color: #bf0000"
+                      >layered layout</span
+                    ><span class="textcolor" style="color: #008000"
+                      >=</span
+                    ></kbd
+                  ><span class="textcolor" style="color: #008000"
+                    ><span class="angle">&langle;</span><i>string</i
+                    ><span class="angle">&rangle;</span></span
+                  ></span
+                >&emsp;&emsp;
+                <a class="anchor-link" href="#pgf.layered:layout">&para;</a>
+              </p>
+            </div>
+            <p>
+              The <span class="texttt">layered layout</span> is the key used to
+              select the modular Sugiyama layout algorithm. This algorithm
+              consists of five consecutive steps, each of which can be
+              configured independently of the other ones (how this is done is
+              explained later in this section). Naturally, the
+              &ldquo;best&rdquo; heuristics are selected by default, so there is
+              typically no need to change the settings, but what is the
+              &ldquo;best&rdquo; method for one graph need not be the best one
+              for another graph.
+            </p>
+            <p>
+              As can be seen in the first example, the algorithm will not only
+              position the nodes of a graph, but will also perform an edge
+              routing. This will look visually quite pleasing if you add the
+              <span class="texttt">rounded corners</span> option:
+            </p>
+            <p>
+              <em>Examples</em>
+            </p>
+
+            <figure class="example">
+              <div class="example-image">
+                <p>
+                  <span class="lateximagesource" id="lateximage-pgfmanual-1985"
+                    ><!--
+                    a
+
+        c b
+
+d e f
+
+                h
+-->
+                    <img
+                      alt="(-tikz-&nbsp;diagram)"
+                      class="lateximage"
+                      height="123.698"
+                      loading="lazy"
+                      src="pgfmanual-images/image-1985.png"
+                      style
+                      width="112.522"
+                  /></span>
+                </p>
+              </div>
+
+              <div class="example-code">
+                <button class="clipboardButton" type="button">copy</button>
+                <code>
+                  <br />
+                  <span class="textcolor" style="color: #0000b2"
+                    ><a href="tikz-scopes#pgf.back/tikz">\tikz</a></span
+                  >&numsp;<span class="textcolor" style="color: #0000b2"
+                    ><a href="tikz-graphs#pgf.back/graph">\graph</a></span
+                  >&numsp;[<span class="textcolor" style="color: #008000"
+                    ><a href="gd-layered#pgf.layered:layout"
+                      >layered layout</a
+                    ></span
+                  >,&numsp;<span class="textcolor" style="color: #008000"
+                    ><a href="tikz-trees#pgf.sibling:distance"
+                      >sibling distance</a
+                    ></span
+                  >=<span class="textcolor" style="color: #008000">7mm</span
+                  >]<br />
+                  {<br />
+                  &numsp;&numsp;<span class="textcolor" style="color: #000000"
+                    >a</span
+                  >
+                  <span class="textcolor" style="color: #000000"
+                    ><a href="tikz-graphs#pgf.-&gt;">-&gt;</a></span
+                  >
+                  {<br />
+                  &numsp;&numsp;&numsp;&numsp;<span
+                    class="textcolor"
+                    style="color: #000000"
+                    >b</span
+                  >,<br />
+                  &numsp;&numsp;&numsp;&numsp;<span
+                    class="textcolor"
+                    style="color: #000000"
+                    >c</span
+                  >
+                  <span class="textcolor" style="color: #000000"
+                    ><a href="tikz-graphs#pgf.-&gt;">-&gt;</a></span
+                  >
+                  {&numsp;<span class="textcolor" style="color: #000000">d</span
+                  >,&numsp;<span class="textcolor" style="color: #000000"
+                    >e</span
+                  >,&numsp;<span class="textcolor" style="color: #000000"
+                    >f</span
+                  >
+                  }<br />
+                  &numsp;&numsp;}&numsp;<span
+                    class="textcolor"
+                    style="color: #000000"
+                    ><a href="tikz-graphs#pgf.-&gt;">-&gt;</a></span
+                  ><br />
+                  &numsp;&numsp;<span class="textcolor" style="color: #000000"
+                    >h</span
+                  >
+                  <span class="textcolor" style="color: #000000"
+                    ><a href="tikz-graphs#pgf.-&gt;">-&gt;</a></span
+                  ><br />
+                  &numsp;&numsp;<span class="textcolor" style="color: #000000"
+                    >a</span
+                  ><br />
+                  };<br />
+                </code>
+              </div>
+            </figure>
+
+            <figure class="example">
+              <div class="example-image">
+                <p>
+                  <span class="lateximagesource" id="lateximage-pgfmanual-1986"
+                    ><!--
+                    a
+
+        c b
+
+d e f
+
+                h
+   -->
+                    <img
+                      alt="(-tikz-&nbsp;diagram)"
+                      class="lateximage"
+                      height="123.698"
+                      loading="lazy"
+                      src="pgfmanual-images/image-1986.png"
+                      style
+                      width="112.522"
+                  /></span>
+                </p>
+              </div>
+
+              <div class="example-code">
+                <button class="clipboardButton" type="button">copy</button>
+                <code>
+                  <br />
+                  <span class="textcolor" style="color: #0000b2"
+                    ><a href="tikz-scopes#pgf.back/tikz">\tikz</a></span
+                  >&numsp;[<span class="textcolor" style="color: #008000"
+                    ><a href="tikz-paths#pgf.rounded:corners"
+                      >rounded corners</a
+                    ></span
+                  >]&numsp;<span class="textcolor" style="color: #0000b2"
+                    ><a href="tikz-graphs#pgf.back/graph">\graph</a></span
+                  >&numsp;[<span class="textcolor" style="color: #008000"
+                    ><a href="gd-layered#pgf.layered:layout"
+                      >layered layout</a
+                    ></span
+                  >,&numsp;<span class="textcolor" style="color: #008000"
+                    ><a href="tikz-trees#pgf.sibling:distance"
+                      >sibling distance</a
+                    ></span
+                  >=<span class="textcolor" style="color: #008000">7mm</span
+                  >]<br />
+                  {<br />
+                  &numsp;&numsp;<span class="textcolor" style="color: #000000"
+                    >a</span
+                  >
+                  <span class="textcolor" style="color: #000000"
+                    ><a href="tikz-graphs#pgf.-&gt;">-&gt;</a></span
+                  >
+                  {<br />
+                  &numsp;&numsp;&numsp;&numsp;<span
+                    class="textcolor"
+                    style="color: #000000"
+                    >b</span
+                  >,<br />
+                  &numsp;&numsp;&numsp;&numsp;<span
+                    class="textcolor"
+                    style="color: #000000"
+                    >c</span
+                  >
+                  <span class="textcolor" style="color: #000000"
+                    ><a href="tikz-graphs#pgf.-&gt;">-&gt;</a></span
+                  >
+                  {&numsp;<span class="textcolor" style="color: #000000">d</span
+                  >,&numsp;<span class="textcolor" style="color: #000000"
+                    >e</span
+                  >,&numsp;<span class="textcolor" style="color: #000000"
+                    >f</span
+                  >
+                  }<br />
+                  &numsp;&numsp;}&numsp;<span
+                    class="textcolor"
+                    style="color: #000000"
+                    ><a href="tikz-graphs#pgf.-&gt;">-&gt;</a></span
+                  ><br />
+                  &numsp;&numsp;<span class="textcolor" style="color: #000000"
+                    >h</span
+                  >
+                  <span class="textcolor" style="color: #000000"
+                    ><a href="tikz-graphs#pgf.-&gt;">-&gt;</a></span
+                  ><br />
+                  &numsp;&numsp;<span class="textcolor" style="color: #000000"
+                    >a</span
+                  ><br />
+                  };<br />
+                </code>
+              </div>
+            </figure>
+          </div>
+
+          <div class="manualentry">
+            <div class="entryheadline">
+              <p>
+                <a id="pgf.minimum:layers"></a>
+                <span class="hl-def"
+                  ><kbd
+                    >/graph drawing/<span
+                      class="textcolor"
+                      style="color: #bf0000"
+                      >minimum layers</span
+                    ><span class="textcolor" style="color: #008000"
+                      >=</span
+                    ></kbd
+                  ><span class="textcolor" style="color: #008000"
+                    ><span class="angle">&langle;</span><i>number</i
+                    ><span class="angle">&rangle;</span></span
+                  ></span
+                >&emsp;&emsp;(initially <kbd>1</kbd>)
+                <a class="anchor-link" href="#pgf.minimum:layers">&para;</a>
+              </p>
+            </div>
+            <p>
+              The minimum number of levels that an edge must span. It is a bit
+              of the opposite of the
+              <span class="texttt">weight</span> parameter: While a large
+              <span class="texttt">weight</span> causes an edge to become
+              shorter, a larger <span class="texttt">minimum layers</span> value
+              causes an edge to be longer.
+            </p>
+            <p>
+              <em>Example</em>
+            </p>
+
+            <figure class="example">
+              <div class="example-image">
+                <p>
+                  <span class="lateximagesource" id="lateximage-pgfmanual-1987"
+                    ><!--
+    a
+
+        d
+
+    c
+
+b
+
+        e
+   -->
+                    <img
+                      alt="(-tikz-&nbsp;diagram)"
+                      class="lateximage"
+                      height="159.914"
+                      loading="lazy"
+                      src="pgfmanual-images/image-1987.png"
+                      style
+                      width="120.106"
+                  /></span>
+                </p>
+              </div>
+
+              <div class="example-code">
+                <button class="clipboardButton" type="button">copy</button>
+                <code>
+                  <br />
+                  <span class="textcolor" style="color: #0000b2"
+                    ><a href="tikz-scopes#pgf.back/tikz">\tikz</a></span
+                  >&numsp;<span class="textcolor" style="color: #0000b2"
+                    ><a href="tikz-graphs#pgf.back/graph">\graph</a></span
+                  >&numsp;[<span class="textcolor" style="color: #008000"
+                    ><a href="gd-layered#pgf.layered:layout"
+                      >layered layout</a
+                    ></span
+                  >]&numsp;{<br />
+                  &numsp;&numsp;<span class="textcolor" style="color: #000000"
+                    >a</span
+                  >
+                  <span class="textcolor" style="color: #000000"
+                    ><a href="tikz-paths#pgf.--">--</a></span
+                  >
+                  {<span class="textcolor" style="color: #000000">b</span>
+                  [<span class="textcolor" style="color: #008000"
+                    >&gt; minimum layers</span
+                  >=<span class="textcolor" style="color: #008000">3</span
+                  >],&numsp;<span class="textcolor" style="color: #000000"
+                    >c</span
+                  >,&numsp;<span class="textcolor" style="color: #000000"
+                    >d</span
+                  >}&numsp;<span class="textcolor" style="color: #000000"
+                    ><a href="tikz-paths#pgf.--">--</a></span
+                  >
+                  <span class="textcolor" style="color: #000000">e</span>
+                  <span class="textcolor" style="color: #000000"
+                    ><a href="tikz-paths#pgf.--">--</a></span
+                  >
+                  <span class="textcolor" style="color: #000000">a</span>;<br />
+                  };<br />
+                </code>
+              </div>
+            </figure>
+          </div>
+
+          <div class="manualentry">
+            <div class="entryheadline">
+              <p>
+                <a id="pgf.same:layer"></a>
+                <span class="hl-def"
+                  ><kbd
+                    >/graph drawing/<span
+                      class="textcolor"
+                      style="color: #bf0000"
+                      >same layer</span
+                    ></kbd
+                  ></span
+                >&emsp;&emsp;(style)
+                <a class="anchor-link" href="#pgf.same:layer">&para;</a>
+              </p>
+            </div>
+            <p>
+              The <span class="texttt">same layer</span> collection allows you
+              to enforce that several nodes a on the same layer of a layered
+              layout (this option is also known as
+              <span class="texttt">same rank</span>). You use it like this:
+            </p>
+            <p>
+              <em>Examples</em>
+            </p>
+
+            <figure class="example">
+              <div class="example-image">
+                <p>
+                  <span class="lateximagesource" id="lateximage-pgfmanual-1988"
+                    ><!--
+    b a
+
+    c
+
+e d
+-->
+                    <img
+                      alt="(-tikz-&nbsp;diagram)"
+                      class="lateximage"
+                      height="87.506"
+                      loading="lazy"
+                      src="pgfmanual-images/image-1988.png"
+                      style
+                      width="84.962"
+                  /></span>
+                </p>
+              </div>
+
+              <div class="example-code">
+                <button class="clipboardButton" type="button">copy</button>
+                <code>
+                  <br />
+                  <span class="textcolor" style="color: #0000b2"
+                    ><a href="tikz-scopes#pgf.back/tikz">\tikz</a></span
+                  >&numsp;<span class="textcolor" style="color: #0000b2"
+                    ><a href="tikz-graphs#pgf.back/graph">\graph</a></span
+                  >&numsp;[<span class="textcolor" style="color: #008000"
+                    ><a href="gd-layered#pgf.layered:layout"
+                      >layered layout</a
+                    ></span
+                  >]&numsp;{<br />
+                  &numsp;&numsp;<span class="textcolor" style="color: #000000"
+                    >a</span
+                  >
+                  <span class="textcolor" style="color: #000000"
+                    ><a href="tikz-paths#pgf.--">--</a></span
+                  >
+                  <span class="textcolor" style="color: #000000">b</span>
+                  <span class="textcolor" style="color: #000000"
+                    ><a href="tikz-paths#pgf.--">--</a></span
+                  >
+                  <span class="textcolor" style="color: #000000">c</span>
+                  <span class="textcolor" style="color: #000000"
+                    ><a href="tikz-paths#pgf.--">--</a></span
+                  >
+                  <span class="textcolor" style="color: #000000">d</span>
+                  <span class="textcolor" style="color: #000000"
+                    ><a href="tikz-paths#pgf.--">--</a></span
+                  >
+                  <span class="textcolor" style="color: #000000">e</span>;<br />
+                  <br />
+                  &numsp;&numsp;{&numsp;[<span
+                    class="textcolor"
+                    style="color: #008000"
+                    ><a href="gd-layered#pgf.same:layer">same layer</a></span
+                  >]&numsp;<span class="textcolor" style="color: #000000"
+                    >a</span
+                  >,&numsp;<span class="textcolor" style="color: #000000"
+                    >b</span
+                  >
+                  };<br />
+                  &numsp;&numsp;{&numsp;[<span
+                    class="textcolor"
+                    style="color: #008000"
+                    ><a href="gd-layered#pgf.same:layer">same layer</a></span
+                  >]&numsp;<span class="textcolor" style="color: #000000"
+                    >d</span
+                  >,&numsp;<span class="textcolor" style="color: #000000"
+                    >e</span
+                  >
+                  };<br />
+                  };<br />
+                </code>
+              </div>
+            </figure>
+
+            <figure class="example">
+              <div class="example-image">
+                <p>
+                  <span class="lateximagesource" id="lateximage-pgfmanual-1989"
+                    ><!--
+1972 Thompson
+
+1976 Mashey Bourne
+
+1978 Formshell csh
+
+1980 esh vsh
+
+1982 ksh System-V
+
+1984 tcsh v9sh
+
+1986 ksh-i
+
+1988 KornShell Perl rc
+
+1990 tcl Bash
+
+future POSIX ksh-POSIX
+-->
+                    <img
+                      alt="(-tikz-&nbsp;diagram)"
+                      class="lateximage"
+                      height="353.378"
+                      loading="lazy"
+                      src="pgfmanual-images/image-1989.png"
+                      style
+                      width="429.962"
+                  /></span>
+                </p>
+              </div>
+
+              <div class="example-code">
+                <button class="clipboardButton" type="button">copy</button>
+                <code>
+                  <br />
+                  <span class="textcolor" style="color: #0000b2"
+                    ><a href="tikz-scopes#pgf.back/tikz">\tikz</a></span
+                  >&numsp;[<span class="textcolor" style="color: #008000"
+                    ><a href="tikz-paths#pgf.rounded:corners"
+                      >rounded corners</a
+                    ></span
+                  >]&numsp;<span class="textcolor" style="color: #0000b2"
+                    ><a href="tikz-graphs#pgf.back/graph">\graph</a></span
+                  >&numsp;[<span class="textcolor" style="color: #008000"
+                    ><a href="gd-layered#pgf.layered:layout"
+                      >layered layout</a
+                    ></span
+                  >]&numsp;{<br />
+                  &numsp;&numsp;<span class="textcolor" style="color: #000000"
+                    >1972</span
+                  >
+                  <span class="textcolor" style="color: #000000"
+                    ><a href="tikz-graphs#pgf.-&gt;">-&gt;</a></span
+                  >
+                  <span class="textcolor" style="color: #000000">1976</span>
+                  <span class="textcolor" style="color: #000000"
+                    ><a href="tikz-graphs#pgf.-&gt;">-&gt;</a></span
+                  >
+                  <span class="textcolor" style="color: #000000">1978</span>
+                  <span class="textcolor" style="color: #000000"
+                    ><a href="tikz-graphs#pgf.-&gt;">-&gt;</a></span
+                  >
+                  <span class="textcolor" style="color: #000000">1980</span>
+                  <span class="textcolor" style="color: #000000"
+                    ><a href="tikz-graphs#pgf.-&gt;">-&gt;</a></span
+                  >
+                  <span class="textcolor" style="color: #000000">1982</span>
+                  <span class="textcolor" style="color: #000000"
+                    ><a href="tikz-graphs#pgf.-&gt;">-&gt;</a></span
+                  >
+                  <span class="textcolor" style="color: #000000">1984</span>
+                  <span class="textcolor" style="color: #000000"
+                    ><a href="tikz-graphs#pgf.-&gt;">-&gt;</a></span
+                  >
+                  <span class="textcolor" style="color: #000000">1986</span>
+                  <span class="textcolor" style="color: #000000"
+                    ><a href="tikz-graphs#pgf.-&gt;">-&gt;</a></span
+                  >
+                  <span class="textcolor" style="color: #000000">1988</span>
+                  <span class="textcolor" style="color: #000000"
+                    ><a href="tikz-graphs#pgf.-&gt;">-&gt;</a></span
+                  >
+                  <span class="textcolor" style="color: #000000">1990</span>
+                  <span class="textcolor" style="color: #000000"
+                    ><a href="tikz-graphs#pgf.-&gt;">-&gt;</a></span
+                  >
+                  <span class="textcolor" style="color: #000000">future</span
+                  >;<br />
+                  <br />
+                  &numsp;&numsp;{&numsp;[<span
+                    class="textcolor"
+                    style="color: #008000"
+                    ><a href="gd-layered#pgf.same:layer">same layer</a></span
+                  >]&numsp;<span class="textcolor" style="color: #000000"
+                    >1972</span
+                  >,&numsp;<span class="textcolor" style="color: #000000"
+                    >Thompson</span
+                  >
+                  };<br />
+                  &numsp;&numsp;{&numsp;[<span
+                    class="textcolor"
+                    style="color: #008000"
+                    ><a href="gd-layered#pgf.same:layer">same layer</a></span
+                  >]&numsp;<span class="textcolor" style="color: #000000"
+                    >1976</span
+                  >,&numsp;<span class="textcolor" style="color: #000000"
+                    >Mashey</span
+                  >,&numsp;<span class="textcolor" style="color: #000000"
+                    >Bourne</span
+                  >
+                  },<br />
+                  &numsp;&numsp;{&numsp;[<span
+                    class="textcolor"
+                    style="color: #008000"
+                    ><a href="gd-layered#pgf.same:layer">same layer</a></span
+                  >]&numsp;<span class="textcolor" style="color: #000000"
+                    >1978</span
+                  >,&numsp;<span class="textcolor" style="color: #000000"
+                    >Formshell</span
+                  >,&numsp;<span class="textcolor" style="color: #000000"
+                    >csh</span
+                  >
+                  },<br />
+                  &numsp;&numsp;{&numsp;[<span
+                    class="textcolor"
+                    style="color: #008000"
+                    ><a href="gd-layered#pgf.same:layer">same layer</a></span
+                  >]&numsp;<span class="textcolor" style="color: #000000"
+                    >1980</span
+                  >,&numsp;<span class="textcolor" style="color: #000000"
+                    >esh</span
+                  >,&numsp;<span class="textcolor" style="color: #000000"
+                    >vsh</span
+                  >
+                  },<br />
+                  &numsp;&numsp;{&numsp;[<span
+                    class="textcolor"
+                    style="color: #008000"
+                    ><a href="gd-layered#pgf.same:layer">same layer</a></span
+                  >]&numsp;<span class="textcolor" style="color: #000000"
+                    >1982</span
+                  >,&numsp;<span class="textcolor" style="color: #000000"
+                    >ksh</span
+                  >,&numsp;<span class="textcolor" style="color: #000000"
+                    >"System-V"</span
+                  >
+                  },<br />
+                  &numsp;&numsp;{&numsp;[<span
+                    class="textcolor"
+                    style="color: #008000"
+                    ><a href="gd-layered#pgf.same:layer">same layer</a></span
+                  >]&numsp;<span class="textcolor" style="color: #000000"
+                    >1984</span
+                  >,&numsp;<span class="textcolor" style="color: #000000"
+                    >v9sh</span
+                  >,&numsp;<span class="textcolor" style="color: #000000"
+                    >tcsh</span
+                  >
+                  },<br />
+                  &numsp;&numsp;{&numsp;[<span
+                    class="textcolor"
+                    style="color: #008000"
+                    ><a href="gd-layered#pgf.same:layer">same layer</a></span
+                  >]&numsp;<span class="textcolor" style="color: #000000"
+                    >1986</span
+                  >,&numsp;<span class="textcolor" style="color: #000000"
+                    >"ksh-i"</span
+                  >
+                  },<br />
+                  &numsp;&numsp;{&numsp;[<span
+                    class="textcolor"
+                    style="color: #008000"
+                    ><a href="gd-layered#pgf.same:layer">same layer</a></span
+                  >]&numsp;<span class="textcolor" style="color: #000000"
+                    >1988</span
+                  >,&numsp;<span class="textcolor" style="color: #000000"
+                    >KornShell</span
+                  >
+                  ,<span class="textcolor" style="color: #000000">Perl</span
+                  >,&numsp;<span class="textcolor" style="color: #000000"
+                    >rc</span
+                  >
+                  },<br />
+                  &numsp;&numsp;{&numsp;[<span
+                    class="textcolor"
+                    style="color: #008000"
+                    ><a href="gd-layered#pgf.same:layer">same layer</a></span
+                  >]&numsp;<span class="textcolor" style="color: #000000"
+                    >1990</span
+                  >,&numsp;<span class="textcolor" style="color: #000000"
+                    >tcl</span
+                  >,&numsp;<span class="textcolor" style="color: #000000"
+                    >Bash</span
+                  >
+                  },<br />
+                  &numsp;&numsp;{&numsp;[<span
+                    class="textcolor"
+                    style="color: #008000"
+                    ><a href="gd-layered#pgf.same:layer">same layer</a></span
+                  >]&numsp;<span class="textcolor" style="color: #000000"
+                    >"future"</span
+                  >,&numsp;<span class="textcolor" style="color: #000000"
+                    >POSIX</span
+                  >,&numsp;<span class="textcolor" style="color: #000000"
+                    >"ksh-POSIX"</span
+                  >
+                  },<br />
+                  <br />
+                  &numsp;&numsp;<span class="textcolor" style="color: #000000"
+                    >Thompson</span
+                  >
+                  <span class="textcolor" style="color: #000000"
+                    ><a href="tikz-graphs#pgf.-&gt;">-&gt;</a></span
+                  >
+                  {&numsp;<span class="textcolor" style="color: #000000"
+                    >Mashey</span
+                  >,&numsp;<span class="textcolor" style="color: #000000"
+                    >Bourne</span
+                  >,&numsp;<span class="textcolor" style="color: #000000"
+                    >csh</span
+                  >
+                  <span class="textcolor" style="color: #000000"
+                    ><a href="tikz-graphs#pgf.-&gt;">-&gt;</a></span
+                  >
+                  <span class="textcolor" style="color: #000000">tcsh</span
+                  >},<br />
+                  &numsp;&numsp;<span class="textcolor" style="color: #000000"
+                    >Bourne</span
+                  >
+                  <span class="textcolor" style="color: #000000"
+                    ><a href="tikz-graphs#pgf.-&gt;">-&gt;</a></span
+                  >
+                  {&numsp;<span class="textcolor" style="color: #000000"
+                    >ksh</span
+                  >,&numsp;<span class="textcolor" style="color: #000000"
+                    >esh</span
+                  >,&numsp;<span class="textcolor" style="color: #000000"
+                    >vsh</span
+                  >,&numsp;<span class="textcolor" style="color: #000000"
+                    >"System-V"</span
+                  >,&numsp;<span class="textcolor" style="color: #000000"
+                    >v9sh</span
+                  >
+                  <span class="textcolor" style="color: #000000"
+                    ><a href="tikz-graphs#pgf.-&gt;">-&gt;</a></span
+                  >
+                  <span class="textcolor" style="color: #000000">rc</span
+                  >,&numsp;<span class="textcolor" style="color: #000000"
+                    >Bash</span
+                  >},<br />
+                  &numsp;&numsp;{&numsp;<span
+                    class="textcolor"
+                    style="color: #000000"
+                    >"ksh-i"</span
+                  >,&numsp;<span class="textcolor" style="color: #000000"
+                    >KornShell</span
+                  >
+                  }&numsp;<span class="textcolor" style="color: #000000"
+                    ><a href="tikz-graphs#pgf.-&gt;">-&gt;</a></span
+                  >
+                  <span class="textcolor" style="color: #000000">Bash</span
+                  >,<br />
+                  &numsp;&numsp;{&numsp;<span
+                    class="textcolor"
+                    style="color: #000000"
+                    >esh</span
+                  >,&numsp;<span class="textcolor" style="color: #000000"
+                    >vsh</span
+                  >,&numsp;<span class="textcolor" style="color: #000000"
+                    >Formshell</span
+                  >,&numsp;<span class="textcolor" style="color: #000000"
+                    >csh</span
+                  >
+                  }&numsp;<span class="textcolor" style="color: #000000"
+                    ><a href="tikz-graphs#pgf.-&gt;">-&gt;</a></span
+                  >
+                  <span class="textcolor" style="color: #000000">ksh</span
+                  >,<br />
+                  &numsp;&numsp;{&numsp;<span
+                    class="textcolor"
+                    style="color: #000000"
+                    >KornShell</span
+                  >,&numsp;<span class="textcolor" style="color: #000000"
+                    >"System-V"</span
+                  >
+                  }&numsp;<span class="textcolor" style="color: #000000"
+                    ><a href="tikz-graphs#pgf.-&gt;">-&gt;</a></span
+                  >
+                  <span class="textcolor" style="color: #000000">POSIX</span
+                  >,<br />
+                  &numsp;&numsp;<span class="textcolor" style="color: #000000"
+                    >ksh</span
+                  >
+                  <span class="textcolor" style="color: #000000"
+                    ><a href="tikz-graphs#pgf.-&gt;">-&gt;</a></span
+                  >
+                  <span class="textcolor" style="color: #000000">"ksh-i"</span>
+                  <span class="textcolor" style="color: #000000"
+                    ><a href="tikz-graphs#pgf.-&gt;">-&gt;</a></span
+                  >
+                  <span class="textcolor" style="color: #000000"
+                    >KornShell</span
+                  >
+                  <span class="textcolor" style="color: #000000"
+                    ><a href="tikz-graphs#pgf.-&gt;">-&gt;</a></span
+                  >
+                  <span class="textcolor" style="color: #000000"
+                    >"ksh-POSIX"</span
+                  >,<br />
+                  &numsp;&numsp;<span class="textcolor" style="color: #000000"
+                    >Bourne</span
+                  >
+                  <span class="textcolor" style="color: #000000"
+                    ><a href="tikz-graphs#pgf.-&gt;">-&gt;</a></span
+                  >
+                  <span class="textcolor" style="color: #000000">Formshell</span
+                  >,<br />
+                  <br />
+                  &numsp;&numsp;{&numsp;[<span
+                    class="textcolor"
+                    style="color: #008000"
+                    ><a href="tikz-shapes#pgf.edge">edge</a></span
+                  >=<span class="textcolor" style="color: #008000"
+                    >{draw=none}</span
+                  >]<br />
+                  &numsp;&numsp;&numsp;&numsp;<span
+                    class="textcolor"
+                    style="color: #000000"
+                    >Bash</span
+                  >
+                  <span class="textcolor" style="color: #000000"
+                    ><a href="tikz-graphs#pgf.-&gt;">-&gt;</a></span
+                  >
+                  <span class="textcolor" style="color: #000000">tcl</span
+                  >,<br />
+                  &numsp;&numsp;&numsp;&numsp;<span
+                    class="textcolor"
+                    style="color: #000000"
+                    >KornShell</span
+                  >
+                  <span class="textcolor" style="color: #000000"
+                    ><a href="tikz-graphs#pgf.-&gt;">-&gt;</a></span
+                  >
+                  <span class="textcolor" style="color: #000000">Perl</span
+                  ><br />
+                  &numsp;&numsp;}<br />
+                  };<br />
+                </code>
+              </div>
+            </figure>
+          </div>
+          <h5 id="autosec-4685">
+            <span class="sectionnumber" id="sec-31.2">31.2&emsp;</span>Cycle
+            Removal<a class="anchor-link" href="#sec-31.2">&para;</a>
+          </h5>
+          <a id="pgfmanual-autopage-4685"></a>
+
+          <p>
+            The Sugiyama method works only on directed <em>acyclic</em> graphs.
+            For this reason, if the input graph is not (yet) acyclic, a number
+            of edges need to be redirected so that acyclicity arises. In the
+            following, the different options that allow you to fine-tune this
+            process are documented.
+          </p>
+
+          <div class="manualentry">
+            <div class="entryheadline">
+              <p>
+                <a id="pgf.depth:first:cycle:removal"></a>
+                <span class="hl-def"
+                  ><kbd
+                    >/graph drawing/<span
+                      class="textcolor"
+                      style="color: #bf0000"
+                      >depth first cycle removal</span
+                    ><span class="textcolor" style="color: #008000"
+                      >=</span
+                    ></kbd
+                  ><span class="textcolor" style="color: #008000"
+                    ><span class="angle">&langle;</span><i>string</i
+                    ><span class="angle">&rangle;</span></span
+                  ></span
+                >&emsp;&emsp;
+                <a class="anchor-link" href="#pgf.depth:first:cycle:removal"
+                  >&para;</a
+                >
+              </p>
+            </div>
+            <p>
+              Selects a cycle removal algorithm that is especially appropriate
+              for graphs specified &ldquo;by hand&rdquo;. When graphs are
+              created by humans manually, one can make assumptions about the
+              input graph that would otherwise not be possible. For instance, it
+              seems reasonable to assume that the order in which nodes and edges
+              are entered by the user somehow reflects the natural flow the user
+              has had in mind for the graph.
+            </p>
+            <p>
+              In order to preserve the natural flow of the input graph, Gansner
+              et al. propose to remove cycles by performing a series of
+              depth-first searches starting at individual nodes in the order
+              they appear in the graph. This algorithm implicitly constructs a
+              spanning tree of the nodes reached during the searches. It thereby
+              partitions the edges of the graph into tree edges and non-tree
+              edges. The non-tree edges are further subdivided into forward
+              edges, cross edges, and back edges. Forward edges point from a
+              tree nodes to one of their descendants. Cross edges connect
+              unrelated branches in the search tree. Back edges connect
+              descendants to one of their ancestors. It is not hard to see that
+              reversing back edges will not only introduce no new cycles but
+              will also make any directed graph acyclic. Gansner et al. argue
+              that this approach is more stable than others in that fewer
+              inappropriate edges are reversed compared to other methods,
+              despite the lack of a provable upper bound for the number of
+              reversed edges.
+            </p>
+            <p>
+              See section&nbsp;4.1.1 of Pohlmann&rsquo;s Diplom thesis for more
+              details.
+            </p>
+            <p>This is the default algorithm for cycle removals.</p>
+          </div>
+
+          <div class="manualentry">
+            <div class="entryheadline">
+              <p>
+                <a id="pgf.prioritized:greedy:cycle:removal"></a>
+                <span class="hl-def"
+                  ><kbd
+                    >/graph drawing/<span
+                      class="textcolor"
+                      style="color: #bf0000"
+                      >prioritized greedy cycle removal</span
+                    ><span class="textcolor" style="color: #008000"
+                      >=</span
+                    ></kbd
+                  ><span class="textcolor" style="color: #008000"
+                    ><span class="angle">&langle;</span><i>string</i
+                    ><span class="angle">&rangle;</span></span
+                  ></span
+                >&emsp;&emsp;
+                <a
+                  class="anchor-link"
+                  href="#pgf.prioritized:greedy:cycle:removal"
+                  >&para;</a
+                >
+              </p>
+            </div>
+            <p>
+              This algorithm implements a greedy heuristic of Eades et al. for
+              cycle removal that prioritizes sources and sinks. See
+              section&nbsp;4.1.1 of Pohlmann&rsquo;s Diploma theses for details.
+            </p>
+          </div>
+
+          <div class="manualentry">
+            <div class="entryheadline">
+              <p>
+                <a id="pgf.greedy:cycle:removal"></a>
+                <span class="hl-def"
+                  ><kbd
+                    >/graph drawing/<span
+                      class="textcolor"
+                      style="color: #bf0000"
+                      >greedy cycle removal</span
+                    ><span class="textcolor" style="color: #008000"
+                      >=</span
+                    ></kbd
+                  ><span class="textcolor" style="color: #008000"
+                    ><span class="angle">&langle;</span><i>string</i
+                    ><span class="angle">&rangle;</span></span
+                  ></span
+                >&emsp;&emsp;
+                <a class="anchor-link" href="#pgf.greedy:cycle:removal"
+                  >&para;</a
+                >
+              </p>
+            </div>
+            <p>
+              This algorithm implements a greedy heuristic of Eades et al. for
+              cycle removal that prioritizes sources and sinks. See
+              section&nbsp;4.1.1 of Pohlmann&rsquo;s Diploma theses for details.
+            </p>
+          </div>
+
+          <div class="manualentry">
+            <div class="entryheadline">
+              <p>
+                <a id="pgf.naive:greedy:cycle:removal"></a>
+                <span class="hl-def"
+                  ><kbd
+                    >/graph drawing/<span
+                      class="textcolor"
+                      style="color: #bf0000"
+                      >naive greedy cycle removal</span
+                    ><span class="textcolor" style="color: #008000"
+                      >=</span
+                    ></kbd
+                  ><span class="textcolor" style="color: #008000"
+                    ><span class="angle">&langle;</span><i>string</i
+                    ><span class="angle">&rangle;</span></span
+                  ></span
+                >&emsp;&emsp;
+                <a class="anchor-link" href="#pgf.naive:greedy:cycle:removal"
+                  >&para;</a
+                >
+              </p>
+            </div>
+            <p>
+              This algorithm implements a greedy heuristic of Berger and Shor
+              for cycle removal. It is not really compared to the other
+              heuristics and only included for demonstration purposes. See
+              section&nbsp;4.1.1 of Pohlmann&rsquo;s Diploma theses for details.
+            </p>
+          </div>
+
+          <div class="manualentry">
+            <div class="entryheadline">
+              <p>
+                <a id="pgf.random:greedy:cycle:removal"></a>
+                <span class="hl-def"
+                  ><kbd
+                    >/graph drawing/<span
+                      class="textcolor"
+                      style="color: #bf0000"
+                      >random greedy cycle removal</span
+                    ><span class="textcolor" style="color: #008000"
+                      >=</span
+                    ></kbd
+                  ><span class="textcolor" style="color: #008000"
+                    ><span class="angle">&langle;</span><i>string</i
+                    ><span class="angle">&rangle;</span></span
+                  ></span
+                >&emsp;&emsp;
+                <a class="anchor-link" href="#pgf.random:greedy:cycle:removal"
+                  >&para;</a
+                >
+              </p>
+            </div>
+            <p>
+              This algorithm implements a randomized greedy heuristic of Berger
+              and Shor for cycle removal. It, too, is not really compared to the
+              other heuristics and only included for demonstration purposes. See
+              section&nbsp;4.1.1 of Pohlmann&rsquo;s Diploma theses for details.
+            </p>
+          </div>
+          <h5 id="autosec-4686">
+            <span class="sectionnumber" id="sec-31.3">31.3&emsp;</span>Layer
+            Assignment (Node Ranking)<a class="anchor-link" href="#sec-31.3"
+              >&para;</a
+            >
+          </h5>
+          <a id="pgfmanual-autopage-4686"></a>
+
+          <p>
+            Algorithms for producing layered drawings place nodes on discrete
+            layers from top to bottom. Layer assignment is the problem of
+            finding a partition so that for all edges \(e = (u,v) \in E(G)\) the
+            equation \(\mathit {layer}(u) &lt; \mathit {layer}(v)\) holds. Such
+            a partition is called a <em>layering</em>. This definition can be
+            extended by introducing edge weights or priorities and minimum
+            length constraints which has practical applications and allows users
+            to fine-tune the results.
+          </p>
+
+          <p>
+            For more details, please see Section&nbsp;4.1.2 of Pohlmann&rsquo;s
+            Diploma thesis.
+          </p>
+
+          <div class="manualentry">
+            <div class="entryheadline">
+              <p>
+                <a id="pgf.linear:optimization:layer:assignment"></a>
+                <span class="hl-def"
+                  ><kbd
+                    >/graph drawing/<span
+                      class="textcolor"
+                      style="color: #bf0000"
+                      >linear optimization layer assignment</span
+                    ><span class="textcolor" style="color: #008000"
+                      >=</span
+                    ></kbd
+                  ><span class="textcolor" style="color: #008000"
+                    ><span class="angle">&langle;</span><i>string</i
+                    ><span class="angle">&rangle;</span></span
+                  ></span
+                >&emsp;&emsp;
+                <a
+                  class="anchor-link"
+                  href="#pgf.linear:optimization:layer:assignment"
+                  >&para;</a
+                >
+              </p>
+            </div>
+            <p>
+              This layer assignment method, due to Gasner et al., is based on a
+              linear optimization problem. For more details, please see
+              Section&nbsp;4.1.2 of Pohlmann&rsquo;s Diploma thesis.
+            </p>
+            <p>This is the default algorithm for layer assignments.</p>
+          </div>
+
+          <div class="manualentry">
+            <div class="entryheadline">
+              <p>
+                <a id="pgf.minimum:height:layer:assignment"></a>
+                <span class="hl-def"
+                  ><kbd
+                    >/graph drawing/<span
+                      class="textcolor"
+                      style="color: #bf0000"
+                      >minimum height layer assignment</span
+                    ><span class="textcolor" style="color: #008000"
+                      >=</span
+                    ></kbd
+                  ><span class="textcolor" style="color: #008000"
+                    ><span class="angle">&langle;</span><i>string</i
+                    ><span class="angle">&rangle;</span></span
+                  ></span
+                >&emsp;&emsp;
+                <a
+                  class="anchor-link"
+                  href="#pgf.minimum:height:layer:assignment"
+                  >&para;</a
+                >
+              </p>
+            </div>
+            <p>
+              This layer assignment method minimizes the height of the resulting
+              graph. For more details, please see Section&nbsp;4.1.3 of
+              Pohlmann&rsquo;s Diploma thesis.
+            </p>
+          </div>
+          <h5 id="autosec-4687">
+            <span class="sectionnumber" id="sec-31.4">31.4&emsp;</span>Crossing
+            Minimization (Node Ordering)<a class="anchor-link" href="#sec-31.4"
+              >&para;</a
+            >
+          </h5>
+          <a id="pgfmanual-autopage-4687"></a>
+
+          <p>
+            The number of edge crossings in a layered drawing is determined by
+            the ordering of nodes at each of its layers. Therefore, crossing
+            minimization is the problem of reordering the nodes at each layer so
+            that the overall number of edge crossings is minimized. The crossing
+            minimization step takes a proper layering where every edge connects
+            nodes in neighbored layers, allowing algorithms to minimize
+            crossings layer by layer rather than all at once. While this does
+            not reduce the complexity of the problem, it does make it
+            considerably easier to understand and implement. Techniques based on
+            such an iterative approach are also known as layer-by-layer sweep
+            methods. They are used in many popular heuristics due to their
+            simplicity and the good results they produce.
+          </p>
+
+          <p>
+            Sweeping refers to moving up and down from one layer to the next,
+            reducing crossings along the way. In layer-by-layer sweep methods,
+            an initial node ordering for one of the layers is computed first.
+            Depending on the sweep direction this can either be the first layer
+            or the last; in rare occasions the layer in the middle is used
+            instead. Followed by this, the actual layer-by-layer sweep is
+            performed. Given an initial ordering for the first layer \(L_1\), a
+            downward sweep first holds the nodes in \(L_1\) fixed while
+            reordering the nodes in the second layer \(L_2\) to reduce the
+            number of crossings between \(L_1\) and \(L_2\). It then goes on to
+            reorder the third layer while holding the second layer fixed. This
+            is continued until all layers except for the first one have been
+            examined. Upward sweeping and sweeping from the middle work
+            analogous.
+          </p>
+
+          <p>
+            Obviously, the central aspect of the layer-by-layer sweep is how the
+            nodes of a specific layer are reordered using a neighbored layer as
+            a fixed reference. This problem is known as one-sided crossing
+            minimization, which unfortunately is NP-hard. In the following
+            various heuristics to solve this problem are presented.
+          </p>
+
+          <p>
+            For more details, please see Section 4.1.4 of Pohlmann&rsquo;s
+            Diploma thesis.
+          </p>
+
+          <div class="manualentry">
+            <div class="entryheadline">
+              <p>
+                <a id="pgf.sweep:crossing:minimization"></a>
+                <span class="hl-def"
+                  ><kbd
+                    >/graph drawing/<span
+                      class="textcolor"
+                      style="color: #bf0000"
+                      >sweep crossing minimization</span
+                    ><span class="textcolor" style="color: #008000"
+                      >=</span
+                    ></kbd
+                  ><span class="textcolor" style="color: #008000"
+                    ><span class="angle">&langle;</span><i>string</i
+                    ><span class="angle">&rangle;</span></span
+                  ></span
+                >&emsp;&emsp;
+                <a class="anchor-link" href="#pgf.sweep:crossing:minimization"
+                  >&para;</a
+                >
+              </p>
+            </div>
+            <p>
+              Gansner et al. combine an initial ordering based on a depth-first
+              search with the median and greedy switch heuristics applied in the
+              form of an alternating layer-by-layer sweep based on a weighted
+              median. For more details, please see Section&nbsp;4.1.4 of
+              Pohlmann&rsquo;s Diploma thesis.
+            </p>
+            <p>This is the default algorithm for crossing minimization.</p>
+          </div>
+          <h5 id="autosec-4688">
+            <span class="sectionnumber" id="sec-31.5">31.5&emsp;</span>Node
+            Positioning (Coordinate Assignment)<a
+              class="anchor-link"
+              href="#sec-31.5"
+              >&para;</a
+            >
+          </h5>
+          <a id="pgfmanual-autopage-4688"></a>
+
+          <p>
+            The second last step of the Sugiyama method decides about the final
+            \(x\)- and \(y\)-coordinates of the nodes. The main objectives of
+            this step are to position nodes so that the number of edge bends is
+            kept small and edges are drawn as vertically as possible. Another
+            goal is to avoid node and edge overlaps which is crucial in
+            particular if the nodes are allowed to have non-uniform sizes. The
+            \(y\)-coordinates of the nodes have no influence on the number of
+            bends. Obviously, nodes need to be separated enough geometrically so
+            that they do not overlap. It feels natural to aim at separating all
+            layers in the drawing by the same amount. Large nodes, however, may
+            force node positioning algorithms to override this uniform level
+            distance in order to avoid overlaps.
+          </p>
+
+          <p>
+            For more details, please see Section&nbsp;4.1.2 of Pohlmann&rsquo;s
+            Diploma thesis.
+          </p>
+
+          <div class="manualentry">
+            <div class="entryheadline">
+              <p>
+                <a id="pgf.linear:optimization:node:positioning"></a>
+                <span class="hl-def"
+                  ><kbd
+                    >/graph drawing/<span
+                      class="textcolor"
+                      style="color: #bf0000"
+                      >linear optimization node positioning</span
+                    ><span class="textcolor" style="color: #008000"
+                      >=</span
+                    ></kbd
+                  ><span class="textcolor" style="color: #008000"
+                    ><span class="angle">&langle;</span><i>string</i
+                    ><span class="angle">&rangle;</span></span
+                  ></span
+                >&emsp;&emsp;
+                <a
+                  class="anchor-link"
+                  href="#pgf.linear:optimization:node:positioning"
+                  >&para;</a
+                >
+              </p>
+            </div>
+            <p>
+              This node positioning method, due to Gasner et al., is based on a
+              linear optimization problem. For more details, please see
+              Section&nbsp;4.1.3 of Pohlmann&rsquo;s Diploma thesis.
+            </p>
+            <p>This is the default algorithm for layer assignments.</p>
+          </div>
+          <h5 id="autosec-4689">
+            <span class="sectionnumber" id="sec-31.6">31.6&emsp;</span>Edge
+            Routing<a class="anchor-link" href="#sec-31.6">&para;</a>
+          </h5>
+          <a id="pgfmanual-autopage-4689"></a>
+
+          <p>
+            The original layered drawing method described by Eades and Sugiyama
+            in does not include the routing or shaping of edges as a main step.
+            This makes sense if all nodes have the same size and shape. In
+            practical scenarios, however, this assumption often does not hold.
+            In these cases, advanced techniques may have to be applied in order
+            to avoid overlaps of nodes and edges.
+          </p>
+
+          <p>
+            For more details, please see Section&nbsp;4.1.5 of Pohlmann&rsquo;s
+            Diploma thesis.
+          </p>
+
+          <div class="manualentry">
+            <div class="entryheadline">
+              <p>
+                <a id="pgf.polyline:layer:edge:routing"></a>
+                <span class="hl-def"
+                  ><kbd
+                    >/graph drawing/<span
+                      class="textcolor"
+                      style="color: #bf0000"
+                      >polyline layer edge routing</span
+                    ><span class="textcolor" style="color: #008000"
+                      >=</span
+                    ></kbd
+                  ><span class="textcolor" style="color: #008000"
+                    ><span class="angle">&langle;</span><i>string</i
+                    ><span class="angle">&rangle;</span></span
+                  ></span
+                >&emsp;&emsp;
+                <a class="anchor-link" href="#pgf.polyline:layer:edge:routing"
+                  >&para;</a
+                >
+              </p>
+            </div>
+            <p>
+              This edge routing algorithm uses polygonal lines to connect nodes.
+              For more details, please see Section&nbsp;4.1.5 of
+              Pohlmann&rsquo;s Diploma thesis.
+            </p>
+            <p>This is the default algorithm for edge routing.</p>
+          </div>
+        </section>
+      </main>
+
+      <footer>
+        <div class_="footer-left">
+          <a href="https://github.com/pgf-tikz/pgf">Github</a> &middot;
+          <a href="/license">License</a> &middot;
+          <a href="https://ctan.org/pkg/pgf">CTAN</a> &middot;
+          <a href="https://pgf-tikz.github.io/pgf/pgfmanual.pdf">PDF version</a>
+          &middot;
+          <a href="https://github.com/DominikPeters/pgf-tikz-html-manual"
+            >About this HTML version</a
+          >
+        </div>
+        <div class_="footer-right">
+          <em>Manual last updated: 2022-04-23</em>
+        </div>
+      </footer>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/@docsearch/js@alpha"></script>
+    <script>
+      docsearch({
+        apiKey: "ae66ec3fc9df4b52b4d6f24fc8508fd3",
+        indexName: "tikz.dev",
+        appId: "Q70NNMA9GC",
+        container: "#search",
+      });
+    </script>
+  </body>
+</html>

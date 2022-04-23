@@ -1,0 +1,2883 @@
+<!DOCTYPE html>
+<html lang="en-US">
+  <head>
+    <meta charset="utf-8" />
+    <meta content="LaTeX Lwarp package" name="generator" />
+    <meta content="width=device-width, initial-scale=1.0" name="viewport" />
+    <!--[if lt IE 9]>
+      <script src="http://html5shiv.googlecode.com/svn/trunk/html5.js"></script>
+    <![endif]-->
+    <title>Math Library - PGF/TikZ Manual</title>
+    <link href="style.css" rel="stylesheet" type="text/css" />
+
+    <script>
+      // Lwarp MathJax emulation code
+      //
+      // Based on code by Davide P. Cervone.
+      // Equation numbering: https://github.com/mathjax/MathJax/issues/2427
+      // Starred and ifnextchar macros: https://github.com/mathjax/MathJax/issues/2428
+      // \left, \right delimiters: https://github.com/mathjax/MathJax/issues/2535
+      //
+      // Modified by Brian Dunn to adjust equation numbering and add subequations.
+      //
+      // LaTeX can use \seteqnumber{subequations?}{section}{number} before each equation.
+      // subequations? is 0 usually, 1 if inside subequations.
+      // section is a string printed as-is, or empty.
+      // number is auto-incremented by MathJax between equations.
+      //
+      MathJax = {
+        subequations: "0",
+        section: "",
+        loader: {
+          load: ["[tex]/tagformat", "[tex]/textmacros"],
+        },
+        startup: {
+          ready() {
+            // These would be replaced by import commands if you wanted to make
+            // a proper extension.
+            const Configuration =
+              MathJax._.input.tex.Configuration.Configuration;
+            const CommandMap = MathJax._.input.tex.SymbolMap.CommandMap;
+            const Macro = MathJax._.input.tex.Symbol.Macro;
+            const TexError = MathJax._.input.tex.TexError.default;
+            const ParseUtil = MathJax._.input.tex.ParseUtil.default;
+            const expandable = MathJax._.util.Options.expandable;
+
+            // Insert the replacement string into the TeX string, and check
+            // that there haven't been too many maxro substitutions (prevents
+            // infinite loops).
+            const useArgument = (parser, text) => {
+              parser.string = ParseUtil.addArgs(
+                parser,
+                text,
+                parser.string.slice(parser.i)
+              );
+              parser.i = 0;
+              if (
+                ++parser.macroCount > parser.configuration.options.maxMacros
+              ) {
+                throw new TexError(
+                  "MaxMacroSub1",
+                  "MathJax maximum macro substitution count exceeded; " +
+                    "is there a recursive macro call?"
+                );
+              }
+            };
+
+            // Create the command map for:
+            // \ifstar, \ifnextchar, \ifblank, \ifstrequal, \seteqnumber
+            new CommandMap(
+              "Lwarp-macros",
+              {
+                ifstar: "IfstarFunction",
+                ifnextchar: "IfnextcharFunction",
+                ifblank: "IfblankFunction",
+                ifstrequal: "IfstrequalFunction",
+                seteqnumber: "SeteqnumberFunction",
+              },
+              {
+                // This function implements an ifstar macro.
+                IfstarFunction(parser, name) {
+                  const resultstar = parser.GetArgument(name);
+                  const resultnostar = parser.GetArgument(name);
+                  const star = parser.GetStar(); // true if there is a *
+                  useArgument(parser, star ? resultstar : resultnostar);
+                },
+
+                // This function implements an ifnextchar macro.
+                IfnextcharFunction(parser, name) {
+                  let whichchar = parser.GetArgument(name);
+                  if (whichchar.match(/^(?:0x[0-9A-F]+|[0-9]+)$/i)) {
+                    // $ syntax highlighting
+                    whichchar = String.fromCodePoint(parseInt(whichchar));
+                  }
+                  const resultnextchar = parser.GetArgument(name);
+                  const resultnotnextchar = parser.GetArgument(name);
+                  const gotchar = parser.GetNext() === whichchar;
+                  useArgument(
+                    parser,
+                    gotchar ? resultnextchar : resultnotnextchar
+                  );
+                },
+
+                // This function implements an ifblank macro.
+                IfblankFunction(parser, name) {
+                  const blankarg = parser.GetArgument(name);
+                  const resultblank = parser.GetArgument(name);
+                  const resultnotblank = parser.GetArgument(name);
+                  const isblank = blankarg.trim() == "";
+                  useArgument(parser, isblank ? resultblank : resultnotblank);
+                },
+
+                // This function implements an ifstrequal macro.
+                IfstrequalFunction(parser, name) {
+                  const strequalfirst = parser.GetArgument(name);
+                  const strequalsecond = parser.GetArgument(name);
+                  const resultequal = parser.GetArgument(name);
+                  const resultnotequal = parser.GetArgument(name);
+                  const isequal = strequalfirst == strequalsecond;
+                  useArgument(parser, isequal ? resultequal : resultnotequal);
+                },
+
+                // This function modifies the equation numbers.
+                SeteqnumberFunction(parser, name) {
+                  // Get the macro parameters
+                  const star = parser.GetStar(); // true if there is a *
+                  const optBrackets = parser.GetBrackets(name); // contents of optional brackets
+                  const newsubequations = parser.GetArgument(name); // the subequations argument
+                  const neweqsection = parser.GetArgument(name); // the eq section argument
+                  const neweqnumber = parser.GetArgument(name); // the eq number argument
+                  MathJax.config.subequations = newsubequations; // a string with boolean meaning
+                  MathJax.config.section = neweqsection; // a string with numeric meaning
+                  parser.tags.counter = parser.tags.allCounter = neweqnumber;
+                },
+              }
+            );
+
+            // Create the Lwarp-macros package
+            Configuration.create("Lwarp-macros", {
+              handler: { macro: ["Lwarp-macros"] },
+            });
+
+            MathJax.startup.defaultReady();
+
+            // For forward references:
+            MathJax.startup.input[0].preFilters.add(({ math }) => {
+              if (math.inputData.recompile) {
+                MathJax.config.subequations =
+                  math.inputData.recompile.subequations;
+                MathJax.config.section = math.inputData.recompile.section;
+              }
+            });
+            MathJax.startup.input[0].postFilters.add(({ math }) => {
+              if (math.inputData.recompile) {
+                math.inputData.recompile.subequations =
+                  MathJax.config.subequations;
+                math.inputData.recompile.section = MathJax.config.section;
+              }
+            });
+
+            // For \left, \right with unicode-math:
+            const { DelimiterMap } = MathJax._.input.tex.SymbolMap;
+            const { Symbol } = MathJax._.input.tex.Symbol;
+            const { MapHandler } = MathJax._.input.tex.MapHandler;
+            const delimiter = MapHandler.getMap("delimiter");
+            delimiter.add("\\lBrack", new Symbol("\\lBrack", "\u27E6"));
+            delimiter.add("\\rBrack", new Symbol("\\rBrack", "\u27E7"));
+            delimiter.add("\\lAngle", new Symbol("\\lAngle", "\u27EA"));
+            delimiter.add("\\rAngle", new Symbol("\\rAngle", "\u27EB"));
+            delimiter.add("\\lbrbrak", new Symbol("\\lbrbrak", "\u2772"));
+            delimiter.add("\\rbrbrak", new Symbol("\\rbrbrak", "\u2773"));
+            delimiter.add("\\lbag", new Symbol("\\lbag", "\u27C5"));
+            delimiter.add("\\rbag", new Symbol("\\rbag", "\u27C6"));
+            delimiter.add(
+              "\\llparenthesis",
+              new Symbol("\\llparenthesis", "\u2987")
+            );
+            delimiter.add(
+              "\\rrparenthesis",
+              new Symbol("\\rrparenthesis", "\u2988")
+            );
+            delimiter.add("\\llangle", new Symbol("\\llangle", "\u2989"));
+            delimiter.add("\\rrangle", new Symbol("\\rrangle", "\u298A"));
+            delimiter.add("\\Lbrbrak", new Symbol("\\Lbrbrak", "\u27EC"));
+            delimiter.add("\\Rbrbrak", new Symbol("\\Rbrbrak", "\u27ED"));
+            delimiter.add("\\lBrace", new Symbol("\\lBrace", "\u2983"));
+            delimiter.add("\\rBrace", new Symbol("\\rBrace", "\u2984"));
+            delimiter.add("\\lParen", new Symbol("\\lParen", "\u2985"));
+            delimiter.add("\\rParen", new Symbol("\\rParen", "\u2986"));
+            delimiter.add("\\lbrackubar", new Symbol("\\lbrackubar", "\u298B"));
+            delimiter.add("\\rbrackubar", new Symbol("\\rbrackubar", "\u298C"));
+            delimiter.add(
+              "\\lbrackultick",
+              new Symbol("\\lbrackultick", "\u298D")
+            );
+            delimiter.add(
+              "\\rbracklrtick",
+              new Symbol("\\rbracklrtick", "\u298E")
+            );
+            delimiter.add(
+              "\\lbracklltick",
+              new Symbol("\\lbracklltick", "\u298F")
+            );
+            delimiter.add(
+              "\\rbrackurtick",
+              new Symbol("\\rbrackurtick", "\u2990")
+            );
+            delimiter.add("\\langledot", new Symbol("\\langledot", "\u2991"));
+            delimiter.add("\\rangledot", new Symbol("\\rangledot", "\u2992"));
+            delimiter.add("\\lparenless", new Symbol("\\lparenless", "\u2993"));
+            delimiter.add("\\rparengtr", new Symbol("\\rparengtr", "\u2994"));
+            delimiter.add("\\Lparengtr", new Symbol("\\Lparengtr", "\u2995"));
+            delimiter.add("\\Rparenless", new Symbol("\\Rparenless", "\u2996"));
+            delimiter.add("\\lblkbrbrak", new Symbol("\\lblkbrbrak", "\u2997"));
+            delimiter.add("\\rblkbrbrak", new Symbol("\\rblkbrbrak", "\u2998"));
+            delimiter.add("\\lvzigzag", new Symbol("\\lvzigzag", "\u29D8"));
+            delimiter.add("\\rvzigzag", new Symbol("\\rvzigzag", "\u29D9"));
+            delimiter.add("\\Lvzigzag", new Symbol("\\Lvzigzag", "\u29DA"));
+            delimiter.add("\\Rvzigzag", new Symbol("\\Rvzigzag", "\u29DB"));
+            delimiter.add(
+              "\\lcurvyangle",
+              new Symbol("\\lcurvyangle", "\u29FC")
+            );
+            delimiter.add(
+              "\\rcurvyangle",
+              new Symbol("\\rcurvyangle", "\u29FD")
+            );
+            delimiter.add("\\Vvert", new Symbol("\\Vvert", "\u2980"));
+          }, // ready
+        }, // startup
+
+        tex: {
+          packages: { "[+]": ["tagformat", "Lwarp-macros", "textmacros"] },
+          tags: "ams",
+          tagformat: {
+            number: function (n) {
+              if (MathJax.config.subequations == 0)
+                return MathJax.config.section + n;
+              else return MathJax.config.section + String.fromCharCode(96 + n);
+            },
+          },
+        },
+      };
+    </script>
+
+    <script
+      async
+      id="MathJax-script"
+      src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-chtml.js"
+    ></script>
+
+    <script src="pgfmanual.js"></script>
+
+    <link href="https://unpkg.com/@docsearch/css@alpha" rel="stylesheet" />
+    <link href="/favicon-16x16.png" rel="icon" sizes="16x16" type="image/png" />
+    <link href="/favicon-32x32.png" rel="icon" sizes="32x32" type="image/png" />
+    <link
+      href="/apple-touch-icon.png"
+      rel="apple-touch-icon"
+      sizes="180x180"
+      type="image/png"
+    />
+    <link href="/site.webmanifest" rel="manifest" />
+  </head>
+  <body>
+    <a id="pgfmanual-autopage-5787"></a>
+
+    <div class="bodyandsidetoc grid-container">
+      <header>
+        <strong><a href="/">PGF/Ti<i>k</i>Z Manual</a></strong>
+        <div id="search"></div>
+      </header>
+      <div class="sidetoccontainer" id="local-toc-container">
+        <nav class="sidetoc">
+          <div class="sidetoctitle"><p>On this page</p></div>
+          <div class="sidetoccontents">
+            <p><a class="tocsubsection" href="#sec-58.1">Overview</a></p>
+            <p><a class="tocsubsection" href="#sec-58.2">Assignment</a></p>
+            <p>
+              <a class="tocsubsection" href="#sec-58.3"
+                >Integers, &ldquo;Real&rdquo; Numbers, and Coordinates</a
+              >
+            </p>
+            <p>
+              <a class="tocsubsection" href="#sec-58.4">Repeating Things</a>
+            </p>
+            <p>
+              <a class="tocsubsection" href="#sec-58.5">Branching Statements</a>
+            </p>
+            <p>
+              <a class="tocsubsection" href="#sec-58.6">Declaring Functions</a>
+            </p>
+            <p>
+              <a class="tocsubsection" href="#sec-58.7"
+                >Executing Code Outside the Parser</a
+              >
+            </p>
+          </div>
+        </nav>
+      </div>
+      <div class="sidetoccontainer" id="chapter-toc-container">
+        <nav class="sidetoc">
+          <div class="sidetoctitle">
+            <p>
+              <span class="sidetocthetitle"
+                >The <span class="tikzname">TikZ</span> and PGF Packages<br />
+                Manual for version 3.1.9a</span
+              >
+            </p>
+
+            <p>Contents</p>
+          </div>
+
+          <div class="sidetoccontents">
+            <p></p>
+
+            <p>
+              <a class="linkintro" href="/">Introduction</a>
+            </p>
+
+            <p>
+              <a class="tocpart" href="tutorials-guidelines"
+                >Tutorials and Guidelines</a
+              >
+            </p>
+
+            <p>
+              <a class="tocpart" href="install"
+                >Installation and Configuration</a
+              >
+            </p>
+
+            <p>
+              <a class="tocpart" href="tikz">Ti<em>k</em>Z</a>
+            </p>
+
+            <p>
+              <a class="tocpart" href="gd">Graph Drawing</a>
+            </p>
+
+            <p class="current-part">
+              <a class="tocpart" href="libraries">Libraries</a>
+            </p>
+
+            <p class="current-part">
+              <a class="tocsection" href="library-3d"
+                >Three Dimensional Drawing Library</a
+              >
+            </p>
+
+            <p class="current-part">
+              <a class="tocsection" href="library-angle">Angle Library</a>
+            </p>
+
+            <p class="current-part">
+              <a class="tocsection" href="library-arrows">Arrow Tip Library</a>
+            </p>
+
+            <p class="current-part">
+              <a class="tocsection" href="library-automata"
+                >Automata Drawing Library</a
+              >
+            </p>
+
+            <p class="current-part">
+              <a class="tocsection" href="library-babel">Babel Library</a>
+            </p>
+
+            <p class="current-part">
+              <a class="tocsection" href="library-backgrounds"
+                >Background Library</a
+              >
+            </p>
+
+            <p class="current-part">
+              <a class="tocsection" href="library-calc">Calc Library</a>
+            </p>
+
+            <p class="current-part">
+              <a class="tocsection" href="library-calender">Calendar Library</a>
+            </p>
+
+            <p class="current-part">
+              <a class="tocsection" href="library-chains">Chains</a>
+            </p>
+
+            <p class="current-part">
+              <a class="tocsection" href="library-circuits"
+                >Circuit Libraries</a
+              >
+            </p>
+
+            <p class="current-part">
+              <a class="tocsection" href="library-decorations"
+                >Decoration Library</a
+              >
+            </p>
+
+            <p class="current-part">
+              <a class="tocsection" href="library-er"
+                >Entity-Relationship Diagram Drawing Library</a
+              >
+            </p>
+
+            <p class="current-part">
+              <a class="tocsection" href="library-external"
+                >Externalization Library</a
+              >
+            </p>
+
+            <p class="current-part">
+              <a class="tocsection" href="library-fadings">Fading Library</a>
+            </p>
+
+            <p class="current-part">
+              <a class="tocsection" href="library-fit">Fitting Library</a>
+            </p>
+
+            <p class="current-part">
+              <a class="tocsection" href="library-fixedpoint"
+                >Fixed Point Arithmetic Library</a
+              >
+            </p>
+
+            <p class="current-part">
+              <a class="tocsection" href="library-fpu"
+                >Floating Point Unit Library</a
+              >
+            </p>
+
+            <p class="current-part">
+              <a class="tocsection" href="library-lsystems"
+                >Lindenmayer System Drawing Library</a
+              >
+            </p>
+
+            <p class="current current-part">
+              <a class="tocsection" href="library-math">Math Library</a>
+            </p>
+
+            <p class="current-part">
+              <a class="tocsection" href="library-matrix">Matrix Library</a>
+            </p>
+
+            <p class="current-part">
+              <a class="tocsection" href="library-mindmaps"
+                >Mindmap Drawing Library</a
+              >
+            </p>
+
+            <p class="current-part">
+              <a class="tocsection" href="library-folding"
+                >Paper-Folding Diagrams Library</a
+              >
+            </p>
+
+            <p class="current-part">
+              <a class="tocsection" href="library-patterns">Pattern Library</a>
+            </p>
+
+            <p class="current-part">
+              <a class="tocsection" href="library-perspective"
+                >Three Point Perspective Drawing Library</a
+              >
+            </p>
+
+            <p class="current-part">
+              <a class="tocsection" href="library-petri"
+                >Petri-Net Drawing Library</a
+              >
+            </p>
+
+            <p class="current-part">
+              <a class="tocsection" href="library-plot-handlers"
+                >Plot Handler Library</a
+              >
+            </p>
+
+            <p class="current-part">
+              <a class="tocsection" href="library-plot-marks"
+                >Plot Mark Library</a
+              >
+            </p>
+
+            <p class="current-part">
+              <a class="tocsection" href="library-profiler">Profiler Library</a>
+            </p>
+
+            <p class="current-part">
+              <a class="tocsection" href="library-shadings">Shadings Library</a>
+            </p>
+
+            <p class="current-part">
+              <a class="tocsection" href="library-shadows">Shadows Library</a>
+            </p>
+
+            <p class="current-part">
+              <a class="tocsection" href="library-shapes">Shape Library</a>
+            </p>
+
+            <p class="current-part">
+              <a class="tocsection" href="library-spy"
+                >Spy Library: Magnifying Parts of Pictures</a
+              >
+            </p>
+
+            <p class="current-part">
+              <a class="tocsection" href="library-svg-path">SVG-Path Library</a>
+            </p>
+
+            <p class="current-part">
+              <a class="tocsection" href="library-edges">To Path Library</a>
+            </p>
+
+            <p class="current-part">
+              <a class="tocsection" href="library-through">Through Library</a>
+            </p>
+
+            <p class="current-part">
+              <a class="tocsection" href="library-trees">Tree Library</a>
+            </p>
+
+            <p class="current-part">
+              <a class="tocsection" href="library-turtle"
+                >Turtle Graphics Library</a
+              >
+            </p>
+
+            <p class="current-part">
+              <a class="tocsection" href="library-views">Views Library</a>
+            </p>
+
+            <p>
+              <a class="tocpart" href="dv">Data Visualization</a>
+            </p>
+
+            <p>
+              <a class="tocpart" href="utilities">Utilities</a>
+            </p>
+
+            <p>
+              <a class="tocpart" href="math"
+                >Mathematical and Object-Oriented Engines</a
+              >
+            </p>
+
+            <p>
+              <a class="tocpart" href="base">The Basic Layer</a>
+            </p>
+
+            <p>
+              <a class="tocpart" href="pgfsys">The System Layer</a>
+            </p>
+          </div>
+        </nav>
+      </div>
+
+      <main class="bodycontainer">
+        <section class="textbody">
+          <h1>
+            The <span class="tikzname">TikZ</span> and PGF Packages<br />
+            Manual for version 3.1.9a
+          </h1>
+          <h2 class="inserted">Libraries</h2>
+
+          <!--MathJax customizations:-->
+
+          <div class="hidden">
+            \(\newcommand{\footnotename}{footnote}\) \(\def \LWRfootnote {1}\)
+            \(\newcommand {\footnote }[2][\LWRfootnote ]{{}^{\mathrm {#1}}}\)
+            \(\newcommand {\footnotemark }[1][\LWRfootnote ]{{}^{\mathrm
+            {#1}}}\) \(\let \LWRorighspace \hspace \) \(\renewcommand {\hspace
+            }{\ifstar \LWRorighspace \LWRorighspace }\) \(\newcommand
+            {\mathnormal }[1]{{#1}}\) \(\newcommand \ensuremath [1]{#1}\)
+            \(\newcommand {\LWRframebox }[2][]{\fbox {#2}} \newcommand
+            {\framebox }[1][]{\LWRframebox } \) \(\newcommand {\setlength
+            }[2]{}\) \(\newcommand {\addtolength }[2]{}\) \(\newcommand
+            {\setcounter }[2]{}\) \(\newcommand {\addtocounter }[2]{}\)
+            \(\newcommand {\arabic }[1]{}\) \(\newcommand {\number }[1]{}\)
+            \(\newcommand {\noalign }[1]{\text {#1}\notag \\}\) \(\newcommand
+            {\cline }[1]{}\) \(\newcommand {\directlua }[1]{\text
+            {(directlua)}}\) \(\newcommand {\luatexdirectlua }[1]{\text
+            {(directlua)}}\) \(\newcommand {\protect }{}\) \(\def
+            \LWRabsorbnumber #1 {}\) \(\def \LWRabsorbquotenumber "#1 {}\)
+            \(\newcommand {\LWRabsorboption }[1][]{}\) \(\newcommand
+            {\LWRabsorbtwooptions }[1][]{\LWRabsorboption }\) \(\def \mathchar
+            {\ifnextchar "\LWRabsorbquotenumber \LWRabsorbnumber }\) \(\def
+            \mathcode #1={\mathchar }\) \(\let \delcode \mathcode \) \(\let
+            \delimiter \mathchar \) \(\def \oe {\unicode {x0153}}\) \(\def \OE
+            {\unicode {x0152}}\) \(\def \ae {\unicode {x00E6}}\) \(\def \AE
+            {\unicode {x00C6}}\) \(\def \aa {\unicode {x00E5}}\) \(\def \AA
+            {\unicode {x00C5}}\) \(\def \o {\unicode {x00F8}}\) \(\def \O
+            {\unicode {x00D8}}\) \(\def \l {\unicode {x0142}}\) \(\def \L
+            {\unicode {x0141}}\) \(\def \ss {\unicode {x00DF}}\) \(\def \SS
+            {\unicode {x1E9E}}\) \(\def \dag {\unicode {x2020}}\) \(\def \ddag
+            {\unicode {x2021}}\) \(\def \P {\unicode {x00B6}}\) \(\def
+            \copyright {\unicode {x00A9}}\) \(\def \pounds {\unicode {x00A3}}\)
+            \(\let \LWRref \ref \) \(\renewcommand {\ref }{\ifstar \LWRref
+            \LWRref }\) \( \newcommand {\multicolumn }[3]{#3}\) \(\require
+            {textcomp}\) \( \newcommand {\meta }[1]{\langle \textit {#1}\rangle
+            } \) \(\newcommand {\intertext }[1]{\text {#1}\notag \\}\) \(\let
+            \Hat \hat \) \(\let \Check \check \) \(\let \Tilde \tilde \) \(\let
+            \Acute \acute \) \(\let \Grave \grave \) \(\let \Dot \dot \) \(\let
+            \Ddot \ddot \) \(\let \Breve \breve \) \(\let \Bar \bar \) \(\let
+            \Vec \vec \)
+          </div>
+
+          <p></p>
+          <h4 id="autosec-5788">
+            <a id="section-library-math"></a
+            ><span class="sectionnumber">58&emsp;</span>Math Library
+          </h4>
+          <a id="pgfmanual-autopage-5788"></a>
+          <a id="pgfmanual-autofile-63"></a>
+
+          <div class="manualentry">
+            <div class="entryheadline">
+              <p>
+                <a id="pgf.math"></a>
+                <span class="hl-def"
+                  ><b><span class="tikzname">TikZ</span> Library</b>
+                  <kbd
+                    ><span class="textcolor" style="color: #bf0000"
+                      >math</span
+                    ></kbd
+                  ></span
+                >
+                <a class="anchor-link" href="#pgf.math">&para;</a>
+              </p>
+            </div>
+            <p>
+              <kbd
+                >\usetikzlibrary{<span class="textcolor" style="color: #bf0000"
+                  >math</span
+                >} %
+                <span class="latexlogofont"
+                  ><span class="latexlogo"
+                    >L<span class="latexlogosup">a</span>T<span
+                      class="latexlogosub"
+                      >e</span
+                    >X</span
+                  ></span
+                >
+                and plain
+                <span class="latexlogofont"
+                  ><span class="latexlogo"
+                    >T<span class="latexlogosub">e</span>X</span
+                  ></span
+                ></kbd
+              ><br />
+              <kbd
+                >\usetikzlibrary[<span class="textcolor" style="color: #bf0000"
+                  >math</span
+                >] % Con<span class="latexlogofont"
+                  ><span class="latexlogo"
+                    >T<span class="latexlogosub">e</span>X</span
+                  ></span
+                >t</kbd
+              ><br />
+              <br />
+              This library defines a simple mathematical language to define
+              simple functions and perform sequences of basic mathematical
+              operations.
+            </p>
+          </div>
+          <h5 id="autosec-5790">
+            <span class="sectionnumber" id="sec-58.1">58.1&emsp;</span
+            >Overview<a class="anchor-link" href="#sec-58.1">&para;</a>
+          </h5>
+          <a id="pgfmanual-autopage-5790"></a>
+
+          <p>
+            <span class="textsc">pgf</span> and
+            <span class="tikzname">TikZ</span> both use the
+            <span class="textsc">pgf</span> mathematical engine which provides
+            many commands for parsing expressions. Unfortunately the
+            <span class="textsc">pgf</span> math engine is somewhat cumbersome
+            for long sequences of mathematical operations, particularly when
+            assigning values to multiple variables. The
+            <span class="tikzname">TikZ</span>
+            <span class="texttt">calc</span> library provides some additional
+            &ldquo;convenience&rdquo; operations for doing calculations
+            (particularly with coordinates), but this can only be used inside
+            <span class="tikzname">TikZ</span> path commands.
+          </p>
+
+          <p>
+            This <span class="texttt">math</span> library provides a means to
+            perform sequences of mathematical operations in a more &lsquo;user
+            friendly&rsquo; manner than the <span class="textsc">pgf</span> math
+            engine. In addition, the coordinate calculations of the
+            <span class="texttt">calc</span> library can be accessed (provided
+            it is loaded). However as the
+            <span class="texttt">math</span> library uses the
+            <span class="textsc">pgf</span> math engine &ndash; which uses pure
+            <span class="latexlogofont"
+              ><span class="latexlogo"
+                >T<span class="latexlogosub">e</span>X</span
+              ></span
+            >
+            to perform all its calculations &ndash; it is subject to the same
+            speed and accuracy limitations. It is worth bearing this in mind,
+            before trying to implement algorithms requiring intensive and highly
+            accurate computation. You can, of course use the
+            <span class="texttt">fp</span> or the
+            <span class="texttt">fpu</span> libraries to increase the accuracy
+            (but not necessarily the speed) of computations.
+          </p>
+
+          <p>
+            For most purposes, the features provided by this library are
+            accessed using the following command:
+          </p>
+
+          <div class="manualentry">
+            <div class="entryheadline">
+              <p>
+                <a id="pgf.back/tikzmath"></a>
+                <span class="hl-def"
+                  ><span class="textcolor" style="color: #bf0000"
+                    ><kbd>\tikzmath</kbd></span
+                  ><kbd>{</kbd><span class="angle">&langle;</span
+                  ><i>statements</i><span class="angle">&rangle;</span
+                  ><kbd>}</kbd></span
+                >
+                <a class="anchor-link" href="#pgf.back/tikzmath">&para;</a>
+              </p>
+            </div>
+            <p>
+              This command process a series of
+              <span class="angle">&langle;</span><i>statements</i
+              ><span class="angle">&rangle;</span> which can represent
+              assignments, function definitions, conditional evaluation, and
+              iterations. It provides, in effect, a miniature mathematical
+              language to perform basic mathematical operations. Perhaps the
+              most important thing to remember is that
+              <em>every statement should end with a semi-colon</em>. This is
+              likely to be the most common reason why the
+              <span class="texttt">\tikzmath</span> command fails.
+            </p>
+
+            <figure class="example">
+              <div class="example-image">
+                <p>
+                  0, 1, 1, 2, 3, 5, 8, 13, 21, 34, 55, 89, 144, 233, 377, 610,
+                  987, 1597, 2584, 4181, 6765,
+                </p>
+              </div>
+
+              <div class="example-code">
+                <button class="clipboardButton" type="button">copy</button>
+                <code>
+                  <span class="c- preamble">\usetikzlibrary {math} </span><br />
+                  <span class="textcolor" style="color: #0000b2"
+                    ><a href="library-math#pgf.back/tikzmath"
+                      >\tikzmath</a
+                    ></span
+                  >{<br />
+                  &numsp;&numsp;<span class="example-code-comment"
+                    >% Adapted from
+                    http://www.cs.northwestern.edu/academics/courses/110/html/fib_rec.html</span
+                  ><br />
+                  &numsp;&numsp;<span class="textcolor" style="color: #000000"
+                    ><a href="dv-formats#pgf.function">function</a></span
+                  >
+                  <span class="textcolor" style="color: #000000">fibonacci</span
+                  ><span class="textcolor" style="color: #800080">(\n)</span
+                  >&numsp;{<br />
+                  &numsp;&numsp;&numsp;&numsp;<span
+                    class="textcolor"
+                    style="color: #000000"
+                    ><a href="library-calender#pgf.if">if</a></span
+                  >
+                  <span class="textcolor" style="color: #0000b2"
+                    ><a href="tikz-paths#pgf.back/n">\n</a></span
+                  >&numsp;<span class="textcolor" style="color: #000000"
+                    >==</span
+                  >
+                  <span class="textcolor" style="color: #000000">0</span>
+                  <span class="textcolor" style="color: #000000">then</span>
+                  {<br />
+                  &numsp;&numsp;&numsp;&numsp;&numsp;&numsp;<span
+                    class="textcolor"
+                    style="color: #000000"
+                    >return</span
+                  >
+                  <span class="textcolor" style="color: #000000">0</span>;<br />
+                  &numsp;&numsp;&numsp;&numsp;}&numsp;<span
+                    class="textcolor"
+                    style="color: #000000"
+                    >else</span
+                  >
+                  {<br />
+                  &numsp;&numsp;&numsp;&numsp;&numsp;&numsp;&numsp;<span
+                    class="textcolor"
+                    style="color: #000000"
+                    >return</span
+                  >
+                  <span class="textcolor" style="color: #000000"
+                    >fibonacci2</span
+                  ><span class="textcolor" style="color: #800080"
+                    >(\n, 0, 1)</span
+                  >;<br />
+                  &numsp;&numsp;&numsp;&numsp;&numsp;};<br />
+                  &numsp;&numsp;};<br />
+                  &numsp;&numsp;<span class="textcolor" style="color: #000000"
+                    ><a href="dv-formats#pgf.function">function</a></span
+                  >
+                  <span class="textcolor" style="color: #000000"
+                    >fibonacci2</span
+                  ><span class="textcolor" style="color: #800080"
+                    >(\n, \p, \q)</span
+                  >&numsp;{<br />
+                  &numsp;&numsp;&numsp;&numsp;<span
+                    class="textcolor"
+                    style="color: #000000"
+                    ><a href="library-calender#pgf.if">if</a></span
+                  >
+                  <span class="textcolor" style="color: #0000b2"
+                    ><a href="tikz-paths#pgf.back/n">\n</a></span
+                  >&numsp;<span class="textcolor" style="color: #000000"
+                    >==</span
+                  >
+                  <span class="textcolor" style="color: #000000">1</span>
+                  <span class="textcolor" style="color: #000000">then</span>
+                  {<br />
+                  &numsp;&numsp;&numsp;&numsp;&numsp;&numsp;<span
+                    class="textcolor"
+                    style="color: #000000"
+                    >return</span
+                  >
+                  <span class="textcolor" style="color: #0000b2">\q</span
+                  >;<br />
+                  &numsp;&numsp;&numsp;&numsp;}&numsp;<span
+                    class="textcolor"
+                    style="color: #000000"
+                    >else</span
+                  >
+                  {<br />
+                  &numsp;&numsp;&numsp;&numsp;&numsp;&numsp;<span
+                    class="textcolor"
+                    style="color: #000000"
+                    >return</span
+                  >
+                  <span class="textcolor" style="color: #000000"
+                    >fibonacci2</span
+                  ><span class="textcolor" style="color: #800080"
+                    >(\n-1, \q, \p+\q)</span
+                  >;<br />
+                  &numsp;&numsp;&numsp;&numsp;};<br />
+                  &numsp;&numsp;};<br />
+                  &numsp;&numsp;<span class="textcolor" style="color: #000000"
+                    >int</span
+                  >
+                  <span class="textcolor" style="color: #0000b2">\f</span
+                  >,&numsp;<span class="textcolor" style="color: #0000b2"
+                    >\i</span
+                  >;<br />
+                  &numsp;&numsp;<span class="textcolor" style="color: #000000"
+                    >for</span
+                  >
+                  <span class="textcolor" style="color: #0000b2">\i</span
+                  >&numsp;<span class="textcolor" style="color: #000000"
+                    ><a href="library-edges#pgf.in">in</a></span
+                  >
+                  {<span class="textcolor" style="color: #000000">0</span>,<span
+                    class="textcolor"
+                    style="color: #000000"
+                    >1</span
+                  >,...,<span class="textcolor" style="color: #000000">20</span
+                  >}&numsp;{<br />
+                  &numsp;&numsp;&numsp;&numsp;<span
+                    class="textcolor"
+                    style="color: #0000b2"
+                    >\f</span
+                  >&numsp;<span class="textcolor" style="color: #000000"
+                    >=</span
+                  >
+                  <span class="textcolor" style="color: #000000">fibonacci</span
+                  ><span class="textcolor" style="color: #800080">(\i)</span
+                  >;<br />
+                  &numsp;&numsp;&numsp;&numsp;<span
+                    class="textcolor"
+                    style="color: #000000"
+                    >print</span
+                  >
+                  {<span class="textcolor" style="color: #0000b2">\f</span
+                  >,&numsp;};<br />
+                  &numsp;&numsp;};<br />
+                  }<br />
+                </code>
+              </div>
+            </figure>
+          </div>
+
+          <p>In addition to this command the following key is provided:</p>
+
+          <div class="manualentry">
+            <div class="entryheadline">
+              <p>
+                <a id="pgf./tikz/evaluate"></a><a id="pgf.evaluate"></a>
+                <span class="hl-def"
+                  ><kbd
+                    ><span class="keyname"
+                      ><span class="textcolor" style="color: #bf0000"
+                        >/tikz/evaluate</span
+                      ></span
+                    >=</kbd
+                  ><span class="angle">&langle;</span><i>statements</i
+                  ><span class="angle">&rangle;</span></span
+                ><span class="hl-default">(no default)</span>
+                <a class="anchor-link" href="#pgf./tikz/evaluate">&para;</a>
+              </p>
+            </div>
+            <p>
+              This key simply executes <span class="texttt">\tikzmath{</span
+              ><span class="angle">&langle;</span><i>statements</i
+              ><span class="angle">&rangle;</span><span class="texttt">}</span>.
+            </p>
+
+            <figure class="example">
+              <div class="example-image">
+                <p>
+                  <span class="lateximagesource" id="lateximage-pgfmanual-2383"
+                    ><!--
+-->
+                    <img
+                      alt="(-tikz-&nbsp;diagram)"
+                      class="lateximage"
+                      height="106.634"
+                      loading="lazy"
+                      src="pgfmanual-images/image-2383.png"
+                      style
+                      width="106.629"
+                  /></span>
+                </p>
+              </div>
+
+              <div class="example-code">
+                <button class="clipboardButton" type="button">copy</button>
+                <code>
+                  <span class="c- preamble">\usetikzlibrary {math} </span><br />
+                  <span class="textcolor" style="color: #0000b2"
+                    ><a href="tikz-scopes#pgf.back/tikz">\tikz</a></span
+                  >[<span class="textcolor" style="color: #008000"
+                    ><a href="tikz-coordinates#pgf.x">x</a></span
+                  >=<span class="textcolor" style="color: #008000">0.25cm</span
+                  >,<span class="textcolor" style="color: #008000"
+                    ><a href="tikz-coordinates#pgf.y">y</a></span
+                  >=<span class="textcolor" style="color: #008000">0.25cm</span
+                  >,<br />
+                  &numsp;&numsp;<span class="textcolor" style="color: #008000"
+                    ><a href="library-math#pgf.evaluate">evaluate</a></span
+                  >=<span class="textcolor" style="color: #008000"
+                    >{<br />
+                    &numsp;&numsp;&numsp;&numsp;int
+                    <span class="textcolor" style="color: #0000b2">\i</span
+                    >,&numsp;<span class="textcolor" style="color: #0000b2"
+                      >\j</span
+                    >;<br />
+                    &numsp;&numsp;&numsp;&numsp;for
+                    <span class="textcolor" style="color: #0000b2">\i</span
+                    >&numsp;<a href="library-edges#pgf.in">in</a>
+                    {0,...,10}&numsp;{<br />
+                    &numsp;&numsp;&numsp;&numsp;&numsp;&numsp;for
+                    <span class="textcolor" style="color: #0000b2">\j</span
+                    >&numsp;<a href="library-edges#pgf.in">in</a>
+                    {0,...,10}&numsp;{<br />
+                    &numsp;&numsp;&numsp;&numsp;&numsp;&numsp;&numsp;&numsp;<span
+                      class="textcolor"
+                      style="color: #0000b2"
+                      >\a</span
+                    >{<span class="textcolor" style="color: #0000b2">\i</span
+                    >,<span class="textcolor" style="color: #0000b2">\j</span
+                    >}&numsp;=
+                    <span class="textcolor" style="color: #800080">(\i+\j)</span
+                    >*5;<br />
+                    &numsp;&numsp;&numsp;&numsp;&numsp;&numsp;};<br />
+                    &numsp;&numsp;&numsp;&numsp;};<br />
+                    &numsp;&numsp;}<br /> </span
+                  >]<br />
+                  <span class="textcolor" style="color: #0000b2"
+                    ><a href="pgffor#pgf.back/foreach">\foreach</a></span
+                  >&numsp;<span class="textcolor" style="color: #0000b2"
+                    >\i</span
+                  >&numsp;<span class="textcolor" style="color: #000000"
+                    ><a href="library-edges#pgf.in">in</a></span
+                  >
+                  {<span class="textcolor" style="color: #000000">0</span
+                  >,...,<span class="textcolor" style="color: #000000">10</span
+                  >}<br />
+                  &numsp;&numsp;<span class="textcolor" style="color: #0000b2"
+                    ><a href="pgffor#pgf.back/foreach">\foreach</a></span
+                  >&numsp;<span class="textcolor" style="color: #0000b2"
+                    >\j</span
+                  >&numsp;<span class="textcolor" style="color: #000000"
+                    ><a href="library-edges#pgf.in">in</a></span
+                  >
+                  {<span class="textcolor" style="color: #000000">0</span
+                  >,...,<span class="textcolor" style="color: #000000">10</span
+                  >}<br />
+                  &numsp;&numsp;&numsp;&numsp;<span
+                    class="textcolor"
+                    style="color: #0000b2"
+                    ><a href="tikz-actions#pgf.back/fill">\fill</a></span
+                  >&numsp;[<span class="textcolor" style="color: #008000"
+                    >red!</span
+                  ><span class="textcolor" style="color: #0000b2">\a</span
+                  >{<span class="textcolor" style="color: #0000b2">\i</span
+                  >,<span class="textcolor" style="color: #0000b2">\j</span
+                  >}<span class="textcolor" style="color: #008000">!yellow</span
+                  >]&numsp;&numsp;<span class="textcolor" style="color: #800080"
+                    >(\i,\j)</span
+                  >&numsp;<span class="textcolor" style="color: #000000"
+                    ><a href="tikz-paths#pgf.rectangle">rectangle</a></span
+                  >
+                  <span class="textcolor" style="color: #000000">++</span
+                  ><span class="textcolor" style="color: #800080">(1, 1)</span
+                  >;<br />
+                </code>
+              </div>
+            </figure>
+          </div>
+
+          <p>
+            The following sections describe the miniature language that this
+            library provides and can be used in the
+            <span class="texttt">\tikzmath</span> command and the
+            <span class="texttt">evaluate</span> key. The language consists only
+            of simple keywords and expressions but the mini-parser allows you to
+            format code in a reasonably versatile way (much like the
+            <span class="texttt">tikz</span> parser) except that
+            <em>all the keywords must be followed by at least one space</em>.
+            This is the second most important thing to remember (after
+            remembering to insert semi-colons at the end of every statement).
+          </p>
+          <h5 id="autosec-5793">
+            <span class="sectionnumber" id="sec-58.2">58.2&emsp;</span
+            >Assignment<a class="anchor-link" href="#sec-58.2">&para;</a>
+          </h5>
+          <a id="pgfmanual-autopage-5793"></a>
+
+          <p>
+            In the simplest case, you will want to evaluate an expression and
+            assign it to a macro, or a
+            <span class="latexlogofont"
+              ><span class="latexlogo"
+                >T<span class="latexlogosub">e</span>X</span
+              ></span
+            >
+            count or dimension register. In this case, use of the
+            <span class="texttt">math</span> library is straightforward:
+          </p>
+
+          <figure class="example">
+            <div class="example-image">
+              <p>26.0, 2.0, 11, 225.0pt</p>
+            </div>
+
+            <div class="example-code">
+              <button class="clipboardButton" type="button">copy</button>
+
+              <code>
+                <span class="c- preamble">\usetikzlibrary {math} </span><br />
+                <span class="textcolor" style="color: #0000b2">\newcount</span
+                ><span class="textcolor" style="color: #0000b2">\mycount</span
+                ><br />
+                <span class="textcolor" style="color: #0000b2">\newdimen</span
+                ><span class="textcolor" style="color: #0000b2">\mydimen</span
+                ><br />
+                <span class="textcolor" style="color: #0000b2"
+                  ><a href="library-math#pgf.back/tikzmath">\tikzmath</a></span
+                >{<br />
+                &numsp;&numsp;<span class="textcolor" style="color: #0000b2"
+                  >\a</span
+                >&numsp;<span class="textcolor" style="color: #000000">=</span>
+                <span class="textcolor" style="color: #000000">4*5+6</span
+                >;<br />
+                &numsp;&numsp;<span class="textcolor" style="color: #0000b2"
+                  >\b</span
+                >&numsp;<span class="textcolor" style="color: #000000">=</span>
+                <span class="textcolor" style="color: #000000"
+                  ><a href="tikz-paths#pgf.sin">sin</a></span
+                ><span class="textcolor" style="color: #800080">(30)</span
+                ><span class="textcolor" style="color: #000000">*4</span>;<br />
+                &numsp;&numsp;<span class="textcolor" style="color: #0000b2"
+                  >\mycount</span
+                >&numsp;<span class="textcolor" style="color: #000000">=</span>
+                <span class="textcolor" style="color: #000000">log10</span
+                ><span class="textcolor" style="color: #800080">(2048)</span
+                >&numsp;<span class="textcolor" style="color: #000000">/</span>
+                <span class="textcolor" style="color: #000000">log10</span
+                ><span class="textcolor" style="color: #800080">(2)</span
+                >;<br />
+                &numsp;&numsp;<span class="textcolor" style="color: #0000b2"
+                  >\mydimen</span
+                >&numsp;<span class="textcolor" style="color: #000000">=</span>
+                <span class="textcolor" style="color: #000000">15^2</span
+                >;<br />
+                }<br />
+                <span class="textcolor" style="color: #0000b2">\a</span
+                >,&numsp;<span class="textcolor" style="color: #0000b2">\b</span
+                >,&numsp;<span class="textcolor" style="color: #0000b2"
+                  >\the</span
+                ><span class="textcolor" style="color: #0000b2">\mycount</span
+                >,&numsp;<span class="textcolor" style="color: #0000b2"
+                  >\the</span
+                ><span class="textcolor" style="color: #0000b2">\mydimen</span
+                ><br />
+              </code>
+            </div>
+          </figure>
+
+          <p>
+            In addition,
+            <span class="latexlogofont"
+              ><span class="latexlogo"
+                >T<span class="latexlogosub">e</span>X</span
+              ></span
+            >-macros (<em>not</em>
+            <span class="latexlogofont"
+              ><span class="latexlogo"
+                >T<span class="latexlogosub">e</span>X</span
+              ></span
+            >
+            registers) can be suffixed with an index, similar to indices in
+            mathematical notation, for example, \(x_1\), \(x_2\), \(x_3\):
+          </p>
+
+          <figure class="example">
+            <div class="example-image">
+              <p>7.0, 70.0, 700.0</p>
+            </div>
+
+            <div class="example-code">
+              <button class="clipboardButton" type="button">copy</button>
+
+              <code>
+                <span class="c- preamble">\usetikzlibrary {math} </span><br />
+                <span class="textcolor" style="color: #0000b2"
+                  ><a href="library-math#pgf.back/tikzmath">\tikzmath</a></span
+                >{<br />
+                &numsp;&numsp;<span class="textcolor" style="color: #0000b2"
+                  ><a href="tikz-paths#pgf.back/x">\x</a></span
+                ><span class="textcolor" style="color: #000000">1</span>
+                <span class="textcolor" style="color: #000000">=</span>
+                <span class="textcolor" style="color: #000000">3+4</span
+                >;&numsp;<span class="textcolor" style="color: #0000b2"
+                  ><a href="tikz-paths#pgf.back/x">\x</a></span
+                ><span class="textcolor" style="color: #000000">2</span>
+                <span class="textcolor" style="color: #000000">=</span>
+                <span class="textcolor" style="color: #000000">30+40</span
+                >;&numsp;<span class="textcolor" style="color: #0000b2"
+                  ><a href="tikz-paths#pgf.back/x">\x</a></span
+                ><span class="textcolor" style="color: #000000">3</span>
+                <span class="textcolor" style="color: #000000">=</span>
+                <span class="textcolor" style="color: #000000">300+400</span
+                >;<br />
+                }<br />
+                <span class="textcolor" style="color: #0000b2"
+                  ><a href="tikz-paths#pgf.back/x">\x</a></span
+                ><span class="textcolor" style="color: #000000">1</span
+                >,&numsp;<span class="textcolor" style="color: #0000b2"
+                  ><a href="tikz-paths#pgf.back/x">\x</a></span
+                ><span class="textcolor" style="color: #000000">2</span
+                >,&numsp;<span class="textcolor" style="color: #0000b2"
+                  ><a href="tikz-paths#pgf.back/x">\x</a></span
+                ><span class="textcolor" style="color: #000000">3</span><br />
+              </code>
+            </div>
+          </figure>
+
+          <p>
+            The index does not have to be a number. By using braces
+            <span class="texttt">{}</span>, more sophisticated indices can be
+            created:
+          </p>
+
+          <figure class="example">
+            <div class="example-image">
+              <p>
+                The speed of sound in air is 340 m/s. The speed of sound in
+                steel is 6100 m/s.
+              </p>
+            </div>
+
+            <div class="example-code">
+              <button class="clipboardButton" type="button">copy</button>
+
+              <code>
+                <span class="c- preamble">\usetikzlibrary {math} </span><br />
+                <span class="textcolor" style="color: #0000b2"
+                  ><a href="library-math#pgf.back/tikzmath">\tikzmath</a></span
+                >{<br />
+                &numsp;&numsp;<span class="textcolor" style="color: #0000b2"
+                  >\c</span
+                >{<span class="textcolor" style="color: #000000">air</span
+                >}&numsp;<span class="textcolor" style="color: #000000">=</span>
+                <span class="textcolor" style="color: #000000">340</span
+                >;&numsp;<span class="textcolor" style="color: #0000b2">\c</span
+                >{<span class="textcolor" style="color: #000000">water</span
+                >}&numsp;<span class="textcolor" style="color: #000000">=</span>
+                <span class="textcolor" style="color: #000000">1435</span
+                >;&numsp;<span class="textcolor" style="color: #0000b2">\c</span
+                >{<span class="textcolor" style="color: #000000">steel</span
+                >}&numsp;<span class="textcolor" style="color: #000000">=</span>
+                <span class="textcolor" style="color: #000000">6100</span
+                >;<br />
+                }<br />
+                <span class="textcolor" style="color: #0000b2"
+                  ><a href="pgffor#pgf.back/foreach">\foreach</a></span
+                >&numsp;<span class="textcolor" style="color: #0000b2"
+                  >\medium</span
+                >&numsp;<span class="textcolor" style="color: #000000"
+                  ><a href="library-edges#pgf.in">in</a></span
+                >
+                {<span class="textcolor" style="color: #000000">air</span>,<span
+                  class="textcolor"
+                  style="color: #000000"
+                  >steel</span
+                >}{<span class="textcolor" style="color: #000000">The</span>
+                <span class="textcolor" style="color: #000000">speed</span>
+                <span class="textcolor" style="color: #000000"
+                  ><a href="tikz-coordinates#pgf.of">of</a></span
+                >
+                <span class="textcolor" style="color: #000000">sound</span>
+                <span class="textcolor" style="color: #000000"
+                  ><a href="library-edges#pgf.in">in</a></span
+                >
+                <span class="textcolor" style="color: #0000b2">\medium</span
+                ><span class="textcolor" style="color: #0000b2">\</span
+                >&numsp;<span class="textcolor" style="color: #000000">is</span>
+                <span class="textcolor" style="color: #0000b2">\c</span>{<span
+                  class="textcolor"
+                  style="color: #0000b2"
+                  >\medium</span
+                >}&numsp;<span class="textcolor" style="color: #000000"
+                  >m/s</span
+                >.&numsp;}<br />
+              </code>
+            </div>
+          </figure>
+
+          <p>
+            You should not, however, try to mix indexed and non-indexed
+            variables. Once an assignment is made using an index, the
+            <span class="texttt">math</span> library expects all instances of
+            the variable on the right hand side of an assignment to be followed
+            by an index. This effect is reversed if you subsequently make an
+            assignment to the variable without an index: the
+            <span class="texttt">math</span> library (or to be precise the
+            <span class="textsc">pgf</span>
+            math-engine) will then ignore any index following the variable on
+            the right hand side of an assignment.
+          </p>
+
+          <p>
+            In some cases, you may wish to assign a value or expression to a
+            variable without evaluating it with the
+            <span class="textsc">pgf</span> math-engine. In this case, you can
+            use the following keyword:
+          </p>
+
+          <div class="manualentry">
+            <div class="entryheadline">
+              <p>
+                <span class="hl-def"
+                  ><kbd
+                    ><span class="textcolor" style="color: #ff0000"
+                      >let</span
+                    ></kbd
+                  >
+                  <span class="angle">&langle;</span><i>variable</i
+                  ><span class="angle">&rangle;</span> <kbd>=</kbd>
+                  <span class="angle">&langle;</span><i>expression</i
+                  ><span class="angle">&rangle;</span><kbd>;</kbd></span
+                >
+              </p>
+            </div>
+            <p>
+              This keyword assigns <span class="angle">&langle;</span
+              ><i>expression</i><span class="angle">&rangle;</span> to
+              <span class="angle">&langle;</span><i>variable</i
+              ><span class="angle">&rangle;</span> without evaluation. The
+              <span class="angle">&langle;</span><i>expression</i
+              ><span class="angle">&rangle;</span> is however fully expanded
+              using <span class="texttt">\edef</span>. Any spaces preceding
+              <span class="angle">&langle;</span><i>expression</i
+              ><span class="angle">&rangle;</span> are removed, but any trailing
+              spaces (before the semi-colon) are included.
+            </p>
+
+            <figure class="example">
+              <div class="example-image">
+                <p>(5*4)+1, &ldquo;blue&rdquo;</p>
+              </div>
+
+              <div class="example-code">
+                <button class="clipboardButton" type="button">copy</button>
+                <code>
+                  <span class="c- preamble">\usetikzlibrary {math} </span><br />
+                  <span class="textcolor" style="color: #0000b2"
+                    ><a href="library-math#pgf.back/tikzmath"
+                      >\tikzmath</a
+                    ></span
+                  >{<br />
+                  &numsp;&numsp;<span class="textcolor" style="color: #000000"
+                    ><a href="tikz-paths#pgf.let">let</a></span
+                  >
+                  <span class="textcolor" style="color: #0000b2"
+                    ><a href="tikz-paths#pgf.back/x">\x</a></span
+                  >&numsp;<span class="textcolor" style="color: #000000"
+                    >=</span
+                  >
+                  <span class="textcolor" style="color: #800080">(5*4)</span
+                  ><span class="textcolor" style="color: #000000">+1</span
+                  >;<br />
+                  &numsp;&numsp;<span class="textcolor" style="color: #000000"
+                    ><a href="tikz-paths#pgf.let">let</a></span
+                  >
+                  <span class="textcolor" style="color: #0000b2">\c</span
+                  ><span class="textcolor" style="color: #000000">1</span>
+                  <span class="textcolor" style="color: #000000">=</span>
+                  <span class="textcolor" style="color: #000000">blue</span
+                  >;<br />
+                  }<br />
+                  <span class="textcolor" style="color: #0000b2"
+                    ><a href="tikz-paths#pgf.back/x">\x</a></span
+                  >,&numsp;<span class="textcolor" style="color: #000000"
+                    >``</span
+                  ><span class="textcolor" style="color: #0000b2">\c</span
+                  ><span class="textcolor" style="color: #000000">1''</span
+                  ><br />
+                </code>
+              </div>
+            </figure>
+          </div>
+          <h5 id="autosec-5794">
+            <span class="sectionnumber" id="sec-58.3">58.3&emsp;</span>Integers,
+            &ldquo;Real&rdquo; Numbers, and Coordinates<a
+              class="anchor-link"
+              href="#sec-58.3"
+              >&para;</a
+            >
+          </h5>
+          <a id="pgfmanual-autopage-5794"></a>
+
+          <p>
+            By default, assignments are made by evaluating expressions using the
+            <span class="textsc">pgf</span> math-engine and results are usually
+            returned as number with a decimal point (unless you are assigning to
+            a count register or use the
+            <span class="texttt">int</span> function). As this is not always
+            desirable, the <span class="texttt">math</span> library allows
+            variables &ndash; which <em>must</em> be
+            <span class="latexlogofont"
+              ><span class="latexlogo"
+                >T<span class="latexlogosub">e</span>X</span
+              ></span
+            >
+            macros &ndash; to be &lsquo;declared&rsquo; as being a particular
+            &lsquo;type&rsquo;. The library recognizes three types: integers
+            (numbers without a decimal point), real numbers (numbers with a
+            decimal point<sup>12</sup>), and coordinates.
+          </p>
+
+          <p>
+            To declare a variable as being one of the three types, you can use
+            the keywords shown below. It is important to remember that by
+            telling the <span class="texttt">math</span> library you want it to
+            do a particular assignment for a variable, it will also do the same
+            assignment when the variable is indexed.
+          </p>
+
+          <figure class="example">
+            <div class="example-image">
+              <p>7, 70, 700</p>
+            </div>
+
+            <div class="example-code">
+              <button class="clipboardButton" type="button">copy</button>
+
+              <code>
+                <span class="c- preamble">\usetikzlibrary {math} </span><br />
+                <span class="textcolor" style="color: #0000b2"
+                  ><a href="library-math#pgf.back/tikzmath">\tikzmath</a></span
+                >{<br />
+                &numsp;&numsp;<span class="textcolor" style="color: #000000"
+                  >integer</span
+                >
+                <span class="textcolor" style="color: #0000b2"
+                  ><a href="tikz-paths#pgf.back/x">\x</a></span
+                >;<br />
+                &numsp;&numsp;<span class="textcolor" style="color: #0000b2"
+                  ><a href="tikz-paths#pgf.back/x">\x</a></span
+                ><span class="textcolor" style="color: #000000">1</span>
+                <span class="textcolor" style="color: #000000">=</span>
+                <span class="textcolor" style="color: #000000">3+4</span
+                >;&numsp;<span class="textcolor" style="color: #0000b2"
+                  ><a href="tikz-paths#pgf.back/x">\x</a></span
+                ><span class="textcolor" style="color: #000000">2</span>
+                <span class="textcolor" style="color: #000000">=</span>
+                <span class="textcolor" style="color: #000000">30+40</span
+                >;&numsp;<span class="textcolor" style="color: #0000b2"
+                  ><a href="tikz-paths#pgf.back/x">\x</a></span
+                ><span class="textcolor" style="color: #000000">3</span>
+                <span class="textcolor" style="color: #000000">=</span>
+                <span class="textcolor" style="color: #000000">300+400</span
+                >;<br />
+                }<br />
+                <span class="textcolor" style="color: #0000b2"
+                  ><a href="tikz-paths#pgf.back/x">\x</a></span
+                ><span class="textcolor" style="color: #000000">1</span
+                >,&numsp;<span class="textcolor" style="color: #0000b2"
+                  ><a href="tikz-paths#pgf.back/x">\x</a></span
+                ><span class="textcolor" style="color: #000000">2</span
+                >,&numsp;<span class="textcolor" style="color: #0000b2"
+                  ><a href="tikz-paths#pgf.back/x">\x</a></span
+                ><span class="textcolor" style="color: #000000">3</span><br />
+              </code>
+            </div>
+          </figure>
+
+          <div class="manualentry">
+            <div class="entryheadline">
+              <p>
+                <span class="hl-def"
+                  ><kbd
+                    ><span class="textcolor" style="color: #ff0000"
+                      >integer</span
+                    ></kbd
+                  >
+                  <span class="angle">&langle;</span><i>variable</i
+                  ><span class="angle">&rangle;</span
+                  ><span class="textcolor" style="color: #008000"
+                    ><kbd>,</kbd> <span class="angle">&langle;</span
+                    ><i>additional variables</i
+                    ><span class="angle">&rangle;</span></span
+                  ><kbd>;</kbd></span
+                >
+              </p>
+            </div>
+            <p>
+              The <span class="texttt">integer</span> keyword indicates that
+              assignments to the <span class="angle">&langle;</span
+              ><i>variable</i><span class="angle">&rangle;</span> or the comma
+              separated list of <span class="angle">&langle;</span
+              ><i>additional variables</i
+              ><span class="angle">&rangle;</span> should be truncated (not
+              rounded) to integers. The variables should be ordinary macros
+              &ndash; <em>not</em>
+              <span class="latexlogofont"
+                ><span class="latexlogo"
+                  >T<span class="latexlogosub">e</span>X</span
+                ></span
+              >
+              registers. In addition the variables should <em>not</em> be
+              indexed.
+            </p>
+
+            <figure class="example">
+              <div class="example-image">
+                <p>
+                  <span class="lateximagesource" id="lateximage-pgfmanual-2384"
+                    ><!--
+x = 26, y = 2, z = 9
+   -->
+                    <img
+                      alt="(image)"
+                      class="lateximage"
+                      height="14.211"
+                      loading="lazy"
+                      src="pgfmanual-images/image-2384.png"
+                      style
+                      width="121.442"
+                  /></span>
+                </p>
+              </div>
+
+              <div class="example-code">
+                <button class="clipboardButton" type="button">copy</button>
+                <code>
+                  <span class="c- preamble">\usetikzlibrary {math} </span><br />
+                  <span class="textcolor" style="color: #0000b2"
+                    ><a href="library-math#pgf.back/tikzmath"
+                      >\tikzmath</a
+                    ></span
+                  >{<br />
+                  &numsp;&numsp;&numsp;<span
+                    class="textcolor"
+                    style="color: #000000"
+                    >integer</span
+                  >
+                  <span class="textcolor" style="color: #0000b2"
+                    ><a href="tikz-paths#pgf.back/x">\x</a></span
+                  >,&numsp;<span class="textcolor" style="color: #0000b2"
+                    ><a href="tikz-paths#pgf.back/y">\y</a></span
+                  >,&numsp;<span class="textcolor" style="color: #0000b2"
+                    >\z</span
+                  >;<br />
+                  &numsp;&numsp;&numsp;<span
+                    class="textcolor"
+                    style="color: #0000b2"
+                    ><a href="tikz-paths#pgf.back/x">\x</a></span
+                  >&numsp;<span class="textcolor" style="color: #000000"
+                    >=</span
+                  >
+                  <span class="textcolor" style="color: #000000">4*5+6</span
+                  >;<br />
+                  &numsp;&numsp;&numsp;<span
+                    class="textcolor"
+                    style="color: #0000b2"
+                    ><a href="tikz-paths#pgf.back/y">\y</a></span
+                  >&numsp;<span class="textcolor" style="color: #000000"
+                    >=</span
+                  >
+                  <span class="textcolor" style="color: #000000"
+                    ><a href="tikz-paths#pgf.sin">sin</a></span
+                  ><span class="textcolor" style="color: #800080">(30)</span
+                  ><span class="textcolor" style="color: #000000">*4</span
+                  >;<br />
+                  &numsp;&numsp;&numsp;<span
+                    class="textcolor"
+                    style="color: #0000b2"
+                    >\z</span
+                  >&numsp;<span class="textcolor" style="color: #000000"
+                    >=</span
+                  >
+                  <span class="textcolor" style="color: #000000">log10</span
+                  ><span class="textcolor" style="color: #800080">(512)</span
+                  >&numsp;<span class="textcolor" style="color: #000000"
+                    >/</span
+                  >
+                  <span class="textcolor" style="color: #000000">log10</span
+                  ><span class="textcolor" style="color: #800080">(2)</span
+                  >;<br />
+                  &numsp;&numsp;&numsp;<span
+                    class="textcolor"
+                    style="color: #000000"
+                    >print</span
+                  >
+                  {<span class="textcolor" style="color: #000000">$x=</span
+                  ><span class="textcolor" style="color: #0000b2"
+                    ><a href="tikz-paths#pgf.back/x">\x</a></span
+                  ><span class="textcolor" style="color: #000000">$</span
+                  >,&numsp;<span class="textcolor" style="color: #000000"
+                    >$y=</span
+                  ><span class="textcolor" style="color: #0000b2"
+                    ><a href="tikz-paths#pgf.back/y">\y</a></span
+                  ><span class="textcolor" style="color: #000000">$</span
+                  >,&numsp;<span class="textcolor" style="color: #000000"
+                    >$z=</span
+                  ><span class="textcolor" style="color: #0000b2">\z</span
+                  ><span class="textcolor" style="color: #000000">$</span
+                  >};<br />
+                  }<br />
+                </code>
+              </div>
+            </figure>
+          </div>
+
+          <div class="manualentry">
+            <div class="entryheadline">
+              <p>
+                <span class="hl-def"
+                  ><kbd
+                    ><span class="textcolor" style="color: #ff0000"
+                      >int</span
+                    ></kbd
+                  >
+                  <span class="angle">&langle;</span><i>variable</i
+                  ><span class="angle">&rangle;</span
+                  ><span class="textcolor" style="color: #008000"
+                    ><kbd>,</kbd> <span class="angle">&langle;</span
+                    ><i>additional variables</i
+                    ><span class="angle">&rangle;</span></span
+                  ><kbd>;</kbd></span
+                >
+              </p>
+            </div>
+            <p>
+              Short version of the <span class="texttt">integer</span> keyword.
+            </p>
+          </div>
+
+          <p>
+            Having declared a variable as an integer, the
+            <span class="texttt">math</span> library will continue to assign
+            only integers to that variable within the current
+            <span class="latexlogofont"
+              ><span class="latexlogo"
+                >T<span class="latexlogosub">e</span>X</span
+              ></span
+            >
+            scope. If you wish to assign non-integer (i.e., <em>real</em>)
+            numbers to the same variable, the following keyword can be used.
+          </p>
+
+          <div class="manualentry">
+            <div class="entryheadline">
+              <p>
+                <span class="hl-def"
+                  ><kbd
+                    ><span class="textcolor" style="color: #ff0000"
+                      >real</span
+                    ></kbd
+                  >
+                  <span class="angle">&langle;</span><i>variable</i
+                  ><span class="angle">&rangle;</span
+                  ><span class="textcolor" style="color: #008000"
+                    ><kbd>,</kbd> <span class="angle">&langle;</span
+                    ><i>additional variables</i
+                    ><span class="angle">&rangle;</span></span
+                  ><kbd>;</kbd></span
+                >
+              </p>
+            </div>
+            <p>
+              The <span class="texttt">real</span> keyword ensures that
+              assignments <span class="angle">&langle;</span><i>variable</i
+              ><span class="angle">&rangle;</span> (and
+              <span class="angle">&langle;</span><i>additional variables</i
+              ><span class="angle">&rangle;</span>) will not be truncated to
+              integers.
+            </p>
+          </div>
+
+          <p>
+            In order to take advantage of
+            <span class="texttt">math</span> library interface to the
+            <span class="texttt">calc</span> library you must indicate that a
+            variable is to be assigned coordinates, using the following keyword.
+          </p>
+
+          <div class="manualentry">
+            <div class="entryheadline">
+              <p>
+                <span class="hl-def"
+                  ><kbd
+                    ><span class="textcolor" style="color: #ff0000"
+                      >coordinate</span
+                    ></kbd
+                  >
+                  <span class="angle">&langle;</span><i>variable</i
+                  ><span class="angle">&rangle;</span
+                  ><span class="textcolor" style="color: #008000"
+                    ><kbd>,</kbd> <span class="angle">&langle;</span
+                    ><i>additional variables</i
+                    ><span class="angle">&rangle;</span></span
+                  ><kbd>;</kbd></span
+                >
+              </p>
+            </div>
+            <p>
+              This keyword enables <span class="tikzname">TikZ</span>-style
+              coordinates such as <span class="texttt">(2cm,3pt)</span> or
+              <span class="texttt">(my node.east)</span> to be parsed and
+              assigned to <span class="angle">&langle;</span><i>variable</i
+              ><span class="angle">&rangle;</span> in the form \(x,y\), which
+              can then be used in a <span class="texttt">tikzpicture</span>:
+            </p>
+
+            <figure class="example">
+              <div class="example-image">
+                <p>
+                  <span class="lateximagesource" id="lateximage-pgfmanual-2385"
+                    ><!--
+-->
+                    <img
+                      alt="(-tikz-&nbsp;diagram)"
+                      class="lateximage"
+                      height="12.459"
+                      loading="lazy"
+                      src="pgfmanual-images/image-2385.png"
+                      style
+                      width="12.459"
+                  /></span>
+                </p>
+              </div>
+
+              <div class="example-code">
+                <button class="clipboardButton" type="button">copy</button>
+                <code>
+                  <span class="c- preamble">\usetikzlibrary {math} </span><br />
+                  <span class="textcolor" style="color: #0000b2"
+                    ><a href="library-math#pgf.back/tikzmath"
+                      >\tikzmath</a
+                    ></span
+                  >{<br />
+                  &numsp;&numsp;&numsp;<span
+                    class="textcolor"
+                    style="color: #000000"
+                    ><a href="tikz-shapes#pgf.coordinate">coordinate</a></span
+                  >
+                  <span class="textcolor" style="color: #0000b2">\c</span
+                  >;<br />
+                  &numsp;&numsp;&numsp;<span
+                    class="textcolor"
+                    style="color: #0000b2"
+                    >\c</span
+                  >&numsp;<span class="textcolor" style="color: #000000"
+                    >=</span
+                  >
+                  <span class="textcolor" style="color: #800080">(45:10pt)</span
+                  >;<br />
+                  }<br />
+                  <span class="textcolor" style="color: #0000b2"
+                    ><a href="tikz-scopes#pgf.back/tikz">\tikz</a></span
+                  ><span class="textcolor" style="color: #0000b2"
+                    ><a href="tikz-actions#pgf.back/draw">\draw</a></span
+                  >&numsp;<span class="textcolor" style="color: #800080"
+                    >(0,0)</span
+                  >&numsp;<span class="textcolor" style="color: #000000"
+                    ><a href="tikz-paths#pgf.--">--</a></span
+                  >
+                  <span class="textcolor" style="color: #800080">(\c)</span
+                  >;<br />
+                </code>
+              </div>
+            </figure>
+            <p>
+              If the <span class="tikzname">TikZ</span>
+              <span class="texttt">calc</span> library is loaded, coordinate
+              calculations can be performed; the coordinate expression does not
+              have to be surrounded by
+              <span class="texttt">($</span>&hellip;<span class="texttt"
+                >$)</span
+              >.
+            </p>
+
+            <figure class="example">
+              <div class="example-image">
+                <p>
+                  <span class="lateximagesource" id="lateximage-pgfmanual-2386"
+                    ><!--
+-->
+                    <img
+                      alt="(-tikz-&nbsp;diagram)"
+                      class="lateximage"
+                      height="40.947"
+                      loading="lazy"
+                      src="pgfmanual-images/image-2386.png"
+                      style
+                      width="78.506"
+                  /></span>
+                </p>
+              </div>
+
+              <div class="example-code">
+                <button class="clipboardButton" type="button">copy</button>
+                <code>
+                  <span class="c- preamble">\usetikzlibrary {math} </span><br />
+                  <span class="textcolor" style="color: #0000b2"
+                    ><a href="library-math#pgf.back/tikzmath"
+                      >\tikzmath</a
+                    ></span
+                  >{<br />
+                  &numsp;&numsp;&numsp;<span
+                    class="textcolor"
+                    style="color: #000000"
+                    ><a href="tikz-shapes#pgf.coordinate">coordinate</a></span
+                  >
+                  <span class="textcolor" style="color: #0000b2">\c</span
+                  >,&numsp;<span class="textcolor" style="color: #0000b2"
+                    >\d</span
+                  >;<br />
+                  &numsp;&numsp;&numsp;<span
+                    class="textcolor"
+                    style="color: #0000b2"
+                    >\c</span
+                  >&numsp;<span class="textcolor" style="color: #000000"
+                    >=</span
+                  >
+                  <span class="textcolor" style="color: #800080">(-1,2)</span
+                  ><span class="textcolor" style="color: #000000">+</span
+                  ><span class="textcolor" style="color: #800080">(1,-1)</span
+                  >;<br />
+                  &numsp;&numsp;&numsp;<span
+                    class="textcolor"
+                    style="color: #0000b2"
+                    >\d</span
+                  >&numsp;<span class="textcolor" style="color: #000000"
+                    >=</span
+                  >
+                  <span class="textcolor" style="color: #800080">(4,1)</span
+                  ><span class="textcolor" style="color: #000000">-</span
+                  ><span class="textcolor" style="color: #800080">(2,-1)</span
+                  >;<br />
+                  }<br />
+                  <span class="textcolor" style="color: #0000b2"
+                    ><a href="tikz-scopes#pgf.back/tikz">\tikz</a></span
+                  ><span class="textcolor" style="color: #0000b2"
+                    ><a href="tikz-actions#pgf.back/draw">\draw</a></span
+                  >&numsp;<span class="textcolor" style="color: #800080"
+                    >(\c)</span
+                  >&numsp;<span class="textcolor" style="color: #000000"
+                    ><a href="tikz-paths#pgf.--">--</a></span
+                  >
+                  <span class="textcolor" style="color: #800080">(\d)</span
+                  >;<br />
+                </code>
+              </div>
+            </figure>
+            <p>
+              In addition to assigning the \(x\) and \(y\) coordinates to
+              <span class="angle">&langle;</span><i>variable</i
+              ><span class="angle">&rangle;</span> (possibly with an optional
+              index), two further variables are defined. The first takes the
+              name of <span class="angle">&langle;</span><i>variable</i
+              ><span class="angle">&rangle;</span> (e.g.,
+              <span class="texttt">\c</span>) suffixed with
+              <span class="texttt">x</span> (i.e.,
+              <span class="texttt">\cx</span>) and is assigned the \(x\)
+              coordinate of <span class="texttt">\c</span>. The second takes the
+              name of <span class="angle">&langle;</span><i>variable</i
+              ><span class="angle">&rangle;</span> suffixed with
+              <span class="texttt">y</span> (i.e.,
+              <span class="texttt">\cy</span>) and is assigned the \(y\)
+              coordinate of <span class="texttt">\c</span>.
+            </p>
+
+            <figure class="example">
+              <div class="example-image">
+                <p>
+                  <span class="lateximagesource" id="lateximage-pgfmanual-2387"
+                    ><!--
+-->
+                    <img
+                      alt="(-tikz-&nbsp;diagram)"
+                      class="lateximage"
+                      height="29.811"
+                      loading="lazy"
+                      src="pgfmanual-images/image-2387.png"
+                      style
+                      width="48.987"
+                  /></span>
+                </p>
+              </div>
+
+              <div class="example-code">
+                <button class="clipboardButton" type="button">copy</button>
+                <code>
+                  <span class="c- preamble">\usetikzlibrary {math} </span><br />
+                  <span class="textcolor" style="color: #0000b2"
+                    ><a href="library-math#pgf.back/tikzmath"
+                      >\tikzmath</a
+                    ></span
+                  >{<br />
+                  &numsp;&numsp;&numsp;<span
+                    class="textcolor"
+                    style="color: #000000"
+                    ><a href="tikz-shapes#pgf.coordinate">coordinate</a></span
+                  >
+                  <span class="textcolor" style="color: #0000b2">\c</span
+                  >;<br />
+                  &numsp;&numsp;&numsp;<span
+                    class="textcolor"
+                    style="color: #0000b2"
+                    >\c</span
+                  ><span class="textcolor" style="color: #000000">1</span>
+                  <span class="textcolor" style="color: #000000">=</span>
+                  <span class="textcolor" style="color: #800080">(30:20pt)</span
+                  >;<br />
+                  &numsp;&numsp;&numsp;<span
+                    class="textcolor"
+                    style="color: #0000b2"
+                    >\c</span
+                  ><span class="textcolor" style="color: #000000">2</span>
+                  <span class="textcolor" style="color: #000000">=</span>
+                  <span class="textcolor" style="color: #800080"
+                    >(210:20pt)</span
+                  >;<br />
+                  }<br />
+                  <span class="textcolor" style="color: #0000b2"
+                    ><a href="tikz-scopes#pgf.back/tikz">\tikz</a></span
+                  ><span class="textcolor" style="color: #0000b2"
+                    ><a href="tikz-actions#pgf.back/draw">\draw</a></span
+                  >&numsp;<span class="textcolor" style="color: #800080"
+                    >(\cx1,\cy1)</span
+                  >&numsp;<span class="textcolor" style="color: #000000"
+                    ><a href="tikz-paths#pgf.--">--</a></span
+                  >
+                  <span class="textcolor" style="color: #800080"
+                    >(\cx2,\cy1)</span
+                  >&numsp;<span class="textcolor" style="color: #000000"
+                    ><a href="tikz-paths#pgf.--">--</a></span
+                  >
+                  <span class="textcolor" style="color: #800080"
+                    >(\cx2,\cy2)</span
+                  >&numsp;<span class="textcolor" style="color: #000000"
+                    ><a href="tikz-paths#pgf.--">--</a></span
+                  >
+                  <span class="textcolor" style="color: #800080"
+                    >(\cx1,\cy2)</span
+                  >;<br />
+                </code>
+              </div>
+            </figure>
+          </div>
+          <div class="footnotes" role="note">
+            <a id="pgfmanual-autopage-5803"></a>
+
+            <p>
+              <sup>12</sup>&nbsp;Strictly speaking, due to the finite range and
+              precision of
+              <span class="latexlogofont"
+                ><span class="latexlogo"
+                  >T<span class="latexlogosub">e</span>X</span
+                ></span
+              >
+              numerical capabilities, the term &ldquo;real&rdquo; is not
+              correct.
+            </p>
+          </div>
+          <h5 id="autosec-5804">
+            <span class="sectionnumber" id="sec-58.4">58.4&emsp;</span>Repeating
+            Things<a class="anchor-link" href="#sec-58.4">&para;</a>
+          </h5>
+          <a id="pgfmanual-autopage-5804"></a>
+
+          <div class="manualentry">
+            <div class="entryheadline">
+              <p>
+                <span class="hl-def"
+                  ><kbd
+                    ><span class="textcolor" style="color: #ff0000"
+                      >for</span
+                    ></kbd
+                  >
+                  <span class="angle">&langle;</span><i>variable</i
+                  ><span class="angle">&rangle;</span> <kbd>in {</kbd
+                  ><span class="angle">&langle;</span><i>list</i
+                  ><span class="angle">&rangle;</span> <kbd>}{</kbd
+                  ><span class="angle">&langle;</span><i>expressions</i
+                  ><span class="angle">&rangle;</span><kbd>};</kbd></span
+                >
+              </p>
+            </div>
+            <p>
+              This is a &ldquo;trimmed down&rdquo; version of the
+              <span class="texttt">\foreach</span> command available as part of
+              <span class="textsc">pgf</span> and
+              <span class="tikzname">TikZ</span>, but cannot currently be used
+              outside of the <span class="texttt">\tikzmath</span> command. It
+              is important to note the following:
+            </p>
+
+            <p>
+              &bull; Every value in <span class="angle">&langle;</span
+              ><i>list</i><span class="angle">&rangle;</span> is evaluated using
+              the <span class="textsc">pgf</span> mathematical engine. However,
+              if an item in <span class="angle">&langle;</span><i>list</i
+              ><span class="angle">&rangle;</span> contains a comma, it
+              <em>must</em> be surrounded by braces, for example,
+              <span class="texttt">{mod(5, 2)}</span>.
+            </p>
+
+            <figure class="example">
+              <div class="example-image">
+                <p>
+                  <span class="lateximagesource" id="lateximage-pgfmanual-2388"
+                    ><!--
+x = 8, v = 256
+  -->
+                    <img
+                      alt="(image)"
+                      class="lateximage"
+                      height="14.043"
+                      loading="lazy"
+                      src="pgfmanual-images/image-2388.png"
+                      style
+                      width="84.146"
+                  /></span>
+                </p>
+              </div>
+
+              <div class="example-code">
+                <button class="clipboardButton" type="button">copy</button>
+                <code>
+                  <span class="c- preamble">\usetikzlibrary {math} </span><br />
+                  <span class="textcolor" style="color: #0000b2"
+                    ><a href="library-math#pgf.back/tikzmath"
+                      >\tikzmath</a
+                    ></span
+                  >{<br />
+                  &numsp;&numsp;<span class="textcolor" style="color: #000000"
+                    >int</span
+                  >
+                  <span class="textcolor" style="color: #0000b2"
+                    ><a href="tikz-paths#pgf.back/x">\x</a></span
+                  >,&numsp;<span class="textcolor" style="color: #0000b2"
+                    >\v</span
+                  >;<br />
+                  &numsp;&numsp;<span class="textcolor" style="color: #0000b2"
+                    >\v</span
+                  ><span class="textcolor" style="color: #000000">=1</span
+                  >;<br />
+                  &numsp;&numsp;<span class="textcolor" style="color: #000000"
+                    >for</span
+                  >
+                  <span class="textcolor" style="color: #0000b2"
+                    ><a href="tikz-paths#pgf.back/x">\x</a></span
+                  >&numsp;<span class="textcolor" style="color: #000000"
+                    ><a href="library-edges#pgf.in">in</a></span
+                  >
+                  {<span class="textcolor" style="color: #000000">1</span
+                  >,...,{<span class="textcolor" style="color: #000000"
+                    >random</span
+                  ><span class="textcolor" style="color: #800080">(3,10)</span
+                  >}}&numsp;{<br />
+                  &numsp;&numsp;&numsp;&numsp;&numsp;<span
+                    class="textcolor"
+                    style="color: #0000b2"
+                    >\v</span
+                  ><span class="textcolor" style="color: #000000">=</span
+                  ><span class="textcolor" style="color: #0000b2">\v</span
+                  ><span class="textcolor" style="color: #000000">*2</span
+                  >;<br />
+                  &numsp;&numsp;};<br />
+                  &numsp;&numsp;<span class="textcolor" style="color: #000000"
+                    >print</span
+                  >
+                  {<span class="textcolor" style="color: #000000">$x=</span
+                  ><span class="textcolor" style="color: #0000b2"
+                    ><a href="tikz-paths#pgf.back/x">\x</a></span
+                  >,&numsp;<span class="textcolor" style="color: #000000"
+                    >v=</span
+                  ><span class="textcolor" style="color: #0000b2">\v</span
+                  ><span class="textcolor" style="color: #000000">$</span
+                  >};<br />
+                  }<br />
+                </code>
+              </div>
+            </figure>
+
+            <p>
+              &bull; Because each item is evaluated, you cannot use
+              <span class="tikzname">TikZ</span> coordinates in
+              <span class="angle">&langle;</span><i>list</i
+              ><span class="angle">&rangle;</span>.
+            </p>
+
+            <p>&bull; Only single variable assignment is supported.</p>
+
+            <p>
+              &bull; The &ldquo;dots notation&rdquo; (e.g.,
+              <span class="texttt">1,2,...,9</span>) can be used in
+              <span class="angle">&langle;</span><i>list</i
+              ><span class="angle">&rangle;</span>, but is not as sophisticated
+              as the <span class="textsc">pgf</span>
+              <span class="texttt">\foreach</span> command. In particular,
+              contextual replacement is not possible.
+            </p>
+
+            <p>
+              &bull; Assignments that occur in the loop body
+              <em>are not scoped</em>. They last beyond the body of each
+              iteration and the end of the
+              <span class="texttt">for</span> statement. This includes the
+              values assigned to the <span class="angle">&langle;</span
+              ><i>variable</i><span class="angle">&rangle;</span>.
+            </p>
+
+            <figure class="example">
+              <div class="example-image">
+                <p>
+                  <span class="lateximagesource" id="lateximage-pgfmanual-2389"
+                    ><!--
+x1 = 5, x2 = 50, y = 2250
+-->
+                    <img
+                      alt="(image)"
+                      class="lateximage"
+                      height="14.211"
+                      loading="lazy"
+                      src="pgfmanual-images/image-2389.png"
+                      style
+                      width="147.314"
+                  /></span>
+                </p>
+              </div>
+
+              <div class="example-code">
+                <button class="clipboardButton" type="button">copy</button>
+                <code>
+                  <span class="c- preamble">\usetikzlibrary {math} </span><br />
+                  <span class="textcolor" style="color: #0000b2"
+                    ><a href="library-math#pgf.back/tikzmath"
+                      >\tikzmath</a
+                    ></span
+                  >{<br />
+                  &numsp;&numsp;<span class="textcolor" style="color: #000000"
+                    >int</span
+                  >
+                  <span class="textcolor" style="color: #0000b2"
+                    ><a href="tikz-paths#pgf.back/x">\x</a></span
+                  >,&numsp;<span class="textcolor" style="color: #0000b2"
+                    ><a href="tikz-paths#pgf.back/y">\y</a></span
+                  >;<br />
+                  &numsp;&numsp;<span class="textcolor" style="color: #0000b2"
+                    ><a href="tikz-paths#pgf.back/y">\y</a></span
+                  >&numsp;<span class="textcolor" style="color: #000000"
+                    >=</span
+                  >
+                  <span class="textcolor" style="color: #000000">0</span>;<br />
+                  &numsp;&numsp;<span class="textcolor" style="color: #000000"
+                    >for</span
+                  >
+                  <span class="textcolor" style="color: #0000b2"
+                    ><a href="tikz-paths#pgf.back/x">\x</a></span
+                  ><span class="textcolor" style="color: #000000">1</span>
+                  <span class="textcolor" style="color: #000000"
+                    ><a href="library-edges#pgf.in">in</a></span
+                  >
+                  {<span class="textcolor" style="color: #000000">1</span
+                  >,...,<span class="textcolor" style="color: #000000">5</span
+                  >}&numsp;{<br />
+                  &numsp;&numsp;&numsp;&numsp;<span
+                    class="textcolor"
+                    style="color: #000000"
+                    >for</span
+                  >
+                  <span class="textcolor" style="color: #0000b2"
+                    ><a href="tikz-paths#pgf.back/x">\x</a></span
+                  ><span class="textcolor" style="color: #000000">2</span>
+                  <span class="textcolor" style="color: #000000"
+                    ><a href="library-edges#pgf.in">in</a></span
+                  >
+                  {<span class="textcolor" style="color: #000000">10</span
+                  >,<span class="textcolor" style="color: #000000">20</span
+                  >,...,<span class="textcolor" style="color: #000000">50</span
+                  >}&numsp;{<br />
+                  &numsp;&numsp;&numsp;&numsp;&numsp;&numsp;<span
+                    class="textcolor"
+                    style="color: #0000b2"
+                    ><a href="tikz-paths#pgf.back/y">\y</a></span
+                  >&numsp;<span class="textcolor" style="color: #000000"
+                    >=</span
+                  >
+                  <span class="textcolor" style="color: #0000b2"
+                    ><a href="tikz-paths#pgf.back/y">\y</a></span
+                  ><span class="textcolor" style="color: #000000">+</span
+                  ><span class="textcolor" style="color: #0000b2"
+                    ><a href="tikz-paths#pgf.back/x">\x</a></span
+                  ><span class="textcolor" style="color: #000000">1*</span
+                  ><span class="textcolor" style="color: #0000b2"
+                    ><a href="tikz-paths#pgf.back/x">\x</a></span
+                  ><span class="textcolor" style="color: #000000">2</span
+                  >;<br />
+                  &numsp;&numsp;&numsp;&numsp;};<br />
+                  &numsp;&numsp;};<br />
+                  }<br />
+                  <span class="textcolor" style="color: #000000">$x_1=</span
+                  ><span class="textcolor" style="color: #0000b2"
+                    ><a href="tikz-paths#pgf.back/x">\x</a></span
+                  ><span class="textcolor" style="color: #000000">1</span
+                  >,&numsp;<span class="textcolor" style="color: #000000"
+                    >x_2=</span
+                  ><span class="textcolor" style="color: #0000b2"
+                    ><a href="tikz-paths#pgf.back/x">\x</a></span
+                  ><span class="textcolor" style="color: #000000">2</span
+                  >,&numsp;<span class="textcolor" style="color: #000000"
+                    >y=</span
+                  ><span class="textcolor" style="color: #0000b2"
+                    ><a href="tikz-paths#pgf.back/y">\y</a></span
+                  ><span class="textcolor" style="color: #000000">$</span><br />
+                </code>
+              </div>
+            </figure>
+          </div>
+          <h5 id="autosec-5809">
+            <span class="sectionnumber" id="sec-58.5">58.5&emsp;</span>Branching
+            Statements<a class="anchor-link" href="#sec-58.5">&para;</a>
+          </h5>
+          <a id="pgfmanual-autopage-5809"></a>
+
+          <p>
+            Sometimes you may wish to execute different statements depending on
+            the value of an expression. In this case the following keyword can
+            be used:
+          </p>
+
+          <div class="manualentry">
+            <div class="entryheadline">
+              <p>
+                <span class="hl-def"
+                  ><kbd
+                    ><span class="textcolor" style="color: #ff0000"
+                      >if</span
+                    ></kbd
+                  >
+                  <span class="angle">&langle;</span><i>condition</i
+                  ><span class="angle">&rangle;</span> <kbd>then {</kbd
+                  ><span class="angle">&langle;</span
+                  ><i>if-non-zero-statements</i
+                  ><span class="angle">&rangle;</span><kbd>};</kbd></span
+                >
+              </p>
+            </div>
+            <p>
+              This keyword executes <span class="angle">&langle;</span
+              ><i>if-non-zero-statements</i
+              ><span class="angle">&rangle;</span> if the expression in
+              <span class="angle">&langle;</span><i>condition</i
+              ><span class="angle">&rangle;</span>
+              evaluates to any value other than zero.
+            </p>
+          </div>
+
+          <div class="manualentry">
+            <div class="entryheadline">
+              <p>
+                <span class="hl-def"
+                  ><kbd
+                    ><span class="textcolor" style="color: #ff0000"
+                      >if</span
+                    ></kbd
+                  >
+                  <span class="angle">&langle;</span><i>condition</i
+                  ><span class="angle">&rangle;</span> <kbd>then {</kbd
+                  ><span class="angle">&langle;</span
+                  ><i>if-non-zero-statements</i
+                  ><span class="angle">&rangle;</span><kbd>}</kbd>
+                  <kbd>else</kbd> <kbd>{</kbd><span class="angle">&langle;</span
+                  ><i>if-zero-statements</i><span class="angle">&rangle;</span
+                  ><kbd>}</kbd><kbd>;</kbd></span
+                >
+              </p>
+            </div>
+            <p>
+              This keyword executes <span class="angle">&langle;</span
+              ><i>if-non-zero-statements</i
+              ><span class="angle">&rangle;</span> if the expression in
+              <span class="angle">&langle;</span><i>condition</i
+              ><span class="angle">&rangle;</span> evaluates to any value other
+              than zero and the <span class="angle">&langle;</span
+              ><i>if-zero-statements</i><span class="angle">&rangle;</span> are
+              executed if the expression in <span class="angle">&langle;</span
+              ><i>condition</i><span class="angle">&rangle;</span> evaluates to
+              zero.
+            </p>
+
+            <figure class="example">
+              <div class="example-image">
+                <p>
+                  <span class="lateximagesource" id="lateximage-pgfmanual-2390"
+                    ><!--
+-->
+                    <img
+                      alt="(-tikz-&nbsp;diagram)"
+                      class="lateximage"
+                      height="78.842"
+                      loading="lazy"
+                      src="pgfmanual-images/image-2390.png"
+                      style
+                      width="78.842"
+                  /></span>
+                </p>
+              </div>
+
+              <div class="example-code">
+                <button class="clipboardButton" type="button">copy</button>
+                <code>
+                  <span class="c- preamble">\usetikzlibrary {math} </span><br />
+                  &numsp;&numsp;<span class="textcolor" style="color: #000000"
+                    >\begin</span
+                  >{<span class="textcolor" style="color: #0000b2"
+                    ><a href="tikz-scopes#pgf.tikzpicture">tikzpicture</a></span
+                  >}<br />
+                  &numsp;&numsp;<span class="textcolor" style="color: #0000b2"
+                    ><a href="library-math#pgf.back/tikzmath"
+                      >\tikzmath</a
+                    ></span
+                  >{<br />
+                  &numsp;&numsp;&numsp;&numsp;<span
+                    class="textcolor"
+                    style="color: #000000"
+                    >int</span
+                  >
+                  <span class="textcolor" style="color: #0000b2"
+                    ><a href="tikz-paths#pgf.back/x">\x</a></span
+                  >;<br />
+                  &numsp;&numsp;&numsp;&numsp;<span
+                    class="textcolor"
+                    style="color: #000000"
+                    >for</span
+                  >
+                  <span class="textcolor" style="color: #0000b2">\k</span
+                  >&numsp;<span class="textcolor" style="color: #000000"
+                    ><a href="library-edges#pgf.in">in</a></span
+                  >
+                  {<span class="textcolor" style="color: #000000">0</span>,<span
+                    class="textcolor"
+                    style="color: #000000"
+                    >10</span
+                  >,...,<span class="textcolor" style="color: #000000">350</span
+                  >}&numsp;{<br />
+                  &numsp;&numsp;&numsp;&numsp;&numsp;&numsp;<span
+                    class="textcolor"
+                    style="color: #000000"
+                    ><a href="library-calender#pgf.if">if</a></span
+                  >
+                  <span class="textcolor" style="color: #0000b2">\k</span
+                  ><span class="textcolor" style="color: #000000">&gt;260</span>
+                  <span class="textcolor" style="color: #000000">then</span>
+                  {&numsp;<span class="textcolor" style="color: #000000"
+                    ><a href="tikz-paths#pgf.let">let</a></span
+                  >
+                  <span class="textcolor" style="color: #0000b2">\c</span
+                  >&numsp;<span class="textcolor" style="color: #000000"
+                    >=</span
+                  >
+                  <span class="textcolor" style="color: #000000">orange</span
+                  >;&numsp;}&numsp;<span
+                    class="textcolor"
+                    style="color: #000000"
+                    >else</span
+                  >
+                  {<br />
+                  &numsp;&numsp;&numsp;&numsp;&numsp;&numsp;&numsp;&numsp;<span
+                    class="textcolor"
+                    style="color: #000000"
+                    ><a href="library-calender#pgf.if">if</a></span
+                  >
+                  <span class="textcolor" style="color: #0000b2">\k</span
+                  ><span class="textcolor" style="color: #000000">&gt;170</span>
+                  <span class="textcolor" style="color: #000000">then</span>
+                  {&numsp;<span class="textcolor" style="color: #000000"
+                    ><a href="tikz-paths#pgf.let">let</a></span
+                  >
+                  <span class="textcolor" style="color: #0000b2">\c</span
+                  >&numsp;<span class="textcolor" style="color: #000000"
+                    >=</span
+                  >
+                  <span class="textcolor" style="color: #000000">blue</span
+                  >;&numsp;}&numsp;<span
+                    class="textcolor"
+                    style="color: #000000"
+                    >else</span
+                  >
+                  {<br />
+                  &numsp;&numsp;&numsp;&numsp;&numsp;&numsp;&numsp;&numsp;&numsp;&numsp;<span
+                    class="textcolor"
+                    style="color: #000000"
+                    ><a href="library-calender#pgf.if">if</a></span
+                  >
+                  <span class="textcolor" style="color: #0000b2">\k</span
+                  ><span class="textcolor" style="color: #000000">&gt;80</span>
+                  <span class="textcolor" style="color: #000000">then</span>
+                  {&numsp;<span class="textcolor" style="color: #000000"
+                    ><a href="tikz-paths#pgf.let">let</a></span
+                  >
+                  <span class="textcolor" style="color: #0000b2">\c</span
+                  >&numsp;<span class="textcolor" style="color: #000000"
+                    >=</span
+                  >
+                  <span class="textcolor" style="color: #000000">red</span
+                  >;&numsp;}&numsp;<span
+                    class="textcolor"
+                    style="color: #000000"
+                    >else</span
+                  >
+                  {<br />
+                  &numsp;&numsp;&numsp;&numsp;&numsp;&numsp;&numsp;&numsp;&numsp;&numsp;&numsp;&numsp;<span
+                    class="textcolor"
+                    style="color: #000000"
+                    ><a href="tikz-paths#pgf.let">let</a></span
+                  >
+                  <span class="textcolor" style="color: #0000b2">\c</span
+                  >&numsp;<span class="textcolor" style="color: #000000"
+                    >=</span
+                  >
+                  <span class="textcolor" style="color: #000000">green</span
+                  >;&numsp;};&numsp;};&numsp;};<br />
+                  &numsp;&numsp;&numsp;&numsp;&numsp;&numsp;{<br />
+                  &numsp;&numsp;&numsp;&numsp;&numsp;&numsp;&numsp;&numsp;<span
+                    class="textcolor"
+                    style="color: #0000b2"
+                    ><a href="tikz-paths#pgf.back/path">\path</a></span
+                  >&numsp;[<span class="textcolor" style="color: #008000"
+                    ><a href="tikz-actions#pgf.fill">fill</a></span
+                  >=<span class="textcolor" style="color: #008000"
+                    ><span class="textcolor" style="color: #0000b2">\c</span
+                    >!50</span
+                  >,&numsp;<span class="textcolor" style="color: #008000"
+                    ><a href="tikz-actions#pgf.draw">draw</a></span
+                  >=<span class="textcolor" style="color: #008000"
+                    ><span class="textcolor" style="color: #0000b2"
+                      >\c</span
+                    ></span
+                  >]&numsp;<span class="textcolor" style="color: #800080"
+                    >(\k:0.5cm)</span
+                  >&numsp;<span class="textcolor" style="color: #000000"
+                    ><a href="tikz-paths#pgf.--">--</a></span
+                  >
+                  <span class="textcolor" style="color: #800080">(\k:1cm)</span
+                  >&numsp;<span class="textcolor" style="color: #000000"
+                    ><a href="tikz-paths#pgf.--">--</a></span
+                  ><br />
+                  &numsp;&numsp;&numsp;&numsp;&numsp;&numsp;&numsp;&numsp;&numsp;&numsp;<span
+                    class="textcolor"
+                    style="color: #800080"
+                    >(\k+5:1cm)</span
+                  >&numsp;<span class="textcolor" style="color: #000000"
+                    ><a href="tikz-paths#pgf.--">--</a></span
+                  >
+                  <span class="textcolor" style="color: #800080"
+                    >(\k+5:0.5cm)</span
+                  >&numsp;<span class="textcolor" style="color: #000000"
+                    ><a href="tikz-paths#pgf.--">--</a></span
+                  >
+                  <span class="textcolor" style="color: #000000"
+                    ><a href="tikz-graphs#pgf.cycle">cycle</a></span
+                  >;<br />
+                  &numsp;&numsp;&numsp;&numsp;&numsp;&numsp;};<br />
+                  &numsp;&numsp;&numsp;&numsp;};<br />
+                  &numsp;&numsp;}<br />
+                  &numsp;&numsp;<span class="textcolor" style="color: #000000"
+                    >\end</span
+                  >{<span class="textcolor" style="color: #0000b2"
+                    ><a href="tikz-scopes#pgf.tikzpicture">tikzpicture</a></span
+                  >}<br />
+                </code>
+              </div>
+            </figure>
+          </div>
+          <h5 id="autosec-5812">
+            <span class="sectionnumber" id="sec-58.6">58.6&emsp;</span>Declaring
+            Functions<a class="anchor-link" href="#sec-58.6">&para;</a>
+          </h5>
+          <a id="pgfmanual-autopage-5812"></a>
+
+          <p>You can add functions by using the following keywords:</p>
+
+          <div class="manualentry">
+            <div class="entryheadline">
+              <p>
+                <span class="hl-def"
+                  ><kbd
+                    ><span class="textcolor" style="color: #ff0000"
+                      >function</span
+                    ></kbd
+                  >
+                  <span class="angle">&langle;</span><i>name</i
+                  ><span class="angle">&rangle;</span><kbd>(</kbd
+                  ><span class="angle">&langle;</span><i>arguments</i
+                  ><span class="angle">&rangle;</span><kbd>) {</kbd>
+                  <span class="angle">&langle;</span><i>definition</i
+                  ><span class="angle">&rangle;</span> <kbd>};</kbd></span
+                >
+              </p>
+            </div>
+            <p>
+              This keyword works much like the
+              <span class="texttt">declare function</span> provided by the
+              <span class="textsc">pgf</span> math-engine. The function
+              <span class="angle">&langle;</span><i>name</i
+              ><span class="angle">&rangle;</span> can be any name that is not
+              already a function name in the current scope. The list of
+              <span class="angle">&langle;</span><i>arguments</i
+              ><span class="angle">&rangle;</span> are comma separated
+              <span class="latexlogofont"
+                ><span class="latexlogo"
+                  >T<span class="latexlogosub">e</span>X</span
+                ></span
+              >
+              macros such as <span class="texttt">\x</span>, or
+              <span class="texttt">\y</span> (it is not possible to declare
+              functions that take variable numbers of arguments). If the
+              function takes no arguments then the parentheses need not be used.
+              It is very important to note that the arrays that the
+              <span class="textsc">pgf</span> math engine supports
+              <em>cannot currently be passed as arguments to functions</em>.
+            </p>
+            <p>
+              The function <span class="angle">&langle;</span><i>definition</i
+              ><span class="angle">&rangle;</span> should be a sequence of
+              statements that can be parsed by the
+              <span class="texttt">\tikzmath</span> command and should use the
+              commands specified in the <span class="angle">&langle;</span
+              ><i>arguments</i><span class="angle">&rangle;</span>. The
+              <span class="texttt">return</span> keyword (described below)
+              should be used to indicate the value returned by the function.
+              Although <span class="angle">&langle;</span><i>definition</i
+              ><span class="angle">&rangle;</span> can take any statements
+              accepted by <span class="texttt">\tikzmath</span>, it is not
+              advisable try to define functions inside other functions.
+            </p>
+
+            <figure class="example">
+              <div class="example-image">
+                <p>
+                  <span class="lateximagesource" id="lateximage-pgfmanual-2391"
+                    ><!--
+2 × 33 = 66
+   -->
+                    <img
+                      alt="(image)"
+                      class="lateximage"
+                      height="11.787"
+                      loading="lazy"
+                      src="pgfmanual-images/image-2391.png"
+                      style
+                      width="68.642"
+                  /></span>
+                </p>
+              </div>
+
+              <div class="example-code">
+                <button class="clipboardButton" type="button">copy</button>
+                <code>
+                  <span class="c- preamble">\usetikzlibrary {math} </span><br />
+                  <span class="textcolor" style="color: #0000b2"
+                    ><a href="library-math#pgf.back/tikzmath"
+                      >\tikzmath</a
+                    ></span
+                  >{<br />
+                  &numsp;&numsp;<span class="textcolor" style="color: #000000"
+                    ><a href="dv-formats#pgf.function">function</a></span
+                  >
+                  <span class="textcolor" style="color: #000000">product</span
+                  ><span class="textcolor" style="color: #800080">(\x,\y)</span
+                  >&numsp;{<br />
+                  &numsp;&numsp;&numsp;&numsp;<span
+                    class="textcolor"
+                    style="color: #000000"
+                    >return</span
+                  >
+                  <span class="textcolor" style="color: #0000b2"
+                    ><a href="tikz-paths#pgf.back/x">\x</a></span
+                  ><span class="textcolor" style="color: #000000">*</span
+                  ><span class="textcolor" style="color: #0000b2"
+                    ><a href="tikz-paths#pgf.back/y">\y</a></span
+                  >;<br />
+                  &numsp;&numsp;};<br />
+                  &numsp;&numsp;<span class="textcolor" style="color: #000000"
+                    >int</span
+                  >
+                  <span class="textcolor" style="color: #0000b2">\i</span
+                  >,&numsp;<span class="textcolor" style="color: #0000b2"
+                    >\j</span
+                  >,&numsp;<span class="textcolor" style="color: #0000b2"
+                    >\k</span
+                  >;<br />
+                  &numsp;&numsp;<span class="textcolor" style="color: #0000b2"
+                    >\i</span
+                  >&numsp;<span class="textcolor" style="color: #000000"
+                    >=</span
+                  >
+                  <span class="textcolor" style="color: #000000">random</span
+                  ><span class="textcolor" style="color: #800080">(1,10)</span
+                  >;<br />
+                  &numsp;&numsp;<span class="textcolor" style="color: #0000b2"
+                    >\j</span
+                  >&numsp;<span class="textcolor" style="color: #000000"
+                    >=</span
+                  >
+                  <span class="textcolor" style="color: #000000">random</span
+                  ><span class="textcolor" style="color: #800080">(20, 40)</span
+                  >;<br />
+                  &numsp;&numsp;<span class="textcolor" style="color: #0000b2"
+                    >\k</span
+                  >&numsp;<span class="textcolor" style="color: #000000"
+                    >=</span
+                  >
+                  <span class="textcolor" style="color: #000000">product</span
+                  ><span class="textcolor" style="color: #800080">(\i, \j)</span
+                  >;<br />
+                  &numsp;&numsp;<span class="textcolor" style="color: #000000"
+                    >print</span
+                  >
+                  {&numsp;<span class="textcolor" style="color: #000000">$</span
+                  ><span class="textcolor" style="color: #0000b2">\i</span
+                  ><span class="textcolor" style="color: #0000b2">\times</span
+                  >&numsp;<span class="textcolor" style="color: #0000b2"
+                    >\j</span
+                  >&numsp;<span class="textcolor" style="color: #000000"
+                    >=</span
+                  >
+                  <span class="textcolor" style="color: #0000b2">\k</span
+                  ><span class="textcolor" style="color: #000000">$</span>
+                  };<br />
+                  }<br />
+                </code>
+              </div>
+            </figure>
+          </div>
+
+          <div class="manualentry">
+            <div class="entryheadline">
+              <p>
+                <span class="hl-def"
+                  ><kbd
+                    ><span class="textcolor" style="color: #ff0000"
+                      >return</span
+                    ></kbd
+                  >
+                  <span class="angle">&langle;</span><i>expression</i
+                  ><span class="angle">&rangle;</span><kbd>;</kbd></span
+                >
+              </p>
+            </div>
+            <p>
+              This keyword should be used as the last executed statement in a
+              function definition to indicate the value that should be returned.
+            </p>
+          </div>
+          <h5 id="autosec-5815">
+            <span class="sectionnumber" id="sec-58.7">58.7&emsp;</span>Executing
+            Code Outside the Parser<a class="anchor-link" href="#sec-58.7"
+              >&para;</a
+            >
+          </h5>
+          <a id="pgfmanual-autopage-5815"></a>
+
+          <p>
+            Sometimes you may wish to do &ldquo;something&rdquo; outside the
+            parser, perhaps display some intermediate result or execute some
+            code. In this case you have two options. Firstly, the following
+            keyword can be used:
+          </p>
+
+          <div class="manualentry">
+            <div class="entryheadline">
+              <p>
+                <span class="hl-def"
+                  ><kbd
+                    ><span class="textcolor" style="color: #ff0000"
+                      >print</span
+                    ></kbd
+                  >
+                  <kbd>{</kbd><span class="angle">&langle;</span><i>code</i
+                  ><span class="angle">&rangle;</span><kbd>};</kbd></span
+                >
+              </p>
+            </div>
+            <p>
+              Execute <span class="angle">&langle;</span><i>code</i
+              ><span class="angle">&rangle;</span> immediately. This is intended
+              as convenience keyword for displaying information in a document
+              (analogous to the <span class="texttt">print</span> command in
+              real programming languages). The
+              <span class="angle">&langle;</span><i>code</i
+              ><span class="angle">&rangle;</span> is executed inside a
+              <span class="latexlogofont"
+                ><span class="latexlogo"
+                  >T<span class="latexlogosub">e</span>X</span
+                ></span
+              >
+              group.
+            </p>
+
+            <figure class="example">
+              <div class="example-image">
+                <p>
+                  <span class="lateximagesource" id="lateximage-pgfmanual-2392"
+                    ><!--
+30 = 1, 31 = 3, 32 = 9, 33 = 27, 34 = 81, 35 = 243, 36 = 729,
+-->
+                    <img
+                      alt="(image)"
+                      class="lateximage"
+                      height="16.299"
+                      loading="lazy"
+                      src="pgfmanual-images/image-2392.png"
+                      style
+                      width="390.602"
+                  /></span>
+                </p>
+              </div>
+
+              <div class="example-code">
+                <button class="clipboardButton" type="button">copy</button>
+                <code>
+                  <span class="c- preamble">\usetikzlibrary {math} </span><br />
+                  <span class="textcolor" style="color: #0000b2"
+                    ><a href="library-math#pgf.back/tikzmath"
+                      >\tikzmath</a
+                    ></span
+                  >{<br />
+                  &numsp;&numsp;<span class="textcolor" style="color: #000000"
+                    >int</span
+                  >
+                  <span class="textcolor" style="color: #0000b2"
+                    ><a href="tikz-paths#pgf.back/x">\x</a></span
+                  >,&numsp;<span class="textcolor" style="color: #0000b2"
+                    ><a href="tikz-paths#pgf.back/y">\y</a></span
+                  >,&numsp;<span class="textcolor" style="color: #0000b2"
+                    >\z</span
+                  >;<br />
+                  &numsp;&numsp;<span class="textcolor" style="color: #0000b2"
+                    ><a href="tikz-paths#pgf.back/x">\x</a></span
+                  >&numsp;<span class="textcolor" style="color: #000000"
+                    >=</span
+                  >
+                  <span class="textcolor" style="color: #000000">random</span
+                  ><span class="textcolor" style="color: #800080">(2, 5)</span
+                  >;<br />
+                  &numsp;&numsp;<span class="textcolor" style="color: #000000"
+                    >for</span
+                  >
+                  <span class="textcolor" style="color: #0000b2"
+                    ><a href="tikz-paths#pgf.back/y">\y</a></span
+                  >&numsp;<span class="textcolor" style="color: #000000"
+                    ><a href="library-edges#pgf.in">in</a></span
+                  >
+                  {<span class="textcolor" style="color: #000000">0</span
+                  >,...,<span class="textcolor" style="color: #000000">6</span
+                  >}&numsp;{<br />
+                  &numsp;&numsp;&numsp;&numsp;<span
+                    class="textcolor"
+                    style="color: #0000b2"
+                    >\z</span
+                  >&numsp;<span class="textcolor" style="color: #000000"
+                    >=</span
+                  >
+                  <span class="textcolor" style="color: #0000b2"
+                    ><a href="tikz-paths#pgf.back/x">\x</a></span
+                  ><span class="textcolor" style="color: #000000">^</span
+                  ><span class="textcolor" style="color: #0000b2"
+                    ><a href="tikz-paths#pgf.back/y">\y</a></span
+                  >;<br />
+                  &numsp;&numsp;&numsp;&numsp;<span
+                    class="textcolor"
+                    style="color: #000000"
+                    >print</span
+                  >
+                  {<span class="textcolor" style="color: #000000">$</span
+                  ><span class="textcolor" style="color: #0000b2"
+                    ><a href="tikz-paths#pgf.back/x">\x</a></span
+                  ><span class="textcolor" style="color: #000000">^</span
+                  ><span class="textcolor" style="color: #0000b2"
+                    ><a href="tikz-paths#pgf.back/y">\y</a></span
+                  ><span class="textcolor" style="color: #000000">=</span
+                  ><span class="textcolor" style="color: #0000b2">\z</span
+                  ><span class="textcolor" style="color: #000000">$</span
+                  >,&numsp;};<br />
+                  &numsp;&numsp;};<br />
+                  }<br />
+                </code>
+              </div>
+            </figure>
+          </div>
+
+          <p>
+            Secondly, if a statement begins with a brace
+            <span class="texttt">{</span>, then everything up to the closing
+            brace <span class="texttt">}</span> is collected and executed (the
+            closing brace <em>must</em> be followed by a semi-colon). Like the
+            <span class="texttt">print</span> keyword, the contents of the
+            braces is executed inside a
+            <span class="latexlogofont"
+              ><span class="latexlogo"
+                >T<span class="latexlogosub">e</span>X</span
+              ></span
+            >
+            group. Unlike the <span class="texttt">print</span> keyword, the
+            brace notation can be used in functions so that
+            <span class="texttt">tikz</span> path commands can be safely
+            executed inside a <span class="texttt">tikzpicture</span>.
+          </p>
+
+          <figure class="example">
+            <div class="example-image">
+              <p>
+                <span class="lateximagesource" id="lateximage-pgfmanual-2393"
+                  ><!--
+-->
+                  <img
+                    alt="(image)"
+                    class="lateximage"
+                    height="78.530"
+                    loading="lazy"
+                    src="pgfmanual-images/image-2393.png"
+                    style
+                    width="116.341"
+                /></span>
+              </p>
+            </div>
+
+            <div class="example-code">
+              <button class="clipboardButton" type="button">copy</button>
+
+              <code>
+                <span class="c- preamble">\usetikzlibrary {math} </span><br />
+                <span class="textcolor" style="color: #000000">\begin</span
+                >{<span class="textcolor" style="color: #0000b2"
+                  ><a href="tikz-scopes#pgf.tikzpicture">tikzpicture</a></span
+                >}<br />
+                <span class="textcolor" style="color: #0000b2"
+                  ><a href="tikz-actions#pgf.back/draw">\draw</a></span
+                >&numsp;[<span class="textcolor" style="color: #008000"
+                  ><a href="tikz-paths#pgf.help:lines">help lines</a></span
+                >]&numsp;<span class="textcolor" style="color: #000000"
+                  ><a href="tikz-paths#pgf.grid">grid</a></span
+                >
+                <span class="textcolor" style="color: #800080">(3,2)</span
+                >;<br />
+                <span class="textcolor" style="color: #0000b2"
+                  ><a href="library-math#pgf.back/tikzmath">\tikzmath</a></span
+                >{<br />
+                &numsp;&numsp;<span class="textcolor" style="color: #000000"
+                  ><a href="tikz-shapes#pgf.coordinate">coordinate</a></span
+                >
+                <span class="textcolor" style="color: #0000b2">\c</span>;<br />
+                &numsp;&numsp;<span class="textcolor" style="color: #000000"
+                  >for</span
+                >
+                <span class="textcolor" style="color: #0000b2"
+                  ><a href="tikz-paths#pgf.back/x">\x</a></span
+                >&numsp;<span class="textcolor" style="color: #000000"
+                  ><a href="library-edges#pgf.in">in</a></span
+                >
+                {<span class="textcolor" style="color: #000000">0</span>,<span
+                  class="textcolor"
+                  style="color: #000000"
+                  >10</span
+                >,...,<span class="textcolor" style="color: #000000">360</span
+                >}&numsp;{<br />
+                &numsp;&numsp;&numsp;&numsp;<span
+                  class="textcolor"
+                  style="color: #0000b2"
+                  >\c</span
+                >&numsp;<span class="textcolor" style="color: #000000">=</span>
+                <span class="textcolor" style="color: #800080"
+                  >(1.5cm, 1cm)</span
+                >&numsp;<span class="textcolor" style="color: #000000">+</span>
+                <span class="textcolor" style="color: #800080"
+                  >(<a href="tikz-paths#pgf.back/x">\x</a>:1cm and 0.5cm)</span
+                >;<br />
+                &numsp;&numsp;&numsp;&numsp;{&numsp;<span
+                  class="textcolor"
+                  style="color: #0000b2"
+                  ><a href="tikz-actions#pgf.back/fill">\fill</a></span
+                >&numsp;<span class="textcolor" style="color: #800080"
+                  >(\c)</span
+                >&numsp;<span class="textcolor" style="color: #000000"
+                  ><a href="tikz-paths#pgf.circle">circle</a></span
+                >
+                [<span class="textcolor" style="color: #008000"
+                  ><a href="tikz-coordinates#pgf.radius">radius</a></span
+                >=<span class="textcolor" style="color: #008000">1pt</span
+                >];&numsp;};<br />
+                &numsp;&numsp;};<br />
+                }<br />
+                <span class="textcolor" style="color: #000000">\end</span>{<span
+                  class="textcolor"
+                  style="color: #0000b2"
+                  ><a href="tikz-scopes#pgf.tikzpicture">tikzpicture</a></span
+                >}<br />
+              </code>
+            </div>
+          </figure>
+        </section>
+      </main>
+
+      <footer>
+        <div class_="footer-left">
+          <a href="https://github.com/pgf-tikz/pgf">Github</a> &middot;
+          <a href="/license">License</a> &middot;
+          <a href="https://ctan.org/pkg/pgf">CTAN</a> &middot;
+          <a href="https://pgf-tikz.github.io/pgf/pgfmanual.pdf">PDF version</a>
+          &middot;
+          <a href="https://github.com/DominikPeters/pgf-tikz-html-manual"
+            >About this HTML version</a
+          >
+        </div>
+        <div class_="footer-right">
+          <em>Manual last updated: 2022-04-23</em>
+        </div>
+      </footer>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/@docsearch/js@alpha"></script>
+    <script>
+      docsearch({
+        apiKey: "ae66ec3fc9df4b52b4d6f24fc8508fd3",
+        indexName: "tikz.dev",
+        appId: "Q70NNMA9GC",
+        container: "#search",
+      });
+    </script>
+  </body>
+</html>

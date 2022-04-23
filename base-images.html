@@ -1,0 +1,1549 @@
+<!DOCTYPE html>
+<html lang="en-US">
+  <head>
+    <meta charset="utf-8" />
+    <meta content="LaTeX Lwarp package" name="generator" />
+    <meta content="width=device-width, initial-scale=1.0" name="viewport" />
+    <!--[if lt IE 9]>
+      <script src="http://html5shiv.googlecode.com/svn/trunk/html5.js"></script>
+    <![endif]-->
+    <title>Declaring and Using Images - PGF/TikZ Manual</title>
+    <link href="style.css" rel="stylesheet" type="text/css" />
+
+    <script src="pgfmanual.js"></script>
+
+    <link href="https://unpkg.com/@docsearch/css@alpha" rel="stylesheet" />
+    <link href="/favicon-16x16.png" rel="icon" sizes="16x16" type="image/png" />
+    <link href="/favicon-32x32.png" rel="icon" sizes="32x32" type="image/png" />
+    <link
+      href="/apple-touch-icon.png"
+      rel="apple-touch-icon"
+      sizes="180x180"
+      type="image/png"
+    />
+    <link href="/site.webmanifest" rel="manifest" />
+  </head>
+  <body>
+    <a id="pgfmanual-autopage-8186"></a>
+
+    <div class="bodyandsidetoc grid-container">
+      <header>
+        <strong><a href="/">PGF/Ti<i>k</i>Z Manual</a></strong>
+        <div id="search"></div>
+      </header>
+      <div class="sidetoccontainer" id="local-toc-container">
+        <nav class="sidetoc">
+          <div class="sidetoctitle"><p>On this page</p></div>
+          <div class="sidetoccontents">
+            <p><a class="tocsubsection" href="#sec-109.1">Overview</a></p>
+            <p>
+              <a class="tocsubsection" href="#sec-109.2">Declaring an Image</a>
+            </p>
+            <p><a class="tocsubsection" href="#sec-109.3">Using an Image</a></p>
+            <p>
+              <a class="tocsubsection" href="#sec-109.4">Masking an Image</a>
+            </p>
+          </div>
+        </nav>
+      </div>
+      <div class="sidetoccontainer" id="chapter-toc-container">
+        <nav class="sidetoc">
+          <div class="sidetoctitle">
+            <p>
+              <span class="sidetocthetitle"
+                >The <span class="tikzname">TikZ</span> and PGF Packages<br />
+                Manual for version 3.1.9a</span
+              >
+            </p>
+
+            <p>Contents</p>
+          </div>
+
+          <div class="sidetoccontents">
+            <p></p>
+
+            <p>
+              <a class="linkintro" href="/">Introduction</a>
+            </p>
+
+            <p>
+              <a class="tocpart" href="tutorials-guidelines"
+                >Tutorials and Guidelines</a
+              >
+            </p>
+
+            <p>
+              <a class="tocpart" href="install"
+                >Installation and Configuration</a
+              >
+            </p>
+
+            <p>
+              <a class="tocpart" href="tikz">Ti<em>k</em>Z</a>
+            </p>
+
+            <p>
+              <a class="tocpart" href="gd">Graph Drawing</a>
+            </p>
+
+            <p>
+              <a class="tocpart" href="libraries">Libraries</a>
+            </p>
+
+            <p>
+              <a class="tocpart" href="dv">Data Visualization</a>
+            </p>
+
+            <p>
+              <a class="tocpart" href="utilities">Utilities</a>
+            </p>
+
+            <p>
+              <a class="tocpart" href="math"
+                >Mathematical and Object-Oriented Engines</a
+              >
+            </p>
+
+            <p class="current-part">
+              <a class="tocpart" href="base">The Basic Layer</a>
+            </p>
+
+            <p class="current-part">
+              <a class="tocsection" href="base-design">Design Principles</a>
+            </p>
+
+            <p class="current-part">
+              <a class="tocsection" href="base-scopes"
+                >Hierarchical Structures: Package, Environments, Scopes, and
+                Text</a
+              >
+            </p>
+
+            <p class="current-part">
+              <a class="tocsection" href="base-points"
+                >Specifying Coordinates</a
+              >
+            </p>
+
+            <p class="current-part">
+              <a class="tocsection" href="base-paths">Constructing Paths</a>
+            </p>
+
+            <p class="current-part">
+              <a class="tocsection" href="base-decorations">Decorations</a>
+            </p>
+
+            <p class="current-part">
+              <a class="tocsection" href="base-actions">Using Paths</a>
+            </p>
+
+            <p class="current-part">
+              <a class="tocsection" href="base-arrows"
+                >Defining New Arrow Tip Kinds</a
+              >
+            </p>
+
+            <p class="current-part">
+              <a class="tocsection" href="base-nodes">Nodes and Shapes</a>
+            </p>
+
+            <p class="current-part">
+              <a class="tocsection" href="base-matrices">Matrices</a>
+            </p>
+
+            <p class="current-part">
+              <a class="tocsection" href="base-transformations"
+                >Coordinate, Canvas, and Nonlinear Transformations</a
+              >
+            </p>
+
+            <p class="current-part">
+              <a class="tocsection" href="base-patterns">Patterns</a>
+            </p>
+
+            <p class="current current-part">
+              <a class="tocsection" href="base-images"
+                >Declaring and Using Images</a
+              >
+            </p>
+
+            <p class="current-part">
+              <a class="tocsection" href="base-external"
+                >Externalizing Graphics</a
+              >
+            </p>
+
+            <p class="current-part">
+              <a class="tocsection" href="base-plots">Creating Plots</a>
+            </p>
+
+            <p class="current-part">
+              <a class="tocsection" href="base-layers">Layered Graphics</a>
+            </p>
+
+            <p class="current-part">
+              <a class="tocsection" href="base-shadings">Shadings</a>
+            </p>
+
+            <p class="current-part">
+              <a class="tocsection" href="base-transparency">Transparency</a>
+            </p>
+
+            <p class="current-part">
+              <a class="tocsection" href="base-animations">Animations</a>
+            </p>
+
+            <p class="current-part">
+              <a class="tocsection" href="base-internalregisters"
+                >Adding libraries to <span class="textsc">pgf</span>: temporary
+                registers</a
+              >
+            </p>
+
+            <p class="current-part">
+              <a class="tocsection" href="base-quick">Quick Commands</a>
+            </p>
+
+            <p>
+              <a class="tocpart" href="pgfsys">The System Layer</a>
+            </p>
+          </div>
+        </nav>
+      </div>
+
+      <main class="bodycontainer">
+        <section class="textbody">
+          <h1>
+            The <span class="tikzname">TikZ</span> and PGF Packages<br />
+            Manual for version 3.1.9a
+          </h1>
+          <h2 class="inserted">The Basic Layer</h2>
+
+          <!--MathJax customizations:-->
+
+          <p></p>
+          <h4 id="autosec-8187">
+            <a id="section-images"></a
+            ><span class="sectionnumber">109&emsp;</span>Declaring and Using
+            Images
+          </h4>
+          <a id="pgfmanual-autopage-8187"></a>
+          <a id="pgfmanual-autofile-118"></a>
+
+          <p>This section describes the commands for creating images.</p>
+          <h5 id="autosec-8188">
+            <span class="sectionnumber" id="sec-109.1">109.1&emsp;</span
+            >Overview<a class="anchor-link" href="#sec-109.1">&para;</a>
+          </h5>
+          <a id="pgfmanual-autopage-8188"></a>
+
+          <p>
+            To be quite frank,
+            <span class="latexlogofont"
+              ><span class="latexlogo"
+                >L<span class="latexlogosup">a</span>T<span class="latexlogosub"
+                  >e</span
+                >X</span
+              ></span
+            >&rsquo;s <span class="texttt">\includegraphics</span> is designed
+            better than <span class="textsc">pgf</span>&rsquo;s image mechanism.
+            For this reason,
+            <em
+              >I recommend that you use the standard image inclusion mechanism
+              of your format</em
+            >. Thus,
+            <span class="latexlogofont"
+              ><span class="latexlogo"
+                >L<span class="latexlogosup">a</span>T<span class="latexlogosub"
+                  >e</span
+                >X</span
+              ></span
+            >
+            users are encouraged to use
+            <span class="texttt">\includegraphics</span> to include images.
+          </p>
+
+          <p>
+            However, there are reasons why you might need to use the image
+            inclusion facilities of <span class="textsc">pgf</span>:
+          </p>
+          <ul style="list-style-type: none">
+            <li>
+              <p>
+                &bull; There is no standard image inclusion mechanism in your
+                format. For example, plain
+                <span class="latexlogofont"
+                  ><span class="latexlogo"
+                    >T<span class="latexlogosub">e</span>X</span
+                  ></span
+                >
+                does not have one, so <span class="textsc">pgf</span>&rsquo;s
+                inclusion mechanism is &ldquo;better than nothing&rdquo;.
+              </p>
+              <p>
+                However, this applies only to the
+                <span class="texttt">pdftex</span> backend. For all other
+                backends, <span class="textsc">pgf</span> currently maps its
+                commands back to the
+                <span class="texttt">graphicx</span> package. Thus, in plain
+                <span class="latexlogofont"
+                  ><span class="latexlogo"
+                    >T<span class="latexlogosub">e</span>X</span
+                  ></span
+                >, this does not really help. It might be a good idea to fix
+                this in the future such that
+                <span class="textsc">pgf</span> becomes independent of
+                <span class="latexlogofont"
+                  ><span class="latexlogo"
+                    >L<span class="latexlogosup">a</span>T<span
+                      class="latexlogosub"
+                      >e</span
+                    >X</span
+                  ></span
+                >, thereby providing a uniform image abstraction for all
+                formats.
+              </p>
+            </li>
+            <li>
+              <p>
+                &bull; You wish to use masking. This is a feature that is only
+                supported by <span class="textsc">pgf</span>, though I hope that
+                someone will implement this also for the graphics package in
+                <span class="latexlogofont"
+                  ><span class="latexlogo"
+                    >L<span class="latexlogosup">a</span>T<span
+                      class="latexlogosub"
+                      >e</span
+                    >X</span
+                  ></span
+                >
+                in the future.
+              </p>
+            </li>
+          </ul>
+
+          <p>
+            Whatever your choice, you can still use the usual image inclusion
+            facilities of the <span class="texttt">graphics</span> package.
+          </p>
+
+          <p>
+            The general approach taken by <span class="textsc">pgf</span> to
+            including an image is the following: First,
+            <span class="texttt">\pgfdeclareimage</span> declares the image.
+            This must be done prior to the first use of the image. Once you have
+            declared an image, you can insert it into the text using
+            <span class="texttt">\pgfuseimage</span>. The advantage of this
+            two-phase approach is that, at least for
+            <span class="textsc">pdf</span>, the image data will only be
+            included once in the file. This can drastically reduce the file size
+            if you use an image repeatedly, for example in an overlay. However,
+            there is also a command called
+            <span class="texttt">\pgfimage</span> that declares and then
+            immediately uses the image.
+          </p>
+
+          <p>
+            To speedup the compilation, you may wish to use the following class
+            option:
+          </p>
+
+          <div class="manualentry">
+            <div class="entryheadline">
+              <p>
+                <span class="hl-def"
+                  ><kbd
+                    >\usepackage[<span class="textcolor" style="color: #bf0000"
+                      >draft</span
+                    >]{pgf}</kbd
+                  ></span
+                >
+              </p>
+            </div>
+            <p>
+              In draft mode boxes showing the image name replace the images. It
+              is checked whether the image files exist, but they are not read.
+              If either height or width is not given, 1cm is used instead.
+            </p>
+          </div>
+          <h5 id="autosec-8189">
+            <span class="sectionnumber" id="sec-109.2">109.2&emsp;</span
+            >Declaring an Image<a class="anchor-link" href="#sec-109.2"
+              >&para;</a
+            >
+          </h5>
+          <a id="pgfmanual-autopage-8189"></a>
+
+          <div class="manualentry">
+            <div class="entryheadline">
+              <p>
+                <a id="pgf.back/pgfdeclareimage"></a>
+                <span class="hl-def"
+                  ><span class="textcolor" style="color: #bf0000"
+                    ><kbd>\pgfdeclareimage</kbd></span
+                  >[<span class="angle">&langle;</span><i>options</i
+                  ><span class="angle">&rangle;</span>]{<span class="angle"
+                    >&langle;</span
+                  ><i>image name</i><span class="angle">&rangle;</span>}{<span
+                    class="angle"
+                    >&langle;</span
+                  ><i>filename</i><span class="angle">&rangle;</span>}</span
+                >
+                <a class="anchor-link" href="#pgf.back/pgfdeclareimage"
+                  >&para;</a
+                >
+              </p>
+            </div>
+            <p>
+              Declares an image, but does not paint anything. To draw the image,
+              use <span class="texttt">\pgfuseimage{</span
+              ><span class="angle">&langle;</span><i>image name</i
+              ><span class="angle">&rangle;</span><span class="texttt">}</span>.
+              The <span class="angle">&langle;</span><i>filename</i
+              ><span class="angle">&rangle;</span> may not have an extension.
+              For <span class="textsc">pdf</span>, the extensions
+              <span class="texttt">.pdf</span>,
+              <span class="texttt">.jpg</span>, and
+              <span class="texttt">.png</span> will automatically tried. For
+              PostScript, the extensions <span class="texttt">.eps</span>,
+              <span class="texttt">.epsi</span>, and
+              <span class="texttt">.ps</span> will be tried.
+            </p>
+            <p>The following options are possible:</p>
+
+            &bull;
+            <p>
+              <span class="textcolor" style="color: #bf0000"
+                ><span class="texttt">height=</span
+                ><span class="angle">&langle;</span><i>dimension</i
+                ><span class="angle">&rangle;</span></span
+              >
+              sets the height of the image. If the width is not specified
+              simultaneously, the aspect ratio of the image is kept.
+            </p>
+
+            &bull;
+            <p>
+              <span class="textcolor" style="color: #bf0000"
+                ><span class="texttt">width=</span
+                ><span class="angle">&langle;</span><i>dimension</i
+                ><span class="angle">&rangle;</span></span
+              >
+              sets the width of the image. If the height is not specified
+              simultaneously, the aspect ratio of the image is kept.
+            </p>
+
+            &bull;
+            <p>
+              <span class="textcolor" style="color: #bf0000"
+                ><span class="texttt">page=</span
+                ><span class="angle">&langle;</span><i>page number</i
+                ><span class="angle">&rangle;</span></span
+              >
+              selects a given page number from a multipage document. Specifying
+              this option will have the following effect: first,
+              <span class="textsc">pgf</span> tries to find a file named
+            </p>
+            <blockquote>
+              <p>
+                <span class="angle">&langle;</span><i>filename</i
+                ><span class="angle">&rangle;</span
+                ><span class="texttt">.page</span
+                ><span class="angle">&langle;</span><i>page number</i
+                ><span class="angle">&rangle;</span><span class="texttt">.</span
+                ><span class="angle">&langle;</span><i>extension</i
+                ><span class="angle">&rangle;</span>
+              </p>
+            </blockquote>
+            <p>
+              If such a file is found, it will be used instead of the originally
+              specified filename. If not,
+              <span class="textsc">pgf</span> inserts the image stored in
+              <span class="angle">&langle;</span><i>filename</i
+              ><span class="angle">&rangle;</span><span class="texttt">.</span
+              ><span class="angle">&langle;</span><i>extension</i
+              ><span class="angle">&rangle;</span> and if a recent version of
+              <span class="texttt">pdflatex</span> is used, only the selected
+              page is inserted. For older versions of
+              <span class="texttt">pdflatex</span> and for
+              <span class="texttt">dvips</span> the complete document is
+              inserted and a warning is printed.
+            </p>
+
+            &bull;
+            <p>
+              <span class="textcolor" style="color: #bf0000"
+                ><span class="texttt">interpolate=</span
+                ><span class="angle">&langle;</span><i>true or false</i
+                ><span class="angle">&rangle;</span></span
+              >
+              selects whether the image should be &ldquo;smoothed&rdquo; when
+              zoomed. False by default.
+            </p>
+
+            &bull;
+            <p>
+              <span class="textcolor" style="color: #bf0000"
+                ><span class="texttt">mask=</span
+                ><span class="angle">&langle;</span><i>mask name</i
+                ><span class="angle">&rangle;</span></span
+              >
+              selects a transparency mask. The mask must previously be declared
+              using <span class="texttt">\pgfdeclaremask</span> (see below).
+              This option only has an effect for
+              <span class="texttt">pdf</span>. Not all viewers support masking.
+            </p>
+
+            <figure class="example">
+              <div class="example-code">
+                <button class="clipboardButton" type="button">copy</button>
+                <code>
+                  <br />
+                  <span class="textcolor" style="color: #0000b2"
+                    ><a href="base-images#pgf.back/pgfdeclareimage"
+                      >\pgfdeclareimage</a
+                    ></span
+                  >[<span class="textcolor" style="color: #008000"
+                    >interpolate</span
+                  >=<span class="textcolor" style="color: #008000"
+                    ><a href="pgfkeys#pgf.true">true</a></span
+                  >,<span class="textcolor" style="color: #008000"
+                    ><a href="library-spy#pgf.height">height</a></span
+                  >=<span class="textcolor" style="color: #008000">1cm</span
+                  >]{<span class="textcolor" style="color: #000000">image1</span
+                  >}{<span class="textcolor" style="color: #000000"
+                    >brave-gnu-world-logo</span
+                  >}<br />
+                  <span class="textcolor" style="color: #0000b2"
+                    ><a href="base-images#pgf.back/pgfdeclareimage"
+                      >\pgfdeclareimage</a
+                    ></span
+                  >[<span class="textcolor" style="color: #008000"
+                    >interpolate</span
+                  >=<span class="textcolor" style="color: #008000"
+                    ><a href="pgfkeys#pgf.true">true</a></span
+                  >,<span class="textcolor" style="color: #008000"
+                    ><a href="tikz-arrows#pgf.width">width</a></span
+                  >=<span class="textcolor" style="color: #008000">1cm</span
+                  >,<span class="textcolor" style="color: #008000"
+                    ><a href="library-spy#pgf.height">height</a></span
+                  >=<span class="textcolor" style="color: #008000">1cm</span
+                  >]{<span class="textcolor" style="color: #000000">image2</span
+                  >}{<span class="textcolor" style="color: #000000"
+                    >brave-gnu-world-logo</span
+                  >}<br />
+                  <span class="textcolor" style="color: #0000b2"
+                    ><a href="base-images#pgf.back/pgfdeclareimage"
+                      >\pgfdeclareimage</a
+                    ></span
+                  >[<span class="textcolor" style="color: #008000"
+                    >interpolate</span
+                  >=<span class="textcolor" style="color: #008000"
+                    ><a href="pgfkeys#pgf.true">true</a></span
+                  >,<span class="textcolor" style="color: #008000"
+                    ><a href="library-spy#pgf.height">height</a></span
+                  >=<span class="textcolor" style="color: #008000">1cm</span
+                  >]{<span class="textcolor" style="color: #000000">image3</span
+                  >}{<span class="textcolor" style="color: #000000"
+                    >brave-gnu-world-logo</span
+                  >}<br />
+                </code>
+              </div>
+            </figure>
+          </div>
+
+          <div class="manualentry">
+            <div class="entryheadline">
+              <p>
+                <a id="pgf.back/pgfaliasimage"></a>
+                <span class="hl-def"
+                  ><span class="textcolor" style="color: #bf0000"
+                    ><kbd>\pgfaliasimage</kbd></span
+                  >{<span class="angle">&langle;</span><i>new image name</i
+                  ><span class="angle">&rangle;</span>}{<span class="angle"
+                    >&langle;</span
+                  ><i>existing image name</i
+                  ><span class="angle">&rangle;</span>}</span
+                >
+                <a class="anchor-link" href="#pgf.back/pgfaliasimage">&para;</a>
+              </p>
+            </div>
+            <p>
+              The {<span class="angle">&langle;</span><i>existing image name</i
+              ><span class="angle">&rangle;</span>} is &ldquo;cloned&rdquo; and
+              the {<span class="angle">&langle;</span><i>new image name</i
+              ><span class="angle">&rangle;</span>} can now be used whenever the
+              original image is used. This command is useful for creating
+              aliases for alternate extensions and for accessing the last image
+              inserted using <span class="texttt">\pgfimage</span>.
+            </p>
+            <p>
+              <i>Example: </i
+              ><span class="texttt"
+                >\pgfaliasimage{image.!30!white}{image.!25!white}</span
+              >
+            </p>
+          </div>
+          <h5 id="autosec-8191">
+            <span class="sectionnumber" id="sec-109.3">109.3&emsp;</span>Using
+            an Image<a class="anchor-link" href="#sec-109.3">&para;</a>
+          </h5>
+          <a id="pgfmanual-autopage-8191"></a>
+
+          <div class="manualentry">
+            <div class="entryheadline">
+              <p>
+                <a id="pgf.back/pgfuseimage"></a>
+                <span class="hl-def"
+                  ><span class="textcolor" style="color: #bf0000"
+                    ><kbd>\pgfuseimage</kbd></span
+                  >{<span class="angle">&langle;</span><i>image name</i
+                  ><span class="angle">&rangle;</span>}</span
+                >
+                <a class="anchor-link" href="#pgf.back/pgfuseimage">&para;</a>
+              </p>
+            </div>
+            <p>
+              Inserts a previously declared image into the <em>normal text</em>.
+              If you wish to use it in a
+              <span class="texttt">{pgfpicture}</span> environment, you must put
+              a <span class="texttt">\pgftext</span> around it.
+            </p>
+            <p>
+              If the macro
+              <span class="texttt">\pgfalternateextension</span> expands to some
+              nonempty <span class="angle">&langle;</span
+              ><i>alternate extension</i><span class="angle">&rangle;</span>,
+              <span class="textsc">pgf</span> will first try to use the image
+              named <span class="angle">&langle;</span><i>image name</i
+              ><span class="angle">&rangle;</span><span class="texttt">.</span
+              ><span class="angle">&langle;</span><i>alternate extension</i
+              ><span class="angle">&rangle;</span>. If this image is not
+              defined, <span class="textsc">pgf</span> will next check whether
+              <span class="angle">&langle;</span><i>alternate extension</i
+              ><span class="angle">&rangle;</span> contains a
+              <span class="texttt">!</span> character. If so, everything up to
+              this exclamation mark and including it is deleted from
+              <span class="angle">&langle;</span><i>alternate extension</i
+              ><span class="angle">&rangle;</span> and the
+              <span class="textsc">pgf</span> again tries to use the image
+              <span class="angle">&langle;</span><i>image name</i
+              ><span class="angle">&rangle;</span><span class="texttt">.</span
+              ><span class="angle">&langle;</span><i>alternate extension</i
+              ><span class="angle">&rangle;</span>. This is repeated until
+              <span class="angle">&langle;</span><i>alternate extension</i
+              ><span class="angle">&rangle;</span> no longer contains
+              a&nbsp;<span class="texttt">!</span>. Then the original image is
+              used.
+            </p>
+            <p>
+              The <span class="texttt">xxcolor</span> package sets the alternate
+              extension to the current color mixin.
+            </p>
+
+            <figure class="example">
+              <div class="example-image">
+                <p>
+                  <span class="lateximagesource" id="lateximage-pgfmanual-3282"
+                    ><!--
+brave-gnu-world-logo
+
+
+
+
+brave-gnu-world-logo
+
+
+
+
+brave-gnu-world-logo
+-->
+                    <img
+                      alt="(-tikz-&nbsp;diagram)"
+                      class="lateximage"
+                      height="192.177"
+                      loading="lazy"
+                      src="pgfmanual-images/image-3282.png"
+                      style
+                      width="94.490"
+                  /></span>
+                </p>
+              </div>
+
+              <div class="example-code">
+                <button class="clipboardButton" type="button">copy</button>
+                <code>
+                  <br />
+                  <span class="textcolor" style="color: #0000b2"
+                    ><a href="base-images#pgf.back/pgfdeclareimage"
+                      >\pgfdeclareimage</a
+                    ></span
+                  >[<span class="textcolor" style="color: #008000"
+                    >interpolate</span
+                  >=<span class="textcolor" style="color: #008000"
+                    ><a href="pgfkeys#pgf.true">true</a></span
+                  >,<span class="textcolor" style="color: #008000"
+                    ><a href="tikz-arrows#pgf.width">width</a></span
+                  >=<span class="textcolor" style="color: #008000">1cm</span
+                  >,<span class="textcolor" style="color: #008000"
+                    ><a href="library-spy#pgf.height">height</a></span
+                  >=<span class="textcolor" style="color: #008000">1cm</span
+                  >]<br />
+                  &numsp;&numsp;{<span class="textcolor" style="color: #000000"
+                    >image1</span
+                  >}{<span class="textcolor" style="color: #000000"
+                    >brave-gnu-world-logo</span
+                  >}<br />
+                  <span class="textcolor" style="color: #0000b2"
+                    ><a href="base-images#pgf.back/pgfdeclareimage"
+                      >\pgfdeclareimage</a
+                    ></span
+                  >[<span class="textcolor" style="color: #008000"
+                    >interpolate</span
+                  >=<span class="textcolor" style="color: #008000"
+                    ><a href="pgfkeys#pgf.true">true</a></span
+                  >,<span class="textcolor" style="color: #008000"
+                    ><a href="tikz-arrows#pgf.width">width</a></span
+                  >=<span class="textcolor" style="color: #008000">1cm</span
+                  >]{<span class="textcolor" style="color: #000000">image2</span
+                  >}{<span class="textcolor" style="color: #000000"
+                    >brave-gnu-world-logo</span
+                  >}<br />
+                  <span class="textcolor" style="color: #0000b2"
+                    ><a href="base-images#pgf.back/pgfdeclareimage"
+                      >\pgfdeclareimage</a
+                    ></span
+                  >[<span class="textcolor" style="color: #008000"
+                    >interpolate</span
+                  >=<span class="textcolor" style="color: #008000"
+                    ><a href="pgfkeys#pgf.true">true</a></span
+                  >,<span class="textcolor" style="color: #008000"
+                    ><a href="library-spy#pgf.height">height</a></span
+                  >=<span class="textcolor" style="color: #008000">1cm</span
+                  >]{<span class="textcolor" style="color: #000000">image3</span
+                  >}{<span class="textcolor" style="color: #000000"
+                    >brave-gnu-world-logo</span
+                  >}<br />
+                  <span class="textcolor" style="color: #000000">\begin</span
+                  >{<span class="textcolor" style="color: #0000b2"
+                    ><a href="base-scopes#pgf.pgfpicture">pgfpicture</a></span
+                  >}<br />
+                  &numsp;&numsp;<span class="textcolor" style="color: #0000b2"
+                    ><a href="base-scopes#pgf.back/pgftext">\pgftext</a></span
+                  >[<span class="textcolor" style="color: #008000"
+                    ><a href="tikz-paths#pgf.at">at</a></span
+                  >=<span class="textcolor" style="color: #008000"
+                    ><span class="textcolor" style="color: #0000b2"
+                      ><a href="base-points#pgf.back/pgfpoint"
+                        >\pgfpoint</a
+                      ></span
+                    >{1cm}{5cm}</span
+                  >,<span class="textcolor" style="color: #008000"
+                    ><a href="tikz-arrows#pgf.left">left</a></span
+                  >,<span class="textcolor" style="color: #008000"
+                    ><a href="tikz-animations#pgf.base">base</a></span
+                  >]{<span class="textcolor" style="color: #0000b2"
+                    ><a href="base-images#pgf.back/pgfuseimage"
+                      >\pgfuseimage</a
+                    ></span
+                  >{<span class="textcolor" style="color: #000000">image1</span
+                  >}}<br />
+                  &numsp;&numsp;<span class="textcolor" style="color: #0000b2"
+                    ><a href="base-scopes#pgf.back/pgftext">\pgftext</a></span
+                  >[<span class="textcolor" style="color: #008000"
+                    ><a href="tikz-paths#pgf.at">at</a></span
+                  >=<span class="textcolor" style="color: #008000"
+                    ><span class="textcolor" style="color: #0000b2"
+                      ><a href="base-points#pgf.back/pgfpoint"
+                        >\pgfpoint</a
+                      ></span
+                    >{1cm}{3cm}</span
+                  >,<span class="textcolor" style="color: #008000"
+                    ><a href="tikz-arrows#pgf.left">left</a></span
+                  >,<span class="textcolor" style="color: #008000"
+                    ><a href="tikz-animations#pgf.base">base</a></span
+                  >]{<span class="textcolor" style="color: #0000b2"
+                    ><a href="base-images#pgf.back/pgfuseimage"
+                      >\pgfuseimage</a
+                    ></span
+                  >{<span class="textcolor" style="color: #000000">image2</span
+                  >}}<br />
+                  &numsp;&numsp;<span class="textcolor" style="color: #0000b2"
+                    ><a href="base-scopes#pgf.back/pgftext">\pgftext</a></span
+                  >[<span class="textcolor" style="color: #008000"
+                    ><a href="tikz-paths#pgf.at">at</a></span
+                  >=<span class="textcolor" style="color: #008000"
+                    ><span class="textcolor" style="color: #0000b2"
+                      ><a href="base-points#pgf.back/pgfpoint"
+                        >\pgfpoint</a
+                      ></span
+                    >{1cm}{1cm}</span
+                  >,<span class="textcolor" style="color: #008000"
+                    ><a href="tikz-arrows#pgf.left">left</a></span
+                  >,<span class="textcolor" style="color: #008000"
+                    ><a href="tikz-animations#pgf.base">base</a></span
+                  >]{<span class="textcolor" style="color: #0000b2"
+                    ><a href="base-images#pgf.back/pgfuseimage"
+                      >\pgfuseimage</a
+                    ></span
+                  >{<span class="textcolor" style="color: #000000">image3</span
+                  >}}<br />
+                  <br />
+                  &numsp;&numsp;<span class="textcolor" style="color: #0000b2"
+                    ><a href="base-paths#pgf.back/pgfpathrectangle"
+                      >\pgfpathrectangle</a
+                    ></span
+                  >{<span class="textcolor" style="color: #0000b2"
+                    ><a href="base-points#pgf.back/pgfpoint">\pgfpoint</a></span
+                  >{<span class="textcolor" style="color: #000000">1cm</span
+                  >}{<span class="textcolor" style="color: #000000">5cm</span
+                  >}}{<span class="textcolor" style="color: #0000b2"
+                    ><a href="base-points#pgf.back/pgfpoint">\pgfpoint</a></span
+                  >{<span class="textcolor" style="color: #000000">1cm</span
+                  >}{<span class="textcolor" style="color: #000000">1cm</span
+                  >}}<br />
+                  &numsp;&numsp;<span class="textcolor" style="color: #0000b2"
+                    ><a href="base-paths#pgf.back/pgfpathrectangle"
+                      >\pgfpathrectangle</a
+                    ></span
+                  >{<span class="textcolor" style="color: #0000b2"
+                    ><a href="base-points#pgf.back/pgfpoint">\pgfpoint</a></span
+                  >{<span class="textcolor" style="color: #000000">1cm</span
+                  >}{<span class="textcolor" style="color: #000000">3cm</span
+                  >}}{<span class="textcolor" style="color: #0000b2"
+                    ><a href="base-points#pgf.back/pgfpoint">\pgfpoint</a></span
+                  >{<span class="textcolor" style="color: #000000">1cm</span
+                  >}{<span class="textcolor" style="color: #000000">1cm</span
+                  >}}<br />
+                  &numsp;&numsp;<span class="textcolor" style="color: #0000b2"
+                    ><a href="base-paths#pgf.back/pgfpathrectangle"
+                      >\pgfpathrectangle</a
+                    ></span
+                  >{<span class="textcolor" style="color: #0000b2"
+                    ><a href="base-points#pgf.back/pgfpoint">\pgfpoint</a></span
+                  >{<span class="textcolor" style="color: #000000">1cm</span
+                  >}{<span class="textcolor" style="color: #000000">1cm</span
+                  >}}{<span class="textcolor" style="color: #0000b2"
+                    ><a href="base-points#pgf.back/pgfpoint">\pgfpoint</a></span
+                  >{<span class="textcolor" style="color: #000000">1cm</span
+                  >}{<span class="textcolor" style="color: #000000">1cm</span
+                  >}}<br />
+                  &numsp;&numsp;<span class="textcolor" style="color: #0000b2"
+                    ><a href="base-actions#pgf.back/pgfusepath"
+                      >\pgfusepath</a
+                    ></span
+                  >{<span class="textcolor" style="color: #000000">stroke</span
+                  >}<br />
+                  <span class="textcolor" style="color: #000000">\end</span
+                  >{<span class="textcolor" style="color: #0000b2"
+                    ><a href="base-scopes#pgf.pgfpicture">pgfpicture</a></span
+                  >}<br />
+                </code>
+              </div>
+            </figure>
+            <p>
+              The following example demonstrates the effect of using
+              <span class="texttt">\pgfuseimage</span> inside a colormixin
+              environment.
+            </p>
+
+            <figure class="example">
+              <div class="example-image">
+                <p>
+                  <span class="lateximagesource" id="lateximage-pgfmanual-3283"
+                    ><!--
+brave-gnu-world-logo
+
+
+
+
+brave-gnu-world-logo
+
+
+
+
+brave-gnu-world-logo
+   -->
+                    <img
+                      alt="(-tikz-&nbsp;diagram)"
+                      class="lateximage"
+                      height="192.177"
+                      loading="lazy"
+                      src="pgfmanual-images/image-3283.png"
+                      style
+                      width="94.490"
+                  /></span>
+                </p>
+              </div>
+
+              <div class="example-code">
+                <button class="clipboardButton" type="button">copy</button>
+                <code>
+                  <span class="c- preamble">\usepackage {xxcolor} </span><br />
+                  <span class="textcolor" style="color: #0000b2"
+                    ><a href="base-images#pgf.back/pgfdeclareimage"
+                      >\pgfdeclareimage</a
+                    ></span
+                  >[<span class="textcolor" style="color: #008000"
+                    >interpolate</span
+                  >=<span class="textcolor" style="color: #008000"
+                    ><a href="pgfkeys#pgf.true">true</a></span
+                  >,<span class="textcolor" style="color: #008000"
+                    ><a href="tikz-arrows#pgf.width">width</a></span
+                  >=<span class="textcolor" style="color: #008000">1cm</span
+                  >,<span class="textcolor" style="color: #008000"
+                    ><a href="library-spy#pgf.height">height</a></span
+                  >=<span class="textcolor" style="color: #008000">1cm</span
+                  >]<br />
+                  &numsp;&numsp;{<span class="textcolor" style="color: #000000"
+                    >image1</span
+                  >.<span class="textcolor" style="color: #000000"
+                    >!25!white</span
+                  >}{<span class="textcolor" style="color: #000000"
+                    >brave-gnu-world-logo</span
+                  >.<span class="textcolor" style="color: #000000">25</span
+                  >}<br />
+                  <span class="textcolor" style="color: #0000b2"
+                    ><a href="base-images#pgf.back/pgfdeclareimage"
+                      >\pgfdeclareimage</a
+                    ></span
+                  >[<span class="textcolor" style="color: #008000"
+                    >interpolate</span
+                  >=<span class="textcolor" style="color: #008000"
+                    ><a href="pgfkeys#pgf.true">true</a></span
+                  >,<span class="textcolor" style="color: #008000"
+                    ><a href="tikz-arrows#pgf.width">width</a></span
+                  >=<span class="textcolor" style="color: #008000">1cm</span
+                  >]<br />
+                  &numsp;&numsp;{<span class="textcolor" style="color: #000000"
+                    >image2</span
+                  >.<span class="textcolor" style="color: #000000"
+                    >25!white</span
+                  >}{<span class="textcolor" style="color: #000000"
+                    >brave-gnu-world-logo</span
+                  >.<span class="textcolor" style="color: #000000">25</span
+                  >}<br />
+                  <span class="textcolor" style="color: #0000b2"
+                    ><a href="base-images#pgf.back/pgfdeclareimage"
+                      >\pgfdeclareimage</a
+                    ></span
+                  >[<span class="textcolor" style="color: #008000"
+                    >interpolate</span
+                  >=<span class="textcolor" style="color: #008000"
+                    ><a href="pgfkeys#pgf.true">true</a></span
+                  >,<span class="textcolor" style="color: #008000"
+                    ><a href="library-spy#pgf.height">height</a></span
+                  >=<span class="textcolor" style="color: #008000">1cm</span
+                  >]<br />
+                  &numsp;&numsp;{<span class="textcolor" style="color: #000000"
+                    >image3</span
+                  >.<span class="textcolor" style="color: #000000">white</span
+                  >}{<span class="textcolor" style="color: #000000"
+                    >brave-gnu-world-logo</span
+                  >.<span class="textcolor" style="color: #000000">25</span
+                  >}<br />
+                  <span class="textcolor" style="color: #000000">\begin</span
+                  >{<span class="textcolor" style="color: #0000b2"
+                    ><a href="xxcolor#pgf.colormixin">colormixin</a></span
+                  >}{<span class="textcolor" style="color: #000000"
+                    >25!white</span
+                  >}<br />
+                  <span class="textcolor" style="color: #000000">\begin</span
+                  >{<span class="textcolor" style="color: #0000b2"
+                    ><a href="base-scopes#pgf.pgfpicture">pgfpicture</a></span
+                  >}<br />
+                  &numsp;&numsp;<span class="textcolor" style="color: #0000b2"
+                    ><a href="base-scopes#pgf.back/pgftext">\pgftext</a></span
+                  >[<span class="textcolor" style="color: #008000"
+                    ><a href="tikz-paths#pgf.at">at</a></span
+                  >=<span class="textcolor" style="color: #008000"
+                    ><span class="textcolor" style="color: #0000b2"
+                      ><a href="base-points#pgf.back/pgfpoint"
+                        >\pgfpoint</a
+                      ></span
+                    >{1cm}{5cm}</span
+                  >,<span class="textcolor" style="color: #008000"
+                    ><a href="tikz-arrows#pgf.left">left</a></span
+                  >,<span class="textcolor" style="color: #008000"
+                    ><a href="tikz-animations#pgf.base">base</a></span
+                  >]{<span class="textcolor" style="color: #0000b2"
+                    ><a href="base-images#pgf.back/pgfuseimage"
+                      >\pgfuseimage</a
+                    ></span
+                  >{<span class="textcolor" style="color: #000000">image1</span
+                  >}}<br />
+                  &numsp;&numsp;<span class="textcolor" style="color: #0000b2"
+                    ><a href="base-scopes#pgf.back/pgftext">\pgftext</a></span
+                  >[<span class="textcolor" style="color: #008000"
+                    ><a href="tikz-paths#pgf.at">at</a></span
+                  >=<span class="textcolor" style="color: #008000"
+                    ><span class="textcolor" style="color: #0000b2"
+                      ><a href="base-points#pgf.back/pgfpoint"
+                        >\pgfpoint</a
+                      ></span
+                    >{1cm}{3cm}</span
+                  >,<span class="textcolor" style="color: #008000"
+                    ><a href="tikz-arrows#pgf.left">left</a></span
+                  >,<span class="textcolor" style="color: #008000"
+                    ><a href="tikz-animations#pgf.base">base</a></span
+                  >]{<span class="textcolor" style="color: #0000b2"
+                    ><a href="base-images#pgf.back/pgfuseimage"
+                      >\pgfuseimage</a
+                    ></span
+                  >{<span class="textcolor" style="color: #000000">image2</span
+                  >}}<br />
+                  &numsp;&numsp;<span class="textcolor" style="color: #0000b2"
+                    ><a href="base-scopes#pgf.back/pgftext">\pgftext</a></span
+                  >[<span class="textcolor" style="color: #008000"
+                    ><a href="tikz-paths#pgf.at">at</a></span
+                  >=<span class="textcolor" style="color: #008000"
+                    ><span class="textcolor" style="color: #0000b2"
+                      ><a href="base-points#pgf.back/pgfpoint"
+                        >\pgfpoint</a
+                      ></span
+                    >{1cm}{1cm}</span
+                  >,<span class="textcolor" style="color: #008000"
+                    ><a href="tikz-arrows#pgf.left">left</a></span
+                  >,<span class="textcolor" style="color: #008000"
+                    ><a href="tikz-animations#pgf.base">base</a></span
+                  >]{<span class="textcolor" style="color: #0000b2"
+                    ><a href="base-images#pgf.back/pgfuseimage"
+                      >\pgfuseimage</a
+                    ></span
+                  >{<span class="textcolor" style="color: #000000">image3</span
+                  >}}<br />
+                  <br />
+                  &numsp;&numsp;<span class="textcolor" style="color: #0000b2"
+                    ><a href="base-paths#pgf.back/pgfpathrectangle"
+                      >\pgfpathrectangle</a
+                    ></span
+                  >{<span class="textcolor" style="color: #0000b2"
+                    ><a href="base-points#pgf.back/pgfpoint">\pgfpoint</a></span
+                  >{<span class="textcolor" style="color: #000000">1cm</span
+                  >}{<span class="textcolor" style="color: #000000">5cm</span
+                  >}}{<span class="textcolor" style="color: #0000b2"
+                    ><a href="base-points#pgf.back/pgfpoint">\pgfpoint</a></span
+                  >{<span class="textcolor" style="color: #000000">1cm</span
+                  >}{<span class="textcolor" style="color: #000000">1cm</span
+                  >}}<br />
+                  &numsp;&numsp;<span class="textcolor" style="color: #0000b2"
+                    ><a href="base-paths#pgf.back/pgfpathrectangle"
+                      >\pgfpathrectangle</a
+                    ></span
+                  >{<span class="textcolor" style="color: #0000b2"
+                    ><a href="base-points#pgf.back/pgfpoint">\pgfpoint</a></span
+                  >{<span class="textcolor" style="color: #000000">1cm</span
+                  >}{<span class="textcolor" style="color: #000000">3cm</span
+                  >}}{<span class="textcolor" style="color: #0000b2"
+                    ><a href="base-points#pgf.back/pgfpoint">\pgfpoint</a></span
+                  >{<span class="textcolor" style="color: #000000">1cm</span
+                  >}{<span class="textcolor" style="color: #000000">1cm</span
+                  >}}<br />
+                  &numsp;&numsp;<span class="textcolor" style="color: #0000b2"
+                    ><a href="base-paths#pgf.back/pgfpathrectangle"
+                      >\pgfpathrectangle</a
+                    ></span
+                  >{<span class="textcolor" style="color: #0000b2"
+                    ><a href="base-points#pgf.back/pgfpoint">\pgfpoint</a></span
+                  >{<span class="textcolor" style="color: #000000">1cm</span
+                  >}{<span class="textcolor" style="color: #000000">1cm</span
+                  >}}{<span class="textcolor" style="color: #0000b2"
+                    ><a href="base-points#pgf.back/pgfpoint">\pgfpoint</a></span
+                  >{<span class="textcolor" style="color: #000000">1cm</span
+                  >}{<span class="textcolor" style="color: #000000">1cm</span
+                  >}}<br />
+                  &numsp;&numsp;<span class="textcolor" style="color: #0000b2"
+                    ><a href="base-actions#pgf.back/pgfusepath"
+                      >\pgfusepath</a
+                    ></span
+                  >{<span class="textcolor" style="color: #000000">stroke</span
+                  >}<br />
+                  <span class="textcolor" style="color: #000000">\end</span
+                  >{<span class="textcolor" style="color: #0000b2"
+                    ><a href="base-scopes#pgf.pgfpicture">pgfpicture</a></span
+                  >}<br />
+                  <span class="textcolor" style="color: #000000">\end</span
+                  >{<span class="textcolor" style="color: #0000b2"
+                    ><a href="xxcolor#pgf.colormixin">colormixin</a></span
+                  >}<br />
+                </code>
+              </div>
+            </figure>
+          </div>
+
+          <div class="manualentry">
+            <div class="entryheadline">
+              <p>
+                <a id="pgf.back/pgfalternateextension"></a>
+                <span class="hl-def"
+                  ><span class="textcolor" style="color: #bf0000"
+                    ><kbd>\pgfalternateextension</kbd></span
+                  ></span
+                >
+                <a class="anchor-link" href="#pgf.back/pgfalternateextension"
+                  >&para;</a
+                >
+              </p>
+            </div>
+            <p>
+              You should redefine this command to install a different alternate
+              extension.
+            </p>
+            <p>
+              <i>Example: </i
+              ><span class="texttt">\def\pgfalternateextension{!25!white}</span>
+            </p>
+          </div>
+
+          <div class="manualentry">
+            <div class="entryheadline">
+              <p>
+                <a id="pgf.back/pgfimage"></a>
+                <span class="hl-def"
+                  ><span class="textcolor" style="color: #bf0000"
+                    ><kbd>\pgfimage</kbd></span
+                  >[<span class="angle">&langle;</span><i>options</i
+                  ><span class="angle">&rangle;</span>]{<span class="angle"
+                    >&langle;</span
+                  ><i>filename</i><span class="angle">&rangle;</span>}</span
+                >
+                <a class="anchor-link" href="#pgf.back/pgfimage">&para;</a>
+              </p>
+            </div>
+            <p>
+              Declares the image under the name
+              <span class="texttt">pgflastimage</span> and immediately uses it.
+              You can &ldquo;save&rdquo; the image for later usage by invoking
+              <span class="texttt">\pgfaliasimage</span> on
+              <span class="texttt">pgflastimage</span>.
+            </p>
+
+            <figure class="example">
+              <div class="example-image">
+                <p>
+                  <span class="lateximagesource" id="lateximage-pgfmanual-3284"
+                    ><!--
+brave-gnu-world-logo
+
+
+
+
+brave-gnu-world-logo
+
+
+
+
+brave-gnu-world-logo
+-->
+                    <img
+                      alt="(-tikz-&nbsp;diagram)"
+                      class="lateximage"
+                      height="192.177"
+                      loading="lazy"
+                      src="pgfmanual-images/image-3284.png"
+                      style
+                      width="94.490"
+                  /></span>
+                </p>
+              </div>
+
+              <div class="example-code">
+                <button class="clipboardButton" type="button">copy</button>
+                <code>
+                  <span class="c- preamble">\usepackage {xxcolor} </span><br />
+                  <span class="textcolor" style="color: #000000">\begin</span
+                  >{<span class="textcolor" style="color: #0000b2"
+                    ><a href="xxcolor#pgf.colormixin">colormixin</a></span
+                  >}{<span class="textcolor" style="color: #000000"
+                    >25!white</span
+                  >}<br />
+                  <span class="textcolor" style="color: #000000">\begin</span
+                  >{<span class="textcolor" style="color: #0000b2"
+                    ><a href="base-scopes#pgf.pgfpicture">pgfpicture</a></span
+                  >}<br />
+                  &numsp;&numsp;<span class="textcolor" style="color: #0000b2"
+                    ><a href="base-scopes#pgf.back/pgftext">\pgftext</a></span
+                  >[<span class="textcolor" style="color: #008000"
+                    ><a href="tikz-paths#pgf.at">at</a></span
+                  >=<span class="textcolor" style="color: #008000"
+                    ><span class="textcolor" style="color: #0000b2"
+                      ><a href="base-points#pgf.back/pgfpoint"
+                        >\pgfpoint</a
+                      ></span
+                    >{1cm}{5cm}</span
+                  >,<span class="textcolor" style="color: #008000"
+                    ><a href="tikz-arrows#pgf.left">left</a></span
+                  >,<span class="textcolor" style="color: #008000"
+                    ><a href="tikz-animations#pgf.base">base</a></span
+                  >]<br />
+                  &numsp;&numsp;&numsp;&numsp;{<span
+                    class="textcolor"
+                    style="color: #0000b2"
+                    ><a href="base-images#pgf.back/pgfimage">\pgfimage</a></span
+                  >[<span class="textcolor" style="color: #008000"
+                    >interpolate</span
+                  >=<span class="textcolor" style="color: #008000"
+                    ><a href="pgfkeys#pgf.true">true</a></span
+                  >,<span class="textcolor" style="color: #008000"
+                    ><a href="tikz-arrows#pgf.width">width</a></span
+                  >=<span class="textcolor" style="color: #008000">1cm</span
+                  >,<span class="textcolor" style="color: #008000"
+                    ><a href="library-spy#pgf.height">height</a></span
+                  >=<span class="textcolor" style="color: #008000">1cm</span
+                  >]{<span class="textcolor" style="color: #000000"
+                    >brave-gnu-world-logo</span
+                  >}}<br />
+                  &numsp;&numsp;<span class="textcolor" style="color: #0000b2"
+                    ><a href="base-scopes#pgf.back/pgftext">\pgftext</a></span
+                  >[<span class="textcolor" style="color: #008000"
+                    ><a href="tikz-paths#pgf.at">at</a></span
+                  >=<span class="textcolor" style="color: #008000"
+                    ><span class="textcolor" style="color: #0000b2"
+                      ><a href="base-points#pgf.back/pgfpoint"
+                        >\pgfpoint</a
+                      ></span
+                    >{1cm}{3cm}</span
+                  >,<span class="textcolor" style="color: #008000"
+                    ><a href="tikz-arrows#pgf.left">left</a></span
+                  >,<span class="textcolor" style="color: #008000"
+                    ><a href="tikz-animations#pgf.base">base</a></span
+                  >]<br />
+                  &numsp;&numsp;&numsp;&numsp;{<span
+                    class="textcolor"
+                    style="color: #0000b2"
+                    ><a href="base-images#pgf.back/pgfimage">\pgfimage</a></span
+                  >[<span class="textcolor" style="color: #008000"
+                    >interpolate</span
+                  >=<span class="textcolor" style="color: #008000"
+                    ><a href="pgfkeys#pgf.true">true</a></span
+                  >,<span class="textcolor" style="color: #008000"
+                    ><a href="tikz-arrows#pgf.width">width</a></span
+                  >=<span class="textcolor" style="color: #008000">1cm</span
+                  >]{<span class="textcolor" style="color: #000000"
+                    >brave-gnu-world-logo</span
+                  >}}<br />
+                  &numsp;&numsp;<span class="textcolor" style="color: #0000b2"
+                    ><a href="base-scopes#pgf.back/pgftext">\pgftext</a></span
+                  >[<span class="textcolor" style="color: #008000"
+                    ><a href="tikz-paths#pgf.at">at</a></span
+                  >=<span class="textcolor" style="color: #008000"
+                    ><span class="textcolor" style="color: #0000b2"
+                      ><a href="base-points#pgf.back/pgfpoint"
+                        >\pgfpoint</a
+                      ></span
+                    >{1cm}{1cm}</span
+                  >,<span class="textcolor" style="color: #008000"
+                    ><a href="tikz-arrows#pgf.left">left</a></span
+                  >,<span class="textcolor" style="color: #008000"
+                    ><a href="tikz-animations#pgf.base">base</a></span
+                  >]<br />
+                  &numsp;&numsp;&numsp;&numsp;{<span
+                    class="textcolor"
+                    style="color: #0000b2"
+                    ><a href="base-images#pgf.back/pgfimage">\pgfimage</a></span
+                  >[<span class="textcolor" style="color: #008000"
+                    >interpolate</span
+                  >=<span class="textcolor" style="color: #008000"
+                    ><a href="pgfkeys#pgf.true">true</a></span
+                  >,<span class="textcolor" style="color: #008000"
+                    ><a href="library-spy#pgf.height">height</a></span
+                  >=<span class="textcolor" style="color: #008000">1cm</span
+                  >]{<span class="textcolor" style="color: #000000"
+                    >brave-gnu-world-logo</span
+                  >}}<br />
+                  <br />
+                  &numsp;&numsp;<span class="textcolor" style="color: #0000b2"
+                    ><a href="base-paths#pgf.back/pgfpathrectangle"
+                      >\pgfpathrectangle</a
+                    ></span
+                  >{<span class="textcolor" style="color: #0000b2"
+                    ><a href="base-points#pgf.back/pgfpoint">\pgfpoint</a></span
+                  >{<span class="textcolor" style="color: #000000">1cm</span
+                  >}{<span class="textcolor" style="color: #000000">5cm</span
+                  >}}{<span class="textcolor" style="color: #0000b2"
+                    ><a href="base-points#pgf.back/pgfpoint">\pgfpoint</a></span
+                  >{<span class="textcolor" style="color: #000000">1cm</span
+                  >}{<span class="textcolor" style="color: #000000">1cm</span
+                  >}}<br />
+                  &numsp;&numsp;<span class="textcolor" style="color: #0000b2"
+                    ><a href="base-paths#pgf.back/pgfpathrectangle"
+                      >\pgfpathrectangle</a
+                    ></span
+                  >{<span class="textcolor" style="color: #0000b2"
+                    ><a href="base-points#pgf.back/pgfpoint">\pgfpoint</a></span
+                  >{<span class="textcolor" style="color: #000000">1cm</span
+                  >}{<span class="textcolor" style="color: #000000">3cm</span
+                  >}}{<span class="textcolor" style="color: #0000b2"
+                    ><a href="base-points#pgf.back/pgfpoint">\pgfpoint</a></span
+                  >{<span class="textcolor" style="color: #000000">1cm</span
+                  >}{<span class="textcolor" style="color: #000000">1cm</span
+                  >}}<br />
+                  &numsp;&numsp;<span class="textcolor" style="color: #0000b2"
+                    ><a href="base-paths#pgf.back/pgfpathrectangle"
+                      >\pgfpathrectangle</a
+                    ></span
+                  >{<span class="textcolor" style="color: #0000b2"
+                    ><a href="base-points#pgf.back/pgfpoint">\pgfpoint</a></span
+                  >{<span class="textcolor" style="color: #000000">1cm</span
+                  >}{<span class="textcolor" style="color: #000000">1cm</span
+                  >}}{<span class="textcolor" style="color: #0000b2"
+                    ><a href="base-points#pgf.back/pgfpoint">\pgfpoint</a></span
+                  >{<span class="textcolor" style="color: #000000">1cm</span
+                  >}{<span class="textcolor" style="color: #000000">1cm</span
+                  >}}<br />
+                  &numsp;&numsp;<span class="textcolor" style="color: #0000b2"
+                    ><a href="base-actions#pgf.back/pgfusepath"
+                      >\pgfusepath</a
+                    ></span
+                  >{<span class="textcolor" style="color: #000000">stroke</span
+                  >}<br />
+                  <span class="textcolor" style="color: #000000">\end</span
+                  >{<span class="textcolor" style="color: #0000b2"
+                    ><a href="base-scopes#pgf.pgfpicture">pgfpicture</a></span
+                  >}<br />
+                  <span class="textcolor" style="color: #000000">\end</span
+                  >{<span class="textcolor" style="color: #0000b2"
+                    ><a href="xxcolor#pgf.colormixin">colormixin</a></span
+                  >}<br />
+                </code>
+              </div>
+            </figure>
+          </div>
+          <h5 id="autosec-8198">
+            <span class="sectionnumber" id="sec-109.4">109.4&emsp;</span>Masking
+            an Image<a class="anchor-link" href="#sec-109.4">&para;</a>
+          </h5>
+          <a id="pgfmanual-autopage-8198"></a>
+
+          <div class="manualentry">
+            <div class="entryheadline">
+              <p>
+                <a id="pgf.back/pgfdeclaremask"></a>
+                <span class="hl-def"
+                  ><span class="textcolor" style="color: #bf0000"
+                    ><kbd>\pgfdeclaremask</kbd></span
+                  >[<span class="angle">&langle;</span><i>options</i
+                  ><span class="angle">&rangle;</span>]{<span class="angle"
+                    >&langle;</span
+                  ><i>mask name</i><span class="angle">&rangle;</span>}{<span
+                    class="angle"
+                    >&langle;</span
+                  ><i>filename</i><span class="angle">&rangle;</span>}</span
+                >
+                <a class="anchor-link" href="#pgf.back/pgfdeclaremask"
+                  >&para;</a
+                >
+              </p>
+            </div>
+            <p>
+              Declares a transparency mask named
+              <span class="angle">&langle;</span><i>mask name</i
+              ><span class="angle">&rangle;</span> (called a
+              <em>soft mask</em> in the
+              <span class="textsc">pdf</span> specification). This mask is read
+              from the file <span class="angle">&langle;</span><i>filename</i
+              ><span class="angle">&rangle;</span>. This file should contain a
+              grayscale image that is as large as the actual image. A white
+              pixel in the mask will correspond to &ldquo;transparent&rdquo;, a
+              black pixel to &ldquo;solid&rdquo;, and gray values correspond to
+              intermediate values. The mask must have a single &ldquo;color
+              channel&rdquo;. This means that the mask must be a
+              &ldquo;real&rdquo; grayscale image, not an
+              <span class="textsc">rgb</span>-image in which all
+              <span class="textsc">rgb</span>-triples happen to have the same
+              components.
+            </p>
+            <p>
+              You can only mask images that are in a &ldquo;pixel format&rdquo;.
+              For drivers with <span class="textsc">pdf</span> output, these are
+              <span class="texttt">.jpg</span> and
+              <span class="texttt">.png</span> image files; you cannot mask
+              <span class="texttt">.pdf</span> images in this way. Pixel images
+              for the <span class="texttt">dvips</span>+<span class="texttt"
+                >ps2pdf</span
+              >
+              workflow must be provided as <span class="texttt">.eps</span> or
+              <span class="texttt">.ps</span>
+              files. Also, again, the mask file and the image file must have the
+              same size.
+            </p>
+            <p>The following options may be given:</p>
+
+            <p>
+              &bull; <span class="texttt">matte=</span>{<span class="angle"
+                >&langle;</span
+              ><i>color components</i><span class="angle">&rangle;</span>} sets
+              the so-called <em>matte</em> of the actual image (strangely, this
+              has to be specified together with the mask, not with the image
+              itself). The matte is the color that has been used to preblend the
+              image. For example, if the image has been preblended with a red
+              background, then <span class="angle">&langle;</span
+              ><i>color components</i><span class="angle">&rangle;</span> should
+              be set to <span class="texttt">{1 0 0}</span>. The default is
+              <span class="texttt">{1 1 1}</span>, which is white in the rgb
+              model.
+            </p>
+            <p>
+              The matte is specified in terms of the parent&rsquo;s image color
+              space. Thus, if the parent is a grayscale image, the matte has to
+              be set to <span class="texttt">{1}</span>.
+            </p>
+
+            <p>
+              <i>Example: </i>
+            </p>
+
+            <figure class="example">
+              <div class="example-image">
+                brave-gnu-world-logo brave-gnu-world-logo-mask
+                brave-gnu-world-logo
+              </div>
+
+              <div class="example-code">
+                <button class="clipboardButton" type="button">copy</button>
+                <code>
+                  <br />
+                  <span class="example-code-comment"
+                    >%% Draw a large colorful background</span
+                  ><br />
+                  <span class="textcolor" style="color: #0000b2"
+                    ><a
+                      href="base-shadings#pgf.back/pgfdeclarehorizontalshading"
+                      >\pgfdeclarehorizontalshading</a
+                    ></span
+                  >{<span class="textcolor" style="color: #000000"
+                    >colorful</span
+                  >}{<span class="textcolor" style="color: #000000">5cm</span
+                  >}{<span class="textcolor" style="color: #000000"
+                    ><a href="tikz-actions#pgf.color">color</a></span
+                  ><span class="textcolor" style="color: #800080">(0cm)</span
+                  ><span class="textcolor" style="color: #000000">=</span
+                  ><span class="textcolor" style="color: #800080">(red)</span
+                  >;<br />
+                  <span class="textcolor" style="color: #000000"
+                    ><a href="tikz-actions#pgf.color">color</a></span
+                  ><span class="textcolor" style="color: #800080">(2cm)</span
+                  ><span class="textcolor" style="color: #000000">=</span
+                  ><span class="textcolor" style="color: #800080">(green)</span
+                  >;&numsp;<span class="textcolor" style="color: #000000"
+                    ><a href="tikz-actions#pgf.color">color</a></span
+                  ><span class="textcolor" style="color: #800080">(4cm)</span
+                  ><span class="textcolor" style="color: #000000">=</span
+                  ><span class="textcolor" style="color: #800080">(blue)</span
+                  >;&numsp;<span class="textcolor" style="color: #000000"
+                    ><a href="tikz-actions#pgf.color">color</a></span
+                  ><span class="textcolor" style="color: #800080">(6cm)</span
+                  ><span class="textcolor" style="color: #000000">=</span
+                  ><span class="textcolor" style="color: #800080">(red)</span
+                  >;<br />
+                  <span class="textcolor" style="color: #000000"
+                    ><a href="tikz-actions#pgf.color">color</a></span
+                  ><span class="textcolor" style="color: #800080">(8cm)</span
+                  ><span class="textcolor" style="color: #000000">=</span
+                  ><span class="textcolor" style="color: #800080">(green)</span
+                  >;&numsp;<span class="textcolor" style="color: #000000"
+                    ><a href="tikz-actions#pgf.color">color</a></span
+                  ><span class="textcolor" style="color: #800080">(10cm)</span
+                  ><span class="textcolor" style="color: #000000">=</span
+                  ><span class="textcolor" style="color: #800080">(blue)</span
+                  >;&numsp;<span class="textcolor" style="color: #000000"
+                    ><a href="tikz-actions#pgf.color">color</a></span
+                  ><span class="textcolor" style="color: #800080">(12cm)</span
+                  ><span class="textcolor" style="color: #000000">=</span
+                  ><span class="textcolor" style="color: #800080">(red)</span
+                  >;<br />
+                  <span class="textcolor" style="color: #000000"
+                    ><a href="tikz-actions#pgf.color">color</a></span
+                  ><span class="textcolor" style="color: #800080">(14cm)</span
+                  ><span class="textcolor" style="color: #000000">=</span
+                  ><span class="textcolor" style="color: #800080">(green)</span
+                  >}<br />
+                  <span class="textcolor" style="color: #0000b2">\hbox</span
+                  >{<span class="textcolor" style="color: #0000b2"
+                    ><a href="base-shadings#pgf.back/pgfuseshading"
+                      >\pgfuseshading</a
+                    ></span
+                  >{<span class="textcolor" style="color: #000000"
+                    >colorful</span
+                  >}<span class="textcolor" style="color: #0000b2">\hskip-</span
+                  ><span class="textcolor" style="color: #000000">14cm</span
+                  ><span class="textcolor" style="color: #0000b2">\hskip</span
+                  ><span class="textcolor" style="color: #000000">1cm</span
+                  ><br />
+                  <span class="textcolor" style="color: #0000b2"
+                    ><a href="base-images#pgf.back/pgfimage">\pgfimage</a></span
+                  >[<span class="textcolor" style="color: #008000"
+                    ><a href="library-spy#pgf.height">height</a></span
+                  >=<span class="textcolor" style="color: #008000">4cm</span
+                  >]{<span class="textcolor" style="color: #000000"
+                    >brave-gnu-world-logo</span
+                  >}<span class="textcolor" style="color: #0000b2">\hskip</span
+                  ><span class="textcolor" style="color: #000000">1cm</span
+                  ><br />
+                  <span class="textcolor" style="color: #0000b2"
+                    ><a href="base-images#pgf.back/pgfimage">\pgfimage</a></span
+                  >[<span class="textcolor" style="color: #008000"
+                    ><a href="library-spy#pgf.height">height</a></span
+                  >=<span class="textcolor" style="color: #008000">4cm</span
+                  >]{<span class="textcolor" style="color: #000000"
+                    >brave-gnu-world-logo-mask</span
+                  >}<span class="textcolor" style="color: #0000b2">\hskip</span
+                  ><span class="textcolor" style="color: #000000">1cm</span
+                  ><br />
+                  <span class="textcolor" style="color: #0000b2"
+                    ><a href="base-images#pgf.back/pgfdeclaremask"
+                      >\pgfdeclaremask</a
+                    ></span
+                  >{<span class="textcolor" style="color: #000000">mymask</span
+                  >}{<span class="textcolor" style="color: #000000"
+                    >brave-gnu-world-logo-mask</span
+                  >}<br />
+                  <span class="textcolor" style="color: #0000b2"
+                    ><a href="base-images#pgf.back/pgfimage">\pgfimage</a></span
+                  >[<span class="textcolor" style="color: #008000">mask</span
+                  >=<span class="textcolor" style="color: #008000">mymask</span
+                  >,<span class="textcolor" style="color: #008000"
+                    ><a href="library-spy#pgf.height">height</a></span
+                  >=<span class="textcolor" style="color: #008000">4cm</span
+                  >,<span class="textcolor" style="color: #008000"
+                    >interpolate</span
+                  >=<span class="textcolor" style="color: #008000"
+                    ><a href="pgfkeys#pgf.true">true</a></span
+                  >]{<span class="textcolor" style="color: #000000"
+                    >brave-gnu-world-logo</span
+                  >}}<br />
+                </code>
+              </div>
+            </figure>
+          </div>
+        </section>
+      </main>
+
+      <footer>
+        <div class_="footer-left">
+          <a href="https://github.com/pgf-tikz/pgf">Github</a> &middot;
+          <a href="/license">License</a> &middot;
+          <a href="https://ctan.org/pkg/pgf">CTAN</a> &middot;
+          <a href="https://pgf-tikz.github.io/pgf/pgfmanual.pdf">PDF version</a>
+          &middot;
+          <a href="https://github.com/DominikPeters/pgf-tikz-html-manual"
+            >About this HTML version</a
+          >
+        </div>
+        <div class_="footer-right">
+          <em>Manual last updated: 2022-04-23</em>
+        </div>
+      </footer>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/@docsearch/js@alpha"></script>
+    <script>
+      docsearch({
+        apiKey: "ae66ec3fc9df4b52b4d6f24fc8508fd3",
+        indexName: "tikz.dev",
+        appId: "Q70NNMA9GC",
+        container: "#search",
+      });
+    </script>
+  </body>
+</html>

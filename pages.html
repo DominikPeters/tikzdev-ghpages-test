@@ -1,0 +1,2608 @@
+<!DOCTYPE html>
+<html lang="en-US">
+  <head>
+    <meta charset="utf-8" />
+    <meta content="LaTeX Lwarp package" name="generator" />
+    <meta content="width=device-width, initial-scale=1.0" name="viewport" />
+    <!--[if lt IE 9]>
+      <script src="http://html5shiv.googlecode.com/svn/trunk/html5.js"></script>
+    <![endif]-->
+    <title>Page Management - PGF/TikZ Manual</title>
+    <link href="style.css" rel="stylesheet" type="text/css" />
+
+    <script>
+      // Lwarp MathJax emulation code
+      //
+      // Based on code by Davide P. Cervone.
+      // Equation numbering: https://github.com/mathjax/MathJax/issues/2427
+      // Starred and ifnextchar macros: https://github.com/mathjax/MathJax/issues/2428
+      // \left, \right delimiters: https://github.com/mathjax/MathJax/issues/2535
+      //
+      // Modified by Brian Dunn to adjust equation numbering and add subequations.
+      //
+      // LaTeX can use \seteqnumber{subequations?}{section}{number} before each equation.
+      // subequations? is 0 usually, 1 if inside subequations.
+      // section is a string printed as-is, or empty.
+      // number is auto-incremented by MathJax between equations.
+      //
+      MathJax = {
+        subequations: "0",
+        section: "",
+        loader: {
+          load: ["[tex]/tagformat", "[tex]/textmacros"],
+        },
+        startup: {
+          ready() {
+            // These would be replaced by import commands if you wanted to make
+            // a proper extension.
+            const Configuration =
+              MathJax._.input.tex.Configuration.Configuration;
+            const CommandMap = MathJax._.input.tex.SymbolMap.CommandMap;
+            const Macro = MathJax._.input.tex.Symbol.Macro;
+            const TexError = MathJax._.input.tex.TexError.default;
+            const ParseUtil = MathJax._.input.tex.ParseUtil.default;
+            const expandable = MathJax._.util.Options.expandable;
+
+            // Insert the replacement string into the TeX string, and check
+            // that there haven't been too many maxro substitutions (prevents
+            // infinite loops).
+            const useArgument = (parser, text) => {
+              parser.string = ParseUtil.addArgs(
+                parser,
+                text,
+                parser.string.slice(parser.i)
+              );
+              parser.i = 0;
+              if (
+                ++parser.macroCount > parser.configuration.options.maxMacros
+              ) {
+                throw new TexError(
+                  "MaxMacroSub1",
+                  "MathJax maximum macro substitution count exceeded; " +
+                    "is there a recursive macro call?"
+                );
+              }
+            };
+
+            // Create the command map for:
+            // \ifstar, \ifnextchar, \ifblank, \ifstrequal, \seteqnumber
+            new CommandMap(
+              "Lwarp-macros",
+              {
+                ifstar: "IfstarFunction",
+                ifnextchar: "IfnextcharFunction",
+                ifblank: "IfblankFunction",
+                ifstrequal: "IfstrequalFunction",
+                seteqnumber: "SeteqnumberFunction",
+              },
+              {
+                // This function implements an ifstar macro.
+                IfstarFunction(parser, name) {
+                  const resultstar = parser.GetArgument(name);
+                  const resultnostar = parser.GetArgument(name);
+                  const star = parser.GetStar(); // true if there is a *
+                  useArgument(parser, star ? resultstar : resultnostar);
+                },
+
+                // This function implements an ifnextchar macro.
+                IfnextcharFunction(parser, name) {
+                  let whichchar = parser.GetArgument(name);
+                  if (whichchar.match(/^(?:0x[0-9A-F]+|[0-9]+)$/i)) {
+                    // $ syntax highlighting
+                    whichchar = String.fromCodePoint(parseInt(whichchar));
+                  }
+                  const resultnextchar = parser.GetArgument(name);
+                  const resultnotnextchar = parser.GetArgument(name);
+                  const gotchar = parser.GetNext() === whichchar;
+                  useArgument(
+                    parser,
+                    gotchar ? resultnextchar : resultnotnextchar
+                  );
+                },
+
+                // This function implements an ifblank macro.
+                IfblankFunction(parser, name) {
+                  const blankarg = parser.GetArgument(name);
+                  const resultblank = parser.GetArgument(name);
+                  const resultnotblank = parser.GetArgument(name);
+                  const isblank = blankarg.trim() == "";
+                  useArgument(parser, isblank ? resultblank : resultnotblank);
+                },
+
+                // This function implements an ifstrequal macro.
+                IfstrequalFunction(parser, name) {
+                  const strequalfirst = parser.GetArgument(name);
+                  const strequalsecond = parser.GetArgument(name);
+                  const resultequal = parser.GetArgument(name);
+                  const resultnotequal = parser.GetArgument(name);
+                  const isequal = strequalfirst == strequalsecond;
+                  useArgument(parser, isequal ? resultequal : resultnotequal);
+                },
+
+                // This function modifies the equation numbers.
+                SeteqnumberFunction(parser, name) {
+                  // Get the macro parameters
+                  const star = parser.GetStar(); // true if there is a *
+                  const optBrackets = parser.GetBrackets(name); // contents of optional brackets
+                  const newsubequations = parser.GetArgument(name); // the subequations argument
+                  const neweqsection = parser.GetArgument(name); // the eq section argument
+                  const neweqnumber = parser.GetArgument(name); // the eq number argument
+                  MathJax.config.subequations = newsubequations; // a string with boolean meaning
+                  MathJax.config.section = neweqsection; // a string with numeric meaning
+                  parser.tags.counter = parser.tags.allCounter = neweqnumber;
+                },
+              }
+            );
+
+            // Create the Lwarp-macros package
+            Configuration.create("Lwarp-macros", {
+              handler: { macro: ["Lwarp-macros"] },
+            });
+
+            MathJax.startup.defaultReady();
+
+            // For forward references:
+            MathJax.startup.input[0].preFilters.add(({ math }) => {
+              if (math.inputData.recompile) {
+                MathJax.config.subequations =
+                  math.inputData.recompile.subequations;
+                MathJax.config.section = math.inputData.recompile.section;
+              }
+            });
+            MathJax.startup.input[0].postFilters.add(({ math }) => {
+              if (math.inputData.recompile) {
+                math.inputData.recompile.subequations =
+                  MathJax.config.subequations;
+                math.inputData.recompile.section = MathJax.config.section;
+              }
+            });
+
+            // For \left, \right with unicode-math:
+            const { DelimiterMap } = MathJax._.input.tex.SymbolMap;
+            const { Symbol } = MathJax._.input.tex.Symbol;
+            const { MapHandler } = MathJax._.input.tex.MapHandler;
+            const delimiter = MapHandler.getMap("delimiter");
+            delimiter.add("\\lBrack", new Symbol("\\lBrack", "\u27E6"));
+            delimiter.add("\\rBrack", new Symbol("\\rBrack", "\u27E7"));
+            delimiter.add("\\lAngle", new Symbol("\\lAngle", "\u27EA"));
+            delimiter.add("\\rAngle", new Symbol("\\rAngle", "\u27EB"));
+            delimiter.add("\\lbrbrak", new Symbol("\\lbrbrak", "\u2772"));
+            delimiter.add("\\rbrbrak", new Symbol("\\rbrbrak", "\u2773"));
+            delimiter.add("\\lbag", new Symbol("\\lbag", "\u27C5"));
+            delimiter.add("\\rbag", new Symbol("\\rbag", "\u27C6"));
+            delimiter.add(
+              "\\llparenthesis",
+              new Symbol("\\llparenthesis", "\u2987")
+            );
+            delimiter.add(
+              "\\rrparenthesis",
+              new Symbol("\\rrparenthesis", "\u2988")
+            );
+            delimiter.add("\\llangle", new Symbol("\\llangle", "\u2989"));
+            delimiter.add("\\rrangle", new Symbol("\\rrangle", "\u298A"));
+            delimiter.add("\\Lbrbrak", new Symbol("\\Lbrbrak", "\u27EC"));
+            delimiter.add("\\Rbrbrak", new Symbol("\\Rbrbrak", "\u27ED"));
+            delimiter.add("\\lBrace", new Symbol("\\lBrace", "\u2983"));
+            delimiter.add("\\rBrace", new Symbol("\\rBrace", "\u2984"));
+            delimiter.add("\\lParen", new Symbol("\\lParen", "\u2985"));
+            delimiter.add("\\rParen", new Symbol("\\rParen", "\u2986"));
+            delimiter.add("\\lbrackubar", new Symbol("\\lbrackubar", "\u298B"));
+            delimiter.add("\\rbrackubar", new Symbol("\\rbrackubar", "\u298C"));
+            delimiter.add(
+              "\\lbrackultick",
+              new Symbol("\\lbrackultick", "\u298D")
+            );
+            delimiter.add(
+              "\\rbracklrtick",
+              new Symbol("\\rbracklrtick", "\u298E")
+            );
+            delimiter.add(
+              "\\lbracklltick",
+              new Symbol("\\lbracklltick", "\u298F")
+            );
+            delimiter.add(
+              "\\rbrackurtick",
+              new Symbol("\\rbrackurtick", "\u2990")
+            );
+            delimiter.add("\\langledot", new Symbol("\\langledot", "\u2991"));
+            delimiter.add("\\rangledot", new Symbol("\\rangledot", "\u2992"));
+            delimiter.add("\\lparenless", new Symbol("\\lparenless", "\u2993"));
+            delimiter.add("\\rparengtr", new Symbol("\\rparengtr", "\u2994"));
+            delimiter.add("\\Lparengtr", new Symbol("\\Lparengtr", "\u2995"));
+            delimiter.add("\\Rparenless", new Symbol("\\Rparenless", "\u2996"));
+            delimiter.add("\\lblkbrbrak", new Symbol("\\lblkbrbrak", "\u2997"));
+            delimiter.add("\\rblkbrbrak", new Symbol("\\rblkbrbrak", "\u2998"));
+            delimiter.add("\\lvzigzag", new Symbol("\\lvzigzag", "\u29D8"));
+            delimiter.add("\\rvzigzag", new Symbol("\\rvzigzag", "\u29D9"));
+            delimiter.add("\\Lvzigzag", new Symbol("\\Lvzigzag", "\u29DA"));
+            delimiter.add("\\Rvzigzag", new Symbol("\\Rvzigzag", "\u29DB"));
+            delimiter.add(
+              "\\lcurvyangle",
+              new Symbol("\\lcurvyangle", "\u29FC")
+            );
+            delimiter.add(
+              "\\rcurvyangle",
+              new Symbol("\\rcurvyangle", "\u29FD")
+            );
+            delimiter.add("\\Vvert", new Symbol("\\Vvert", "\u2980"));
+          }, // ready
+        }, // startup
+
+        tex: {
+          packages: { "[+]": ["tagformat", "Lwarp-macros", "textmacros"] },
+          tags: "ams",
+          tagformat: {
+            number: function (n) {
+              if (MathJax.config.subequations == 0)
+                return MathJax.config.section + n;
+              else return MathJax.config.section + String.fromCharCode(96 + n);
+            },
+          },
+        },
+      };
+    </script>
+
+    <script
+      async
+      id="MathJax-script"
+      src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-chtml.js"
+    ></script>
+
+    <script src="pgfmanual.js"></script>
+
+    <link href="https://unpkg.com/@docsearch/css@alpha" rel="stylesheet" />
+    <link href="/favicon-16x16.png" rel="icon" sizes="16x16" type="image/png" />
+    <link href="/favicon-32x32.png" rel="icon" sizes="32x32" type="image/png" />
+    <link
+      href="/apple-touch-icon.png"
+      rel="apple-touch-icon"
+      sizes="180x180"
+      type="image/png"
+    />
+    <link href="/site.webmanifest" rel="manifest" />
+  </head>
+  <body>
+    <a id="pgfmanual-autopage-7563"></a>
+
+    <div class="bodyandsidetoc grid-container">
+      <header>
+        <strong><a href="/">PGF/Ti<i>k</i>Z Manual</a></strong>
+        <div id="search"></div>
+      </header>
+      <div class="sidetoccontainer" id="local-toc-container">
+        <nav class="sidetoc">
+          <div class="sidetoctitle"><p>On this page</p></div>
+          <div class="sidetoccontents">
+            <p><a class="tocsubsection" href="#sec-89.1">Basic Usage</a></p>
+            <p>
+              <a class="tocsubsection" href="#sec-89.2"
+                >The Predefined Layouts</a
+              >
+            </p>
+            <p>
+              <a class="tocsubsection" href="#sec-89.3">Defining a Layout</a>
+            </p>
+            <p>
+              <a class="tocsubsection" href="#sec-89.4"
+                >Creating Logical Pages</a
+              >
+            </p>
+          </div>
+        </nav>
+      </div>
+      <div class="sidetoccontainer" id="chapter-toc-container">
+        <nav class="sidetoc">
+          <div class="sidetoctitle">
+            <p>
+              <span class="sidetocthetitle"
+                >The <span class="tikzname">TikZ</span> and PGF Packages<br />
+                Manual for version 3.1.9a</span
+              >
+            </p>
+
+            <p>Contents</p>
+          </div>
+
+          <div class="sidetoccontents">
+            <p></p>
+
+            <p>
+              <a class="linkintro" href="/">Introduction</a>
+            </p>
+
+            <p>
+              <a class="tocpart" href="tutorials-guidelines"
+                >Tutorials and Guidelines</a
+              >
+            </p>
+
+            <p>
+              <a class="tocpart" href="install"
+                >Installation and Configuration</a
+              >
+            </p>
+
+            <p>
+              <a class="tocpart" href="tikz">Ti<em>k</em>Z</a>
+            </p>
+
+            <p>
+              <a class="tocpart" href="gd">Graph Drawing</a>
+            </p>
+
+            <p>
+              <a class="tocpart" href="libraries">Libraries</a>
+            </p>
+
+            <p>
+              <a class="tocpart" href="dv">Data Visualization</a>
+            </p>
+
+            <p class="current-part">
+              <a class="tocpart" href="utilities">Utilities</a>
+            </p>
+
+            <p class="current-part">
+              <a class="tocsection" href="pgfkeys">Key Management</a>
+            </p>
+
+            <p class="current-part">
+              <a class="tocsection" href="pgffor"
+                >Repeating Things: The Foreach Statement</a
+              >
+            </p>
+
+            <p class="current-part">
+              <a class="tocsection" href="pgfcalendar"
+                >Date and Calendar Utility Macros</a
+              >
+            </p>
+
+            <p class="current current-part">
+              <a class="tocsection" href="pages">Page Management</a>
+            </p>
+
+            <p class="current-part">
+              <a class="tocsection" href="xxcolor">Extended Color Support</a>
+            </p>
+
+            <p class="current-part">
+              <a class="tocsection" href="module-parser">Parser Module</a>
+            </p>
+
+            <p>
+              <a class="tocpart" href="math"
+                >Mathematical and Object-Oriented Engines</a
+              >
+            </p>
+
+            <p>
+              <a class="tocpart" href="base">The Basic Layer</a>
+            </p>
+
+            <p>
+              <a class="tocpart" href="pgfsys">The System Layer</a>
+            </p>
+          </div>
+        </nav>
+      </div>
+
+      <main class="bodycontainer">
+        <section class="textbody">
+          <h1>
+            The <span class="tikzname">TikZ</span> and PGF Packages<br />
+            Manual for version 3.1.9a
+          </h1>
+          <h2 class="inserted">Utilities</h2>
+
+          <!--MathJax customizations:-->
+
+          <div class="hidden">
+            \(\newcommand{\footnotename}{footnote}\) \(\def \LWRfootnote {1}\)
+            \(\newcommand {\footnote }[2][\LWRfootnote ]{{}^{\mathrm {#1}}}\)
+            \(\newcommand {\footnotemark }[1][\LWRfootnote ]{{}^{\mathrm
+            {#1}}}\) \(\let \LWRorighspace \hspace \) \(\renewcommand {\hspace
+            }{\ifstar \LWRorighspace \LWRorighspace }\) \(\newcommand
+            {\mathnormal }[1]{{#1}}\) \(\newcommand \ensuremath [1]{#1}\)
+            \(\newcommand {\LWRframebox }[2][]{\fbox {#2}} \newcommand
+            {\framebox }[1][]{\LWRframebox } \) \(\newcommand {\setlength
+            }[2]{}\) \(\newcommand {\addtolength }[2]{}\) \(\newcommand
+            {\setcounter }[2]{}\) \(\newcommand {\addtocounter }[2]{}\)
+            \(\newcommand {\arabic }[1]{}\) \(\newcommand {\number }[1]{}\)
+            \(\newcommand {\noalign }[1]{\text {#1}\notag \\}\) \(\newcommand
+            {\cline }[1]{}\) \(\newcommand {\directlua }[1]{\text
+            {(directlua)}}\) \(\newcommand {\luatexdirectlua }[1]{\text
+            {(directlua)}}\) \(\newcommand {\protect }{}\) \(\def
+            \LWRabsorbnumber #1 {}\) \(\def \LWRabsorbquotenumber "#1 {}\)
+            \(\newcommand {\LWRabsorboption }[1][]{}\) \(\newcommand
+            {\LWRabsorbtwooptions }[1][]{\LWRabsorboption }\) \(\def \mathchar
+            {\ifnextchar "\LWRabsorbquotenumber \LWRabsorbnumber }\) \(\def
+            \mathcode #1={\mathchar }\) \(\let \delcode \mathcode \) \(\let
+            \delimiter \mathchar \) \(\def \oe {\unicode {x0153}}\) \(\def \OE
+            {\unicode {x0152}}\) \(\def \ae {\unicode {x00E6}}\) \(\def \AE
+            {\unicode {x00C6}}\) \(\def \aa {\unicode {x00E5}}\) \(\def \AA
+            {\unicode {x00C5}}\) \(\def \o {\unicode {x00F8}}\) \(\def \O
+            {\unicode {x00D8}}\) \(\def \l {\unicode {x0142}}\) \(\def \L
+            {\unicode {x0141}}\) \(\def \ss {\unicode {x00DF}}\) \(\def \SS
+            {\unicode {x1E9E}}\) \(\def \dag {\unicode {x2020}}\) \(\def \ddag
+            {\unicode {x2021}}\) \(\def \P {\unicode {x00B6}}\) \(\def
+            \copyright {\unicode {x00A9}}\) \(\def \pounds {\unicode {x00A3}}\)
+            \(\let \LWRref \ref \) \(\renewcommand {\ref }{\ifstar \LWRref
+            \LWRref }\) \( \newcommand {\multicolumn }[3]{#3}\) \(\require
+            {textcomp}\) \( \newcommand {\meta }[1]{\langle \textit {#1}\rangle
+            } \) \(\newcommand {\intertext }[1]{\text {#1}\notag \\}\) \(\let
+            \Hat \hat \) \(\let \Check \check \) \(\let \Tilde \tilde \) \(\let
+            \Acute \acute \) \(\let \Grave \grave \) \(\let \Dot \dot \) \(\let
+            \Ddot \ddot \) \(\let \Breve \breve \) \(\let \Bar \bar \) \(\let
+            \Vec \vec \)
+          </div>
+
+          <p></p>
+          <h4 id="autosec-7564">
+            <span class="sectionnumber">89&emsp;</span>Page Management
+          </h4>
+          <a id="pgfmanual-autopage-7564"></a>
+          <a id="pgfmanual-autofile-96"></a>
+
+          <p>
+            This section describes the
+            <span class="texttt">pgfpages</span> package. Although this package
+            is not concerned with creating pictures, its implementation relies
+            so heavily on <span class="textsc">pgf</span> that it is documented
+            here. Currently, <span class="texttt">pgfpages</span> only works
+            with
+            <span class="latexlogofont"
+              ><span class="latexlogo"
+                >L<span class="latexlogosup">a</span>T<span class="latexlogosub"
+                  >e</span
+                >X</span
+              ></span
+            >, but if you are adventurous, feel free to hack the code so that it
+            also works with plain
+            <span class="latexlogofont"
+              ><span class="latexlogo"
+                >T<span class="latexlogosub">e</span>X</span
+              ></span
+            >.
+          </p>
+
+          <p>
+            The aim of <span class="texttt">pgfpages</span> is to provide a
+            flexible way of putting multiple pages on a single page
+            <em
+              >inside
+              <span class="latexlogofont"
+                ><span class="latexlogo"
+                  >T<span class="latexlogosub">e</span>X</span
+                ></span
+              ></em
+            >. Thus, <span class="texttt">pgfpages</span> is quite different
+            from useful tools like <span class="texttt">psnup</span> or
+            <span class="texttt">pdfnup</span> insofar as it creates its output
+            in a single pass. Furthermore, it works uniformly with both
+            <span class="texttt">latex</span> and
+            <span class="texttt">pdflatex</span>, making it easy to put multiple
+            pages on a single page without any fuss.
+          </p>
+
+          <p>
+            A word of warning:
+            <em
+              >using <span class="texttt">pgfpages</span> will destroy
+              hyperlinks</em
+            >. Actually, the hyperlinks are not destroyed, only they will appear
+            at totally wrong positions on the final output. This is due to a
+            fundamental flaw in the
+            <span class="textsc">pdf</span> specification: In
+            <span class="textsc">pdf</span> the bounding rectangle of a
+            hyperlink is given in &ldquo;absolute page coordinates&rdquo; and
+            translations or rotations do not affect them. Thus, the
+            transformations applied by <span class="texttt">pgfpages</span> to
+            put the pages where you want them are (cannot, even) be applied to
+            the coordinates of hyperlinks. It is unlikely that this will change
+            in the foreseeable future.
+          </p>
+          <h5 id="autosec-7566">
+            <span class="sectionnumber" id="sec-89.1">89.1&emsp;</span>Basic
+            Usage<a class="anchor-link" href="#sec-89.1">&para;</a>
+          </h5>
+          <a id="pgfmanual-autopage-7566"></a>
+
+          <p>
+            The internals of <span class="texttt">pgfpages</span> are complex
+            since the package can do all sorts of interesting tricks. For this
+            reason, so-called <em>layouts</em> are predefined that set up all
+            option in appropriate ways.
+          </p>
+
+          <p>You use a layout as follows:</p>
+
+          <figure class="example">
+            <div class="example-code">
+              <button class="clipboardButton" type="button">copy</button>
+
+              <code>
+                <br />
+                <span class="textcolor" style="color: #0000b2"
+                  >\documentclass</span
+                >{<span class="textcolor" style="color: #000000">article</span
+                >}<br />
+                <br />
+                <span class="textcolor" style="color: #0000b2">\usepackage</span
+                >{<span class="textcolor" style="color: #000000">pgfpages</span
+                >}<br />
+                <span class="textcolor" style="color: #0000b2"
+                  ><a href="pages#pgf.back/pgfpagesuselayout"
+                    >\pgfpagesuselayout</a
+                  ></span
+                >{<span class="textcolor" style="color: #000000">2</span>
+                <span class="textcolor" style="color: #000000">on</span>
+                <span class="textcolor" style="color: #000000">1</span>}[<span
+                  class="textcolor"
+                  style="color: #008000"
+                  >a4paper</span
+                >,<span class="textcolor" style="color: #008000">landscape</span
+                >,<span class="textcolor" style="color: #008000"
+                  >border shrink</span
+                >=<span class="textcolor" style="color: #008000">5mm</span
+                >]<br />
+                <br />
+                <span class="textcolor" style="color: #000000">\begin</span
+                >{<span class="textcolor" style="color: #0000b2">document</span
+                >}<br />
+                <span class="textcolor" style="color: #000000">This</span>
+                <span class="textcolor" style="color: #000000"
+                  ><a href="tikz-shapes#pgf.text">text</a></span
+                >
+                <span class="textcolor" style="color: #000000">is</span>
+                <span class="textcolor" style="color: #000000">shown</span>
+                <span class="textcolor" style="color: #000000">on</span>
+                <span class="textcolor" style="color: #000000">the</span>
+                <span class="textcolor" style="color: #000000"
+                  ><a href="tikz-arrows#pgf.left">left</a></span
+                >.<br />
+                <span class="textcolor" style="color: #0000b2">\clearpage</span
+                ><br />
+                <span class="textcolor" style="color: #000000">This</span>
+                <span class="textcolor" style="color: #000000"
+                  ><a href="tikz-shapes#pgf.text">text</a></span
+                >
+                <span class="textcolor" style="color: #000000">is</span>
+                <span class="textcolor" style="color: #000000">shown</span>
+                <span class="textcolor" style="color: #000000">on</span>
+                <span class="textcolor" style="color: #000000">the</span>
+                <span class="textcolor" style="color: #000000"
+                  ><a href="tikz-arrows#pgf.right">right</a></span
+                >.<br />
+                <span class="textcolor" style="color: #000000">\end</span>{<span
+                  class="textcolor"
+                  style="color: #0000b2"
+                  >document</span
+                >}<br />
+              </code>
+            </div>
+          </figure>
+
+          <p>
+            The layout <span class="texttt">2 on 1</span> puts two pages on a
+            single page. The option <span class="texttt">a4paper</span> tells
+            <span class="texttt">pgfpages</span> that the
+            <em>resulting</em> page (called the <em>physical</em> page in the
+            following) should be <span class="texttt">a4paper</span> and it
+            should be landscape (which is quite logical since putting two
+            portrait pages next to each other gives a landscape page). Normally,
+            the <em>logical</em> pages, that is, the pages that
+            <span class="latexlogofont"
+              ><span class="latexlogo"
+                >T<span class="latexlogosub">e</span>X</span
+              ></span
+            >
+            &ldquo;thinks&rdquo; that it is typesetting, will have the same
+            sizes, but this need not be the case.
+            <span class="texttt">pgfpages</span> will automatically scale down
+            the logical pages such that two logical pages fit next to each other
+            inside a DIN A4 page.
+          </p>
+
+          <p>
+            The <span class="texttt">border shrink</span> tells
+            <span class="texttt">pgfpages</span> that it should add an
+            additional 5mm to the shrinking such that a 5mm-wide border is shown
+            around the resulting logical pages.
+          </p>
+
+          <p>
+            As a second example, let us put two pages produced by the
+            <span class="textsc">beamer</span> class on a single page:
+          </p>
+
+          <figure class="example">
+            <div class="example-code">
+              <button class="clipboardButton" type="button">copy</button>
+
+              <code>
+                <br />
+                <span class="textcolor" style="color: #0000b2"
+                  >\documentclass</span
+                >{<span class="textcolor" style="color: #000000">beamer</span
+                >}<br />
+                <br />
+                <span class="textcolor" style="color: #0000b2">\usepackage</span
+                >{<span class="textcolor" style="color: #000000">pgfpages</span
+                >}<br />
+                <span class="textcolor" style="color: #0000b2"
+                  ><a href="pages#pgf.back/pgfpagesuselayout"
+                    >\pgfpagesuselayout</a
+                  ></span
+                >{<span class="textcolor" style="color: #000000">2</span>
+                <span class="textcolor" style="color: #000000">on</span>
+                <span class="textcolor" style="color: #000000">1</span>}[<span
+                  class="textcolor"
+                  style="color: #008000"
+                  >a4paper</span
+                >,<span class="textcolor" style="color: #008000"
+                  >border shrink</span
+                >=<span class="textcolor" style="color: #008000">5mm</span
+                >]<br />
+                <br />
+                <span class="textcolor" style="color: #000000">\begin</span
+                >{<span class="textcolor" style="color: #0000b2">document</span
+                >}<br />
+                <span class="textcolor" style="color: #000000">\begin</span
+                >{<span class="textcolor" style="color: #0000b2">frame</span
+                >}<br />
+                &numsp;&numsp;<span class="textcolor" style="color: #000000"
+                  >This</span
+                >
+                <span class="textcolor" style="color: #000000"
+                  ><a href="tikz-shapes#pgf.text">text</a></span
+                >
+                <span class="textcolor" style="color: #000000">is</span>
+                <span class="textcolor" style="color: #000000">shown</span>
+                <span class="textcolor" style="color: #000000"
+                  ><a href="tikz-paths#pgf.at">at</a></span
+                >
+                <span class="textcolor" style="color: #000000">the</span>
+                <span class="textcolor" style="color: #000000"
+                  ><a href="base-scopes#pgf.top">top</a></span
+                >.<br />
+                <span class="textcolor" style="color: #000000">\end</span>{<span
+                  class="textcolor"
+                  style="color: #0000b2"
+                  >frame</span
+                >}<br />
+                <span class="textcolor" style="color: #000000">\begin</span
+                >{<span class="textcolor" style="color: #0000b2">frame</span
+                >}<br />
+                &numsp;&numsp;<span class="textcolor" style="color: #000000"
+                  >This</span
+                >
+                <span class="textcolor" style="color: #000000"
+                  ><a href="tikz-shapes#pgf.text">text</a></span
+                >
+                <span class="textcolor" style="color: #000000">is</span>
+                <span class="textcolor" style="color: #000000">shown</span>
+                <span class="textcolor" style="color: #000000"
+                  ><a href="tikz-paths#pgf.at">at</a></span
+                >
+                <span class="textcolor" style="color: #000000">the</span>
+                <span class="textcolor" style="color: #000000"
+                  ><a href="base-scopes#pgf.bottom">bottom</a></span
+                >.<br />
+                <span class="textcolor" style="color: #000000">\end</span>{<span
+                  class="textcolor"
+                  style="color: #0000b2"
+                  >frame</span
+                >}<br />
+                <span class="textcolor" style="color: #000000">\end</span>{<span
+                  class="textcolor"
+                  style="color: #0000b2"
+                  >document</span
+                >}<br />
+              </code>
+            </div>
+          </figure>
+
+          <p>
+            Note that we do not use the
+            <span class="texttt">landscape</span> option since
+            <span class="textsc">beamer</span>&rsquo;s logical pages are already
+            in landscape mode and putting two landscape pages on top of each
+            other results in a portrait page. However, if you had used the
+            <span class="texttt">4 on 1</span> layout, you would have had to add
+            <span class="texttt">landscape</span> once more, using the
+            <span class="texttt">6 on 1</span> or
+            <span class="texttt">8 on 1</span> you must not, using
+            <span class="texttt">16 on 1</span> you need it yet again. And, no,
+            there is no <span class="texttt">32 on 1</span> layout.
+          </p>
+
+          <p>
+            Another word of caution:
+            <em
+              >using <span class="texttt">pgfpages</span> will produce wrong
+              page numbers in the <span class="texttt">.aux</span> file</em
+            >. The reason is that
+            <span class="latexlogofont"
+              ><span class="latexlogo"
+                >T<span class="latexlogosub">e</span>X</span
+              ></span
+            >
+            instantiates the page numbers when writing an
+            <span class="texttt">.aux</span> file only when the physical page is
+            shipped out. Fortunately, this problem is easy to fix: First,
+            typeset our file normally without using the
+            <span class="texttt">\pgfpagesuselayout</span> command (just put the
+            comment marker <span class="texttt">%</span> before it) Then, rerun
+            <span class="latexlogofont"
+              ><span class="latexlogo"
+                >T<span class="latexlogosub">e</span>X</span
+              ></span
+            >
+            with the <span class="texttt">\pgfpagesuselayout</span> command
+            included and add the command <span class="texttt">\nofiles</span>.
+            This command ensures that the <span class="texttt">.aux</span> file
+            is not modified, which is exactly what you want. So, to typeset the
+            above example, you should actually first
+            <span class="latexlogofont"
+              ><span class="latexlogo"
+                >T<span class="latexlogosub">e</span>X</span
+              ></span
+            >
+            the following file:
+          </p>
+
+          <figure class="example">
+            <div class="example-code">
+              <button class="clipboardButton" type="button">copy</button>
+
+              <code>
+                <br />
+                <span class="textcolor" style="color: #0000b2"
+                  >\documentclass</span
+                >{<span class="textcolor" style="color: #000000">article</span
+                >}<br />
+                <br />
+                <span class="textcolor" style="color: #0000b2">\usepackage</span
+                >{<span class="textcolor" style="color: #000000">pgfpages</span
+                >}<br />
+                <span class="example-code-comment"
+                  >%%\pgfpagesuselayout{2 on 1}[a4paper,landscape,border
+                  shrink=5mm]</span
+                ><br />
+                <span class="example-code-comment">%%\nofiles</span><br />
+                <br />
+                <span class="textcolor" style="color: #000000">\begin</span
+                >{<span class="textcolor" style="color: #0000b2">document</span
+                >}<br />
+                <span class="textcolor" style="color: #000000">This</span>
+                <span class="textcolor" style="color: #000000"
+                  ><a href="tikz-shapes#pgf.text">text</a></span
+                >
+                <span class="textcolor" style="color: #000000">is</span>
+                <span class="textcolor" style="color: #000000">shown</span>
+                <span class="textcolor" style="color: #000000">on</span>
+                <span class="textcolor" style="color: #000000">the</span>
+                <span class="textcolor" style="color: #000000"
+                  ><a href="tikz-arrows#pgf.left">left</a></span
+                >.<br />
+                <span class="textcolor" style="color: #0000b2">\clearpage</span
+                ><br />
+                <span class="textcolor" style="color: #000000">This</span>
+                <span class="textcolor" style="color: #000000"
+                  ><a href="tikz-shapes#pgf.text">text</a></span
+                >
+                <span class="textcolor" style="color: #000000">is</span>
+                <span class="textcolor" style="color: #000000">shown</span>
+                <span class="textcolor" style="color: #000000">on</span>
+                <span class="textcolor" style="color: #000000">the</span>
+                <span class="textcolor" style="color: #000000"
+                  ><a href="tikz-arrows#pgf.right">right</a></span
+                >.<br />
+                <span class="textcolor" style="color: #000000">\end</span>{<span
+                  class="textcolor"
+                  style="color: #0000b2"
+                  >document</span
+                >}<br />
+              </code>
+            </div>
+          </figure>
+
+          <p>and then typeset</p>
+
+          <figure class="example">
+            <div class="example-code">
+              <button class="clipboardButton" type="button">copy</button>
+
+              <code>
+                <br />
+                <span class="textcolor" style="color: #0000b2"
+                  >\documentclass</span
+                >{<span class="textcolor" style="color: #000000">article</span
+                >}<br />
+                <br />
+                <span class="textcolor" style="color: #0000b2">\usepackage</span
+                >{<span class="textcolor" style="color: #000000">pgfpages</span
+                >}<br />
+                <span class="textcolor" style="color: #0000b2"
+                  ><a href="pages#pgf.back/pgfpagesuselayout"
+                    >\pgfpagesuselayout</a
+                  ></span
+                >{<span class="textcolor" style="color: #000000">2</span>
+                <span class="textcolor" style="color: #000000">on</span>
+                <span class="textcolor" style="color: #000000">1</span>}[<span
+                  class="textcolor"
+                  style="color: #008000"
+                  >a4paper</span
+                >,<span class="textcolor" style="color: #008000">landscape</span
+                >,<span class="textcolor" style="color: #008000"
+                  >border shrink</span
+                >=<span class="textcolor" style="color: #008000">5mm</span
+                >]<br />
+                <span class="textcolor" style="color: #0000b2">\nofiles</span
+                ><br />
+                <br />
+                <span class="textcolor" style="color: #000000">\begin</span
+                >{<span class="textcolor" style="color: #0000b2">document</span
+                >}<br />
+                <span class="textcolor" style="color: #000000">This</span>
+                <span class="textcolor" style="color: #000000"
+                  ><a href="tikz-shapes#pgf.text">text</a></span
+                >
+                <span class="textcolor" style="color: #000000">is</span>
+                <span class="textcolor" style="color: #000000">shown</span>
+                <span class="textcolor" style="color: #000000">on</span>
+                <span class="textcolor" style="color: #000000">the</span>
+                <span class="textcolor" style="color: #000000"
+                  ><a href="tikz-arrows#pgf.left">left</a></span
+                >.<br />
+                <span class="textcolor" style="color: #0000b2">\clearpage</span
+                ><br />
+                <span class="textcolor" style="color: #000000">This</span>
+                <span class="textcolor" style="color: #000000"
+                  ><a href="tikz-shapes#pgf.text">text</a></span
+                >
+                <span class="textcolor" style="color: #000000">is</span>
+                <span class="textcolor" style="color: #000000">shown</span>
+                <span class="textcolor" style="color: #000000">on</span>
+                <span class="textcolor" style="color: #000000">the</span>
+                <span class="textcolor" style="color: #000000"
+                  ><a href="tikz-arrows#pgf.right">right</a></span
+                >.<br />
+                <span class="textcolor" style="color: #000000">\end</span>{<span
+                  class="textcolor"
+                  style="color: #0000b2"
+                  >document</span
+                >}<br />
+              </code>
+            </div>
+          </figure>
+
+          <p>
+            The final basic example is the
+            <span class="texttt">resize to</span> layout (it works a bit like a
+            hypothetical <span class="texttt">1 on 1</span> layout). This layout
+            resizes the logical page such that is fits the specified physical
+            size. Since this does not change the page numbering, you need not
+            worry about the <span class="texttt">.aux</span> files with this
+            layout. For example, adding the following lines will ensure that the
+            physical output will fit on DIN A4 paper:
+          </p>
+
+          <figure class="example">
+            <div class="example-code">
+              <button class="clipboardButton" type="button">copy</button>
+
+              <code>
+                <br />
+                <span class="textcolor" style="color: #0000b2">\usepackage</span
+                >{<span class="textcolor" style="color: #000000">pgfpages</span
+                >}<br />
+                <span class="textcolor" style="color: #0000b2"
+                  ><a href="pages#pgf.back/pgfpagesuselayout"
+                    >\pgfpagesuselayout</a
+                  ></span
+                >{<span class="textcolor" style="color: #000000">resize</span>
+                <span class="textcolor" style="color: #000000"
+                  ><a href="tikz-paths#pgf.to">to</a></span
+                >}[<span class="textcolor" style="color: #008000">a4paper</span
+                >]<br />
+              </code>
+            </div>
+          </figure>
+
+          <p>
+            This can be very useful when you have to handle lots of papers that
+            are typeset for, say, letter paper and you have an A4 printer or the
+            other way round. For example, the following article will be fit for
+            printing on letter paper:
+          </p>
+
+          <figure class="example">
+            <div class="example-code">
+              <button class="clipboardButton" type="button">copy</button>
+
+              <code>
+                <br />
+                <span class="textcolor" style="color: #0000b2"
+                  >\documentclass</span
+                >[<span class="textcolor" style="color: #008000">a4paper</span
+                >]{<span class="textcolor" style="color: #000000">article</span
+                >}<br />
+                <span class="example-code-comment"
+                  >%% a4 is currently the logical size and also the physical
+                  size</span
+                ><br />
+                <br />
+                <span class="textcolor" style="color: #0000b2">\usepackage</span
+                >{<span class="textcolor" style="color: #000000">pgfpages</span
+                >}<br />
+                <span class="textcolor" style="color: #0000b2"
+                  ><a href="pages#pgf.back/pgfpagesuselayout"
+                    >\pgfpagesuselayout</a
+                  ></span
+                >{<span class="textcolor" style="color: #000000">resize</span>
+                <span class="textcolor" style="color: #000000"
+                  ><a href="tikz-paths#pgf.to">to</a></span
+                >}[<span class="textcolor" style="color: #008000"
+                  >letterpaper</span
+                >]<br />
+                <span class="example-code-comment"
+                  >%% a4 is still the logical size, but letter is the physical
+                  one</span
+                ><br />
+                <br />
+                <span class="textcolor" style="color: #000000">\begin</span
+                >{<span class="textcolor" style="color: #0000b2">document</span
+                >}<br />
+                &numsp;&numsp;<span class="textcolor" style="color: #0000b2"
+                  >\title</span
+                >{<span class="textcolor" style="color: #000000">My</span>
+                <span class="textcolor" style="color: #000000">Great</span>
+                <span class="textcolor" style="color: #000000">Article</span
+                >}<br />
+                ...<br />
+                <span class="textcolor" style="color: #000000">\end</span>{<span
+                  class="textcolor"
+                  style="color: #0000b2"
+                  >document</span
+                >}<br />
+              </code>
+            </div>
+          </figure>
+          <h5 id="autosec-7567">
+            <span class="sectionnumber" id="sec-89.2">89.2&emsp;</span>The
+            Predefined Layouts<a class="anchor-link" href="#sec-89.2">&para;</a>
+          </h5>
+          <a id="pgfmanual-autopage-7567"></a>
+
+          <p>
+            This section explains the predefined layouts in more detail. You
+            select a layout using the following command:
+          </p>
+
+          <div class="manualentry">
+            <div class="entryheadline">
+              <p>
+                <a id="pgf.back/pgfpagesuselayout"></a>
+                <span class="hl-def"
+                  ><span class="textcolor" style="color: #bf0000"
+                    ><kbd>\pgfpagesuselayout</kbd></span
+                  >{<span class="angle">&langle;</span><i>layout</i
+                  ><span class="angle">&rangle;</span>}[<span class="angle"
+                    >&langle;</span
+                  ><i>options</i><span class="angle">&rangle;</span>]</span
+                >
+                <a class="anchor-link" href="#pgf.back/pgfpagesuselayout"
+                  >&para;</a
+                >
+              </p>
+            </div>
+            <p>
+              Installs the specified <span class="angle">&langle;</span
+              ><i>layout</i><span class="angle">&rangle;</span> with the given
+              <span class="angle">&langle;</span><i>options</i
+              ><span class="angle">&rangle;</span>. The predefined layouts and
+              their permissible options are explained below.
+            </p>
+            <p>
+              If this function is called multiple times, only the last call
+              &ldquo;wins&rdquo;. You can thereby overwrite any previous
+              settings. In particular, layouts <em>do not</em> accumulate.
+            </p>
+            <p>
+              <i>Example: </i
+              ><span class="texttt"
+                >\pgfpagesuselayout{resize to}[a4paper]</span
+              >
+            </p>
+          </div>
+
+          <div class="manualentry">
+            <div class="entryheadline">
+              <p>
+                <a id="pgf.resize:to"></a>
+                <span class="hl-def"
+                  ><kbd
+                    >\pgfpagesuselayout{<span
+                      class="textcolor"
+                      style="color: #bf0000"
+                      >resize to</span
+                    >}</kbd
+                  >[<span class="angle">&langle;</span><i>options</i
+                  ><span class="angle">&rangle;</span>]</span
+                >
+                <a class="anchor-link" href="#pgf.resize:to">&para;</a>
+              </p>
+            </div>
+            <p>
+              This layout is used to resize every logical page to a specified
+              physical size. To determine the target size, the following options
+              may be given:
+            </p>
+
+            &bull;
+            <p>
+              <span class="textcolor" style="color: #bf0000"
+                ><span class="texttt">physical paper height=</span
+                ><span class="angle">&langle;</span><i>size</i
+                ><span class="angle">&rangle;</span></span
+              >
+              sets the height of the physical page size to
+              <span class="angle">&langle;</span><i>size</i
+              ><span class="angle">&rangle;</span>.
+            </p>
+
+            &bull;
+            <p>
+              <span class="textcolor" style="color: #bf0000"
+                ><span class="texttt">physical paper width=</span
+                ><span class="angle">&langle;</span><i>size</i
+                ><span class="angle">&rangle;</span></span
+              >
+              sets the width of the physical Pappe size to
+              <span class="angle">&langle;</span><i>size</i
+              ><span class="angle">&rangle;</span>.
+            </p>
+
+            &bull;
+            <p>
+              <span class="textcolor" style="color: #bf0000"
+                ><span class="texttt">a0paper</span></span
+              >
+              sets the physical page size to DIN A0 paper.
+            </p>
+
+            &bull;
+            <p>
+              <span class="textcolor" style="color: #bf0000"
+                ><span class="texttt">a1paper</span></span
+              >
+              sets the physical page size to DIN A1 paper.
+            </p>
+
+            &bull;
+            <p>
+              <span class="textcolor" style="color: #bf0000"
+                ><span class="texttt">a2paper</span></span
+              >
+              sets the physical page size to DIN A2 paper.
+            </p>
+
+            &bull;
+            <p>
+              <span class="textcolor" style="color: #bf0000"
+                ><span class="texttt">a3paper</span></span
+              >
+              sets the physical page size to DIN A3 paper.
+            </p>
+
+            &bull;
+            <p>
+              <span class="textcolor" style="color: #bf0000"
+                ><span class="texttt">a4paper</span></span
+              >
+              sets the physical page size to DIN A4 paper.
+            </p>
+
+            &bull;
+            <p>
+              <span class="textcolor" style="color: #bf0000"
+                ><span class="texttt">a5paper</span></span
+              >
+              sets the physical page size to DIN A5 paper.
+            </p>
+
+            &bull;
+            <p>
+              <span class="textcolor" style="color: #bf0000"
+                ><span class="texttt">a6paper</span></span
+              >
+              sets the physical page size to DIN A6 paper.
+            </p>
+
+            &bull;
+            <p>
+              <span class="textcolor" style="color: #bf0000"
+                ><span class="texttt">letterpaper</span></span
+              >
+              sets the physical page size to the American letter paper size.
+            </p>
+
+            &bull;
+            <p>
+              <span class="textcolor" style="color: #bf0000"
+                ><span class="texttt">legalpaper</span></span
+              >
+              sets the physical page size to the American legal paper size.
+            </p>
+
+            &bull;
+            <p>
+              <span class="textcolor" style="color: #bf0000"
+                ><span class="texttt">executivepaper</span></span
+              >
+              sets the physical page size to the American executive paper size.
+            </p>
+
+            &bull;
+            <p>
+              <span class="textcolor" style="color: #bf0000"
+                ><span class="texttt">landscape</span></span
+              >
+              swaps the height and the width of the physical paper.
+            </p>
+
+            &bull;
+            <p>
+              <span class="textcolor" style="color: #bf0000"
+                ><span class="texttt">border shrink=</span
+                ><span class="angle">&langle;</span><i>size</i
+                ><span class="angle">&rangle;</span></span
+              >
+              additionally reduces the size of the logical page on the physical
+              page by <span class="angle">&langle;</span><i>size</i
+              ><span class="angle">&rangle;</span>.
+            </p>
+          </div>
+
+          <div class="manualentry">
+            <div class="entryheadline">
+              <p>
+                <a id="pgf.2:on:1"></a>
+                <span class="hl-def"
+                  ><kbd
+                    >\pgfpagesuselayout{<span
+                      class="textcolor"
+                      style="color: #bf0000"
+                      >2 on 1</span
+                    >}</kbd
+                  >[<span class="angle">&langle;</span><i>options</i
+                  ><span class="angle">&rangle;</span>]</span
+                >
+                <a class="anchor-link" href="#pgf.2:on:1">&para;</a>
+              </p>
+            </div>
+            <p>
+              Puts two logical pages alongside each other on each physical page
+              if the logical height is larger than the logical width (logical
+              pages are in portrait mode). Otherwise, two logical pages are put
+              on top of each other (logical pages are in landscape mode). When
+              using this layout, it is advisable to use the
+              <span class="texttt">\nofiles</span> command, but this is not done
+              automatically.
+            </p>
+            <p>
+              The same <span class="angle">&langle;</span><i>options</i
+              ><span class="angle">&rangle;</span> as for the
+              <span class="texttt">resize to</span> layout can be used, plus the
+              following option:
+            </p>
+
+            &bull;
+            <p>
+              <span class="textcolor" style="color: #bf0000"
+                ><span class="texttt">odd numbered pages right</span></span
+              >
+              places the first page on the right.
+            </p>
+          </div>
+
+          <div class="manualentry">
+            <div class="entryheadline">
+              <p>
+                <a id="pgf.4:on:1"></a>
+                <span class="hl-def"
+                  ><kbd
+                    >\pgfpagesuselayout{<span
+                      class="textcolor"
+                      style="color: #bf0000"
+                      >4 on 1</span
+                    >}</kbd
+                  >[<span class="angle">&langle;</span><i>options</i
+                  ><span class="angle">&rangle;</span>]</span
+                >
+                <a class="anchor-link" href="#pgf.4:on:1">&para;</a>
+              </p>
+            </div>
+            <p>
+              Puts four logical pages on a single physical page. The same
+              <span class="angle">&langle;</span><i>options</i
+              ><span class="angle">&rangle;</span> as for the
+              <span class="texttt">resize to</span> layout can be used.
+            </p>
+          </div>
+
+          <div class="manualentry">
+            <div class="entryheadline">
+              <p>
+                <a id="pgf.6:on:1"></a>
+                <span class="hl-def"
+                  ><kbd
+                    >\pgfpagesuselayout{<span
+                      class="textcolor"
+                      style="color: #bf0000"
+                      >6 on 1</span
+                    >}</kbd
+                  >[<span class="angle">&langle;</span><i>options</i
+                  ><span class="angle">&rangle;</span>]</span
+                >
+                <a class="anchor-link" href="#pgf.6:on:1">&para;</a>
+              </p>
+            </div>
+            <p>Puts six logical pages on a single physical page.</p>
+          </div>
+
+          <div class="manualentry">
+            <div class="entryheadline">
+              <p>
+                <a id="pgf.8:on:1"></a>
+                <span class="hl-def"
+                  ><kbd
+                    >\pgfpagesuselayout{<span
+                      class="textcolor"
+                      style="color: #bf0000"
+                      >8 on 1</span
+                    >}</kbd
+                  >[<span class="angle">&langle;</span><i>options</i
+                  ><span class="angle">&rangle;</span>]</span
+                >
+                <a class="anchor-link" href="#pgf.8:on:1">&para;</a>
+              </p>
+            </div>
+            <p>
+              Puts eight logical pages on a single physical page. As for
+              <span class="texttt">2 on 1</span> and
+              <span class="texttt">4 on 1</span>, the orientation depends on
+              whether the logical pages are in landscape mode or in portrait
+              mode.
+            </p>
+          </div>
+
+          <div class="manualentry">
+            <div class="entryheadline">
+              <p>
+                <a id="pgf.16:on:1"></a>
+                <span class="hl-def"
+                  ><kbd
+                    >\pgfpagesuselayout{<span
+                      class="textcolor"
+                      style="color: #bf0000"
+                      >16 on 1</span
+                    >}</kbd
+                  >[<span class="angle">&langle;</span><i>options</i
+                  ><span class="angle">&rangle;</span>]</span
+                >
+                <a class="anchor-link" href="#pgf.16:on:1">&para;</a>
+              </p>
+            </div>
+            <p>This is for the <span class="textsc">ceo</span>.</p>
+          </div>
+
+          <div class="manualentry">
+            <div class="entryheadline">
+              <p>
+                <span class="hl-def"
+                  ><kbd
+                    >\pgfpagesuselayout{<span
+                      class="textcolor"
+                      style="color: #bf0000"
+                      >rounded corners</span
+                    >}</kbd
+                  >[<span class="angle">&langle;</span><i>options</i
+                  ><span class="angle">&rangle;</span>]</span
+                >
+              </p>
+            </div>
+            <a id="layout-rounded-corners"></a>
+            <p>
+              This layout adds &ldquo;rounded corners&rdquo; to every page,
+              which, supposedly, looks nicer during presentations with
+              projectors (personally, I doubt this). This is done by (possibly)
+              resizing the page to the physical page size. Then four black
+              rectangles are drawn in each corner. Next, a clipping region is
+              set up that contains all of the logical page except for little
+              rounded corners. Finally, the logical page is drawn and clipped
+              against the clipping region.
+            </p>
+            <p>
+              Note that every logical page should fill its background for this
+              to work.
+            </p>
+            <p>
+              In addition to the <span class="angle">&langle;</span
+              ><i>options</i><span class="angle">&rangle;</span> that can be
+              given to <span class="texttt">resize to</span>, the following
+              options may be given.
+            </p>
+
+            &bull;
+            <p>
+              <span class="textcolor" style="color: #bf0000"
+                ><span class="texttt">corner width=</span
+                ><span class="angle">&langle;</span><i>size</i
+                ><span class="angle">&rangle;</span></span
+              >
+              specifies the size of the corner.
+            </p>
+
+            <figure class="example">
+              <div class="example-code">
+                <button class="clipboardButton" type="button">copy</button>
+                <code>
+                  <br />
+                  <span class="textcolor" style="color: #0000b2"
+                    >\documentclass</span
+                  >{<span class="textcolor" style="color: #000000">beamer</span
+                  >}<br />
+                  <span class="textcolor" style="color: #0000b2"
+                    >\usepackage</span
+                  >{<span class="textcolor" style="color: #000000"
+                    >pgfpages</span
+                  >}<br />
+                  <span class="textcolor" style="color: #0000b2"
+                    ><a href="pages#pgf.back/pgfpagesuselayout"
+                      >\pgfpagesuselayout</a
+                    ></span
+                  >{<span class="textcolor" style="color: #000000"
+                    >rounded</span
+                  >
+                  <span class="textcolor" style="color: #000000">corners</span
+                  >}[<span class="textcolor" style="color: #008000"
+                    >corner width</span
+                  >=<span class="textcolor" style="color: #008000">5pt</span
+                  >]<br />
+                  <span class="textcolor" style="color: #000000">\begin</span
+                  >{<span class="textcolor" style="color: #0000b2"
+                    >document</span
+                  >}<br />
+                  ...<br />
+                  <span class="textcolor" style="color: #000000">\end</span
+                  >{<span class="textcolor" style="color: #0000b2"
+                    >document</span
+                  >}<br />
+                </code>
+              </div>
+            </figure>
+          </div>
+
+          <div class="manualentry">
+            <div class="entryheadline">
+              <p>
+                <a id="pgf.two:screens:with:lagging:second"></a>
+                <span class="hl-def"
+                  ><kbd
+                    >\pgfpagesuselayout{<span
+                      class="textcolor"
+                      style="color: #bf0000"
+                      >two screens with lagging second</span
+                    >}</kbd
+                  >[<span class="angle">&langle;</span><i>options</i
+                  ><span class="angle">&rangle;</span>]</span
+                >
+                <a
+                  class="anchor-link"
+                  href="#pgf.two:screens:with:lagging:second"
+                  >&para;</a
+                >
+              </p>
+            </div>
+            <p>
+              This layout puts two logical pages alongside each other. The
+              second page always shows what the main page showed on the previous
+              physical page. Thus, the second page &ldquo;lags behind&rdquo; the
+              main page. This can be useful when you have two projectors
+              attached to your computer and can show different parts of a
+              physical page on different projectors.
+            </p>
+            <p>
+              The following <span class="angle">&langle;</span><i>options</i
+              ><span class="angle">&rangle;</span> may be given:
+            </p>
+
+            &bull;
+            <p>
+              <span class="textcolor" style="color: #bf0000"
+                ><span class="texttt">second right</span></span
+              >
+              puts the second page right of the main page. This will make the
+              physical pages twice as wide as the logical pages, but it will
+              retain the height.
+            </p>
+
+            &bull;
+            <p>
+              <span class="textcolor" style="color: #bf0000"
+                ><span class="texttt">second left</span></span
+              >
+              puts the second page left, otherwise it behaves the same as
+              <span class="texttt">second right</span>.
+            </p>
+
+            &bull;
+            <p>
+              <span class="textcolor" style="color: #bf0000"
+                ><span class="texttt">second bottom</span></span
+              >
+              puts the second page below the main page. This make the physical
+              pages twice as high as the logical ones.
+            </p>
+
+            &bull;
+            <p>
+              <span class="textcolor" style="color: #bf0000"
+                ><span class="texttt">second top</span></span
+              >
+              works like <span class="texttt">second bottom</span>.
+            </p>
+          </div>
+
+          <div class="manualentry">
+            <div class="entryheadline">
+              <p>
+                <a id="pgf.two:screens:with:optional:second"></a>
+                <span class="hl-def"
+                  ><kbd
+                    >\pgfpagesuselayout{<span
+                      class="textcolor"
+                      style="color: #bf0000"
+                      >two screens with optional second</span
+                    >}</kbd
+                  >[<span class="angle">&langle;</span><i>options</i
+                  ><span class="angle">&rangle;</span>]</span
+                >
+                <a
+                  class="anchor-link"
+                  href="#pgf.two:screens:with:optional:second"
+                  >&para;</a
+                >
+              </p>
+            </div>
+            <p>
+              This layout works similarly to
+              <span class="texttt">two screens with lagging second</span>. The
+              difference is that the contents of the second screen only changes
+              when one of the commands
+              <span class="texttt">\pgfshipoutlogicalpage{2}</span>{<span
+                class="angle"
+                >&langle;</span
+              ><i>box</i><span class="angle">&rangle;</span>} or
+              <span class="texttt">\pgfcurrentpagewillbelogicalpage{2}</span> is
+              called. The first puts the given
+              <span class="angle">&langle;</span><i>box</i
+              ><span class="angle">&rangle;</span> on the second page. The
+              second specifies that the current page should be put there, once
+              it is finished.
+            </p>
+            <p>
+              The same options as for
+              <span class="texttt">two screens with lagging second</span> may be
+              given.
+            </p>
+          </div>
+
+          <p>
+            You can define your own predefined layouts using the following
+            command:
+          </p>
+
+          <div class="manualentry">
+            <div class="entryheadline">
+              <p>
+                <a id="pgf.back/pgfpagesdeclarelayout"></a>
+                <span class="hl-def"
+                  ><span class="textcolor" style="color: #bf0000"
+                    ><kbd>\pgfpagesdeclarelayout</kbd></span
+                  >{<span class="angle">&langle;</span><i>layout</i
+                  ><span class="angle">&rangle;</span>}{<span class="angle"
+                    >&langle;</span
+                  ><i>before actions</i
+                  ><span class="angle">&rangle;</span>}{<span class="angle"
+                    >&langle;</span
+                  ><i>after actions</i
+                  ><span class="angle">&rangle;</span>}</span
+                >
+                <a class="anchor-link" href="#pgf.back/pgfpagesdeclarelayout"
+                  >&para;</a
+                >
+              </p>
+            </div>
+            <p>
+              This command predefines a <span class="angle">&langle;</span
+              ><i>layout</i><span class="angle">&rangle;</span> that can later
+              be installed using the
+              <span class="texttt">\pgfpagesuselayout</span> command.
+            </p>
+            <p>
+              When <span class="texttt">\pgfpagesuselayout</span>{<span
+                class="angle"
+                >&langle;</span
+              ><i>layout</i><span class="angle">&rangle;</span>}[<span
+                class="angle"
+                >&langle;</span
+              ><i>options</i><span class="angle">&rangle;</span>] is called, the
+              following happens: First, the <span class="angle">&langle;</span
+              ><i>before actions</i><span class="angle">&rangle;</span> are
+              executed. They can be used, for example, to set up default values
+              for keys. Next,
+              <span class="texttt">\setkeys{pgfpagesuselayoutoption}</span
+              >{<span class="angle">&langle;</span><i>options</i
+              ><span class="angle">&rangle;</span>} is executed. Finally, the
+              <span class="angle">&langle;</span><i>after actions</i
+              ><span class="angle">&rangle;</span> are executed.
+            </p>
+            <p>Here is an example:</p>
+
+            <figure class="example">
+              <div class="example-code">
+                <button class="clipboardButton" type="button">copy</button>
+                <code>
+                  <br />
+                  <span class="textcolor" style="color: #0000b2"
+                    ><a href="pages#pgf.back/pgfpagesdeclarelayout"
+                      >\pgfpagesdeclarelayout</a
+                    ></span
+                  >{<span class="textcolor" style="color: #000000">resize</span>
+                  <span class="textcolor" style="color: #000000"
+                    ><a href="tikz-paths#pgf.to">to</a></span
+                  >}<br />
+                  {<br />
+                  &numsp;&numsp;<span class="textcolor" style="color: #0000b2"
+                    >\def</span
+                  ><span class="textcolor" style="color: #0000b2"
+                    >\pgfpageoptionborder</span
+                  >{<span class="textcolor" style="color: #000000">0pt</span
+                  >}<br />
+                  }<br />
+                  {<br />
+                  &numsp;&numsp;<span class="textcolor" style="color: #0000b2"
+                    ><a href="pages#pgf.back/pgfpagesphysicalpageoptions"
+                      >\pgfpagesphysicalpageoptions</a
+                    ></span
+                  ><br />
+                  &numsp;&numsp;{<span class="example-code-comment">%</span
+                  ><br />
+                  &numsp;&numsp;&numsp;&numsp;<span
+                    class="textcolor"
+                    style="color: #000000"
+                    >logical</span
+                  >
+                  <span class="textcolor" style="color: #000000">pages=1</span
+                  >,<span class="example-code-comment">%</span><br />
+                  &numsp;&numsp;&numsp;&numsp;<span
+                    class="textcolor"
+                    style="color: #000000"
+                    >physical</span
+                  >
+                  <span class="textcolor" style="color: #000000">height=</span
+                  ><span class="textcolor" style="color: #0000b2"
+                    >\pgfpageoptionheight</span
+                  >,<span class="example-code-comment">%</span><br />
+                  &numsp;&numsp;&numsp;&numsp;<span
+                    class="textcolor"
+                    style="color: #000000"
+                    >physical</span
+                  >
+                  <span class="textcolor" style="color: #000000">width=</span
+                  ><span class="textcolor" style="color: #0000b2"
+                    >\pgfpageoptionwidth</span
+                  ><span class="example-code-comment">%</span><br />
+                  &numsp;&numsp;}<br />
+                  &numsp;&numsp;<span class="textcolor" style="color: #0000b2"
+                    ><a href="pages#pgf.back/pgfpageslogicalpageoptions"
+                      >\pgfpageslogicalpageoptions</a
+                    ></span
+                  >{<span class="textcolor" style="color: #000000">1</span
+                  >}<br />
+                  &numsp;&numsp;{<span class="example-code-comment">%</span
+                  ><br />
+                  &numsp;&numsp;&numsp;&numsp;<span
+                    class="textcolor"
+                    style="color: #000000"
+                    >resized</span
+                  >
+                  <span class="textcolor" style="color: #000000">width=</span
+                  ><span class="textcolor" style="color: #0000b2"
+                    >\pgfphysicalwidth</span
+                  >,<span class="example-code-comment">%</span><br />
+                  &numsp;&numsp;&numsp;&numsp;<span
+                    class="textcolor"
+                    style="color: #000000"
+                    >resized</span
+                  >
+                  <span class="textcolor" style="color: #000000">height=</span
+                  ><span class="textcolor" style="color: #0000b2"
+                    >\pgfphysicalheight</span
+                  >,<span class="example-code-comment">%</span><br />
+                  &numsp;&numsp;&numsp;&numsp;<span
+                    class="textcolor"
+                    style="color: #000000"
+                    >border</span
+                  >
+                  <span class="textcolor" style="color: #000000">shrink=</span
+                  ><span class="textcolor" style="color: #0000b2"
+                    >\pgfpageoptionborder</span
+                  >,<span class="example-code-comment">%</span><br />
+                  &numsp;&numsp;&numsp;&numsp;<span
+                    class="textcolor"
+                    style="color: #000000"
+                    >center=</span
+                  ><span class="textcolor" style="color: #0000b2"
+                    ><a href="base-points#pgf.back/pgfpoint">\pgfpoint</a></span
+                  >{.<span class="textcolor" style="color: #000000">5</span
+                  ><span class="textcolor" style="color: #0000b2"
+                    >\pgfphysicalwidth</span
+                  >}{.<span class="textcolor" style="color: #000000">5</span
+                  ><span class="textcolor" style="color: #0000b2"
+                    >\pgfphysicalheight</span
+                  >}<span class="example-code-comment">%</span><br />
+                  &numsp;&numsp;}<span class="example-code-comment">%</span
+                  ><br />
+                  }<br />
+                </code>
+              </div>
+            </figure>
+          </div>
+          <h5 id="autosec-7568">
+            <span class="sectionnumber" id="sec-89.3">89.3&emsp;</span>Defining
+            a Layout<a class="anchor-link" href="#sec-89.3">&para;</a>
+          </h5>
+          <a id="pgfmanual-autopage-7568"></a>
+
+          <p>
+            If none of the predefined layouts meets your problem or if you wish
+            to modify them, you can create layouts from scratch. This section
+            explains how this is done.
+          </p>
+
+          <p>
+            Basically, <span class="texttt">pgfpages</span> hooks into
+            <span class="latexlogofont"
+              ><span class="latexlogo"
+                >T<span class="latexlogosub">e</span>X</span
+              ></span
+            >&rsquo;s <span class="texttt">\shipout</span> function. This
+            function is called whenever
+            <span class="latexlogofont"
+              ><span class="latexlogo"
+                >T<span class="latexlogosub">e</span>X</span
+              ></span
+            >
+            has completed typesetting a page and wishes to send this page to the
+            <span class="texttt">.dvi</span> or
+            <span class="texttt">.pdf</span> file. The
+            <span class="texttt">pgfpages</span> package redefines this command.
+            Instead of sending the page to the output file,
+            <span class="texttt">pgfpages</span> stores it in an internal box
+            and then acts as if the page had been output. When
+            <span class="latexlogofont"
+              ><span class="latexlogo"
+                >T<span class="latexlogosub">e</span>X</span
+              ></span
+            >
+            tries to output the next page using
+            <span class="texttt">\shipout</span>, this call is once more
+            intercepted and the page is stored in another box. These boxes are
+            called <em>logical pages</em>.
+          </p>
+
+          <p>
+            At some point, enough logical pages have been accumulated such that
+            a <em>physical page</em> can be output. When this happens,
+            <span class="texttt">pgfpages</span> possibly scales, rotates, and
+            translates the logical pages (and possibly even does further
+            modifications) and then puts them at certain positions of the
+            <em>physical</em> page. Once this page is fully assembled, the
+            &ldquo;real&rdquo; or &ldquo;original&rdquo;
+            <span class="texttt">\shipout</span> is called to send the physical
+            page to the output file.
+          </p>
+
+          <p>
+            In reality, things are slightly more complicated. First, once a
+            physical page has been shipped out, the logical pages are usually
+            voided, but this need not be the case. Instead, it is possible that
+            certain logical pages just retain their contents after the physical
+            page has been shipped out and these pages need not be filled once
+            more before a physical shipout can occur. However, the contents of
+            these logical pages can still be changed using special commands. It
+            is also possible that after a shipout certain logical pages are
+            filled with the contents of <em>other</em> logical pages.
+          </p>
+
+          <p>
+            A <em>layout</em> defines for each logical page where it will go on
+            the physical page and which further modifications should be done.
+            The following two commands are used to define the layout:
+          </p>
+
+          <div class="manualentry">
+            <div class="entryheadline">
+              <p>
+                <a id="pgf.back/pgfpagesphysicalpageoptions"></a>
+                <span class="hl-def"
+                  ><span class="textcolor" style="color: #bf0000"
+                    ><kbd>\pgfpagesphysicalpageoptions</kbd></span
+                  >{<span class="angle">&langle;</span><i>options</i
+                  ><span class="angle">&rangle;</span>}</span
+                >
+                <a
+                  class="anchor-link"
+                  href="#pgf.back/pgfpagesphysicalpageoptions"
+                  >&para;</a
+                >
+              </p>
+            </div>
+            <p>
+              This command sets the characteristics of the
+              &ldquo;physical&rdquo; page. For example, it is used to specify
+              how many logical pages there are and how many logical pages must
+              be accumulated before a physical page is shipped out. How each
+              individual logical page is typeset is specified using the command
+              <span class="texttt">\pgfpageslogicalpageoptions</span>, described
+              later.
+            </p>
+            <p>
+              <i>Example: </i>A layout for putting two portrait pages on a
+              single landscape page:
+            </p>
+
+            <figure class="example">
+              <div class="example-code">
+                <button class="clipboardButton" type="button">copy</button>
+                <code>
+                  <br />
+                  <span class="textcolor" style="color: #0000b2"
+                    ><a href="pages#pgf.back/pgfpagesphysicalpageoptions"
+                      >\pgfpagesphysicalpageoptions</a
+                    ></span
+                  ><br />
+                  {<span class="example-code-comment">%</span><br />
+                  &numsp;&numsp;<span class="textcolor" style="color: #000000"
+                    >logical</span
+                  >
+                  <span class="textcolor" style="color: #000000">pages=2</span
+                  >,<span class="example-code-comment">%</span><br />
+                  &numsp;&numsp;<span class="textcolor" style="color: #000000"
+                    >physical</span
+                  >
+                  <span class="textcolor" style="color: #000000">height=</span
+                  ><span class="textcolor" style="color: #0000b2"
+                    >\paperwidth</span
+                  >,<span class="example-code-comment">%</span><br />
+                  &numsp;&numsp;<span class="textcolor" style="color: #000000"
+                    >physical</span
+                  >
+                  <span class="textcolor" style="color: #000000">width=</span
+                  ><span class="textcolor" style="color: #0000b2"
+                    >\paperheight</span
+                  >,<span class="example-code-comment">%</span><br />
+                  }<br />
+                  <br />
+                  <span class="textcolor" style="color: #0000b2"
+                    ><a href="pages#pgf.back/pgfpageslogicalpageoptions"
+                      >\pgfpageslogicalpageoptions</a
+                    ></span
+                  >{<span class="textcolor" style="color: #000000">1</span
+                  >}<br />
+                  {<span class="example-code-comment">%</span><br />
+                  &numsp;&numsp;<span class="textcolor" style="color: #000000"
+                    >resized</span
+                  >
+                  <span class="textcolor" style="color: #000000">width=</span
+                  >.<span class="textcolor" style="color: #000000">5</span
+                  ><span class="textcolor" style="color: #0000b2"
+                    >\pgfphysicalwidth</span
+                  >,<span class="example-code-comment">%</span><br />
+                  &numsp;&numsp;<span class="textcolor" style="color: #000000"
+                    >resized</span
+                  >
+                  <span class="textcolor" style="color: #000000">height=</span
+                  ><span class="textcolor" style="color: #0000b2"
+                    >\pgfphysicalheight</span
+                  >,<span class="example-code-comment">%</span><br />
+                  &numsp;&numsp;<span class="textcolor" style="color: #000000"
+                    >center=</span
+                  ><span class="textcolor" style="color: #0000b2"
+                    ><a href="base-points#pgf.back/pgfpoint">\pgfpoint</a></span
+                  >{.<span class="textcolor" style="color: #000000">25</span
+                  ><span class="textcolor" style="color: #0000b2"
+                    >\pgfphysicalwidth</span
+                  >}{.<span class="textcolor" style="color: #000000">5</span
+                  ><span class="textcolor" style="color: #0000b2"
+                    >\pgfphysicalheight</span
+                  >}<span class="example-code-comment">%</span><br />
+                  }<span class="example-code-comment">%</span><br />
+                  <span class="textcolor" style="color: #0000b2"
+                    ><a href="pages#pgf.back/pgfpageslogicalpageoptions"
+                      >\pgfpageslogicalpageoptions</a
+                    ></span
+                  >{<span class="textcolor" style="color: #000000">2</span
+                  >}<br />
+                  {<span class="example-code-comment">%</span><br />
+                  &numsp;&numsp;<span class="textcolor" style="color: #000000"
+                    >resized</span
+                  >
+                  <span class="textcolor" style="color: #000000">width=</span
+                  >.<span class="textcolor" style="color: #000000">5</span
+                  ><span class="textcolor" style="color: #0000b2"
+                    >\pgfphysicalwidth</span
+                  >,<span class="example-code-comment">%</span><br />
+                  &numsp;&numsp;<span class="textcolor" style="color: #000000"
+                    >resized</span
+                  >
+                  <span class="textcolor" style="color: #000000">height=</span
+                  ><span class="textcolor" style="color: #0000b2"
+                    >\pgfphysicalheight</span
+                  >,<span class="example-code-comment">%</span><br />
+                  &numsp;&numsp;<span class="textcolor" style="color: #000000"
+                    >center=</span
+                  ><span class="textcolor" style="color: #0000b2"
+                    ><a href="base-points#pgf.back/pgfpoint">\pgfpoint</a></span
+                  >{.<span class="textcolor" style="color: #000000">75</span
+                  ><span class="textcolor" style="color: #0000b2"
+                    >\pgfphysicalwidth</span
+                  >}{.<span class="textcolor" style="color: #000000">5</span
+                  ><span class="textcolor" style="color: #0000b2"
+                    >\pgfphysicalheight</span
+                  >}<span class="example-code-comment">%</span><br />
+                  }<span class="example-code-comment">%</span><br />
+                </code>
+              </div>
+            </figure>
+            <p>
+              The following <span class="angle">&langle;</span><i>options</i
+              ><span class="angle">&rangle;</span> may be set:
+            </p>
+
+            &bull;
+            <p>
+              <span class="textcolor" style="color: #bf0000"
+                ><span class="texttt">logical pages=</span
+                ><span class="angle">&langle;</span><i>logical pages</i
+                ><span class="angle">&rangle;</span></span
+              >
+              specified how many logical pages there are, in total. These are
+              numbered 1 to <span class="angle">&langle;</span
+              ><i>logical pages</i><span class="angle">&rangle;</span>.
+            </p>
+
+            &bull;
+            <p>
+              <span class="textcolor" style="color: #bf0000"
+                ><span class="texttt">first logical shipout=</span
+                ><span class="angle">&langle;</span><i>first</i
+                ><span class="angle">&rangle;</span></span
+              >. See the next option. By default,
+              <span class="angle">&langle;</span><i>first</i
+              ><span class="angle">&rangle;</span> is 1.
+            </p>
+
+            &bull;
+            <p>
+              <span class="textcolor" style="color: #bf0000"
+                ><span class="texttt">last logical shipout=</span
+                ><span class="angle">&langle;</span><i>last</i
+                ><span class="angle">&rangle;</span></span
+              >. Together with the previous option, these two options define an
+              interval of pages inside the range 1 to
+              <span class="angle">&langle;</span><i>logical pages</i
+              ><span class="angle">&rangle;</span>. Only this range is used to
+              store the pages that are shipped out by
+              <span class="latexlogofont"
+                ><span class="latexlogo"
+                  >T<span class="latexlogosub">e</span>X</span
+                ></span
+              >. This means that after a physical shipout has just occurred (or
+              at the beginning), the first time
+              <span class="latexlogofont"
+                ><span class="latexlogo"
+                  >T<span class="latexlogosub">e</span>X</span
+                ></span
+              >
+              wishes to perform a shipout, the page to be shipped out is stored
+              in logical page <span class="angle">&langle;</span><i>first</i
+              ><span class="angle">&rangle;</span>. The next time
+              <span class="latexlogofont"
+                ><span class="latexlogo"
+                  >T<span class="latexlogosub">e</span>X</span
+                ></span
+              >
+              performs a shipout, the page is stored in logical page \(\meta
+              {first} +1\) and so on, until the logical page
+              <span class="angle">&langle;</span><i>last</i
+              ><span class="angle">&rangle;</span> is also filled. Once this
+              happens, a physical shipout occurs and the process starts once
+              more.
+            </p>
+            <p>
+              Note that logical pages that lie outside the interval between
+              <span class="angle">&langle;</span><i>first</i
+              ><span class="angle">&rangle;</span> and
+              <span class="angle">&langle;</span><i>last</i
+              ><span class="angle">&rangle;</span> are filled only indirectly or
+              when special commands are used.
+            </p>
+            <p>
+              By default, <span class="angle">&langle;</span><i>last</i
+              ><span class="angle">&rangle;</span> equals
+              <span class="angle">&langle;</span><i>logical pages</i
+              ><span class="angle">&rangle;</span>.
+            </p>
+
+            &bull;
+            <p>
+              <span class="textcolor" style="color: #bf0000"
+                ><span class="texttt">current logical shipout=</span
+                ><span class="angle">&langle;</span><i>current</i
+                ><span class="angle">&rangle;</span></span
+              >
+              changes an internal counter such that
+              <span class="latexlogofont"
+                ><span class="latexlogo"
+                  >T<span class="latexlogosub">e</span>X</span
+                ></span
+              >&rsquo;s next logical shipout will be stored in logical page
+              <span class="angle">&langle;</span><i>current</i
+              ><span class="angle">&rangle;</span>.
+            </p>
+            <p>
+              This option can be used to &ldquo;warp&rdquo; the logical page
+              filling mechanism to a certain page. You can both skip logical
+              pages and overwrite already filled logical pages. After the
+              logical page <span class="angle">&langle;</span><i>current</i
+              ><span class="angle">&rangle;</span> has been filled, the internal
+              counter is incremented normally as if the logical page
+              <span class="angle">&langle;</span><i>current</i
+              ><span class="angle">&rangle;</span> had been
+              &ldquo;reached&rdquo; normally. If you specify a
+              <span class="angle">&langle;</span><i>current</i
+              ><span class="angle">&rangle;</span> larger than
+              <span class="angle">&langle;</span><i>last</i
+              ><span class="angle">&rangle;</span>, a physical shipout will
+              occur after the logical page <span class="angle">&langle;</span
+              ><i>current</i><span class="angle">&rangle;</span> has been
+              filled.
+            </p>
+
+            &bull;
+            <p>
+              <span class="textcolor" style="color: #bf0000"
+                ><span class="texttt">physical height=</span
+                ><span class="angle">&langle;</span><i>height</i
+                ><span class="angle">&rangle;</span></span
+              >
+              specifies the height of the physical pages. This height is
+              typically different from the normal
+              <span class="texttt">\paperheight</span>, which is used by
+              <span class="latexlogofont"
+                ><span class="latexlogo"
+                  >T<span class="latexlogosub">e</span>X</span
+                ></span
+              >
+              for its typesetting and page breaking purposes.
+            </p>
+
+            &bull;
+            <p>
+              <span class="textcolor" style="color: #bf0000"
+                ><span class="texttt">physical width=</span
+                ><span class="angle">&langle;</span><i>width</i
+                ><span class="angle">&rangle;</span></span
+              >
+              specifies the physical width.
+            </p>
+          </div>
+
+          <div class="manualentry">
+            <div class="entryheadline">
+              <p>
+                <a id="pgf.back/pgfpageslogicalpageoptions"></a>
+                <span class="hl-def"
+                  ><span class="textcolor" style="color: #bf0000"
+                    ><kbd>\pgfpageslogicalpageoptions</kbd></span
+                  >{<span class="angle">&langle;</span><i>logical page number</i
+                  ><span class="angle">&rangle;</span>}{<span class="angle"
+                    >&langle;</span
+                  ><i>options</i><span class="angle">&rangle;</span>}</span
+                >
+                <a
+                  class="anchor-link"
+                  href="#pgf.back/pgfpageslogicalpageoptions"
+                  >&para;</a
+                >
+              </p>
+            </div>
+            <p>
+              This command is used to specify where the logical page number
+              <span class="angle">&langle;</span><i>logical page number</i
+              ><span class="angle">&rangle;</span> will be placed on the
+              physical page. In addition, this command can be used to install
+              additional &ldquo;code&rdquo; to be executed when this page is put
+              on the physical page.
+            </p>
+            <p>
+              The number <span class="angle">&langle;</span
+              ><i>logical page number</i
+              ><span class="angle">&rangle;</span> should be between 1 and
+              <span class="angle">&langle;</span><i>logical pages</i
+              ><span class="angle">&rangle;</span>, which has previously been
+              installed using the
+              <span class="texttt">\pgfpagesphysicalpageoptions</span> command.
+            </p>
+            <p>
+              The following <span class="angle">&langle;</span><i>options</i
+              ><span class="angle">&rangle;</span> may be given:
+            </p>
+
+            &bull;
+            <p>
+              <span class="textcolor" style="color: #bf0000"
+                ><span class="texttt">center=</span
+                ><span class="angle">&langle;</span><i>pgf point</i
+                ><span class="angle">&rangle;</span></span
+              >
+              specifies the center of the logical page inside the physical page
+              as a <span class="textsc">pgf</span>-point. The origin of the
+              coordinate system of the physical page is at the
+              <em>lower</em> left corner.
+            </p>
+
+            <figure class="example">
+              <div class="example-code">
+                <button class="clipboardButton" type="button">copy</button>
+                <code>
+                  <br />
+                  <span class="textcolor" style="color: #0000b2"
+                    ><a href="pages#pgf.back/pgfpageslogicalpageoptions"
+                      >\pgfpageslogicalpageoptions</a
+                    ></span
+                  >{<span class="textcolor" style="color: #000000">1</span
+                  >}<br />
+                  {<span class="example-code-comment"
+                    >% center logical page on middle of left side</span
+                  ><br />
+                  &numsp;&numsp;<span class="textcolor" style="color: #000000"
+                    >center=</span
+                  ><span class="textcolor" style="color: #0000b2"
+                    ><a href="base-points#pgf.back/pgfpoint">\pgfpoint</a></span
+                  >{.<span class="textcolor" style="color: #000000">25</span
+                  ><span class="textcolor" style="color: #0000b2"
+                    >\pgfphysicalwidth</span
+                  >}{.<span class="textcolor" style="color: #000000">5</span
+                  ><span class="textcolor" style="color: #0000b2"
+                    >\pgfphysicalheight</span
+                  >}<span class="example-code-comment">%</span><br />
+                  &numsp;&numsp;<span class="textcolor" style="color: #000000"
+                    >resized</span
+                  >
+                  <span class="textcolor" style="color: #000000">width=</span
+                  >.<span class="textcolor" style="color: #000000">5</span
+                  ><span class="textcolor" style="color: #0000b2"
+                    >\pgfphysicalwidth</span
+                  >,<span class="example-code-comment">%</span><br />
+                  &numsp;&numsp;<span class="textcolor" style="color: #000000"
+                    >resized</span
+                  >
+                  <span class="textcolor" style="color: #000000">height=</span
+                  ><span class="textcolor" style="color: #0000b2"
+                    >\pgfphysicalheight</span
+                  >,<span class="example-code-comment">%</span><br />
+                  }<br />
+                </code>
+              </div>
+            </figure>
+
+            &bull;
+            <p>
+              <span class="textcolor" style="color: #bf0000"
+                ><span class="texttt">resized width=</span
+                ><span class="angle">&langle;</span><i>size</i
+                ><span class="angle">&rangle;</span></span
+              >
+              specifies the width that the logical page should have
+              <em>at most</em> on the physical page. To achieve this width, the
+              pages is scaled down appropriately <em>or more</em>. The &ldquo;or
+              more&rdquo; part can happen if the
+              <span class="texttt">resize height</span> option is also used. In
+              this case, the scaling is chosen such that both the specified
+              height and width are met. The aspect ratio of a logical page is
+              not modified.
+            </p>
+
+            &bull;
+            <p>
+              <span class="textcolor" style="color: #bf0000"
+                ><span class="texttt">resized height=</span
+                ><span class="angle">&langle;</span><i>height</i
+                ><span class="angle">&rangle;</span></span
+              >
+              specifies the maximum height of the logical page.
+            </p>
+
+            &bull;
+            <p>
+              <span class="textcolor" style="color: #bf0000"
+                ><span class="texttt">original width=</span
+                ><span class="angle">&langle;</span><i>width</i
+                ><span class="angle">&rangle;</span></span
+              >
+              specifies the width the
+              <span class="latexlogofont"
+                ><span class="latexlogo"
+                  >T<span class="latexlogosub">e</span>X</span
+                ></span
+              >
+              &ldquo;thinks&rdquo; that the logical page has. This width is
+              <span class="texttt">\paperwidth</span> at the point of
+              invocation, by default. Note that setting this width to something
+              different from <span class="texttt">\paperwidth</span> does
+              <em>not</em> change the
+              <span class="texttt">\pagewidth</span> during
+              <span class="latexlogofont"
+                ><span class="latexlogo"
+                  >T<span class="latexlogosub">e</span>X</span
+                ></span
+              >&rsquo;s typesetting. You have to do that yourself.
+            </p>
+            <p>
+              You need this option only for special logical pages that have a
+              height or width different from the normal one and for which you
+              will (later on) set these sizes yourself.
+            </p>
+
+            &bull;
+            <p>
+              <span class="textcolor" style="color: #bf0000"
+                ><span class="texttt">original height=</span
+                ><span class="angle">&langle;</span><i>height</i
+                ><span class="angle">&rangle;</span></span
+              >
+              works like <span class="texttt">original width</span>.
+            </p>
+
+            &bull;
+            <p>
+              <span class="textcolor" style="color: #bf0000"
+                ><span class="texttt">scale=</span
+                ><span class="angle">&langle;</span><i>factor</i
+                ><span class="angle">&rangle;</span></span
+              >
+              scales the page by at least the given
+              <span class="angle">&langle;</span><i>factor</i
+              ><span class="angle">&rangle;</span>. A
+              <span class="angle">&langle;</span><i>factor</i
+              ><span class="angle">&rangle;</span> of
+              <span class="texttt">0.5</span> will half the size of the page, a
+              factor or <span class="texttt">2</span> will double the size.
+              &ldquo;At least&rdquo; means that if options like
+              <span class="texttt">resize height</span> are given and if the
+              scaling required to meet that option is less than
+              <span class="angle">&langle;</span><i>factor</i
+              ><span class="angle">&rangle;</span>, that other scaling is used
+              instead.
+            </p>
+
+            &bull;
+            <p>
+              <span class="textcolor" style="color: #bf0000"
+                ><span class="texttt">xscale=</span
+                ><span class="angle">&langle;</span><i>factor</i
+                ><span class="angle">&rangle;</span></span
+              >
+              scales the logical page along the \(x\)-axis by the given
+              <span class="angle">&langle;</span><i>factor</i
+              ><span class="angle">&rangle;</span>. This scaling is done
+              independently of any other scaling. Mostly, this option is useful
+              for a factor of <span class="texttt">-1</span>, which flips the
+              page along the \(y\)-axis. The aspect ratio is not kept.
+            </p>
+
+            &bull;
+            <p>
+              <span class="textcolor" style="color: #bf0000"
+                ><span class="texttt">yscale=</span
+                ><span class="angle">&langle;</span><i>factor</i
+                ><span class="angle">&rangle;</span></span
+              >
+              works like <span class="texttt">xscale</span>, only for the
+              \(y\)-axis.
+            </p>
+
+            &bull;
+            <p>
+              <span class="textcolor" style="color: #bf0000"
+                ><span class="texttt">rotation=</span
+                ><span class="angle">&langle;</span><i>degree</i
+                ><span class="angle">&rangle;</span></span
+              >
+              rotates the page by <span class="angle">&langle;</span
+              ><i>degree</i><span class="angle">&rangle;</span> around its
+              center. Use a degree of <span class="texttt">90</span> or
+              <span class="texttt">-90</span> to go from portrait to landscape
+              and back. The rotation need not be a multiple of
+              <span class="texttt">90</span>.
+            </p>
+
+            &bull;
+            <p>
+              <span class="textcolor" style="color: #bf0000"
+                ><span class="texttt">copy from=</span
+                ><span class="angle">&langle;</span><i>logical page number</i
+                ><span class="angle">&rangle;</span></span
+              >. Normally, after a physical shipout has occurred, all logical
+              pages are voided in a loop. However, if this option is given, the
+              current logical page is filled with the contents of the old
+              logical page number <span class="angle">&langle;</span
+              ><i>logical page number</i><span class="angle">&rangle;</span>.
+            </p>
+            <p><i>Example: </i>Have logical page 2 retain its contents:</p>
+
+            <figure class="example">
+              <div class="example-code">
+                <button class="clipboardButton" type="button">copy</button>
+                <code>
+                  <br />
+                  <span class="textcolor" style="color: #0000b2"
+                    ><a href="pages#pgf.back/pgfpageslogicalpageoptions"
+                      >\pgfpageslogicalpageoptions</a
+                    ></span
+                  >{<span class="textcolor" style="color: #000000">2</span
+                  >}{<span class="textcolor" style="color: #000000"
+                    ><a href="oo#pgf.copy">copy</a></span
+                  >
+                  <span class="textcolor" style="color: #000000">from=2</span
+                  >}<br />
+                </code>
+              </div>
+            </figure>
+            <p>
+              <i>Example: </i>Let logical page 2 show what logical page 1 showed
+              on the just-shipped-out physical page:
+            </p>
+
+            <figure class="example">
+              <div class="example-code">
+                <button class="clipboardButton" type="button">copy</button>
+                <code>
+                  <br />
+                  <span class="textcolor" style="color: #0000b2"
+                    ><a href="pages#pgf.back/pgfpageslogicalpageoptions"
+                      >\pgfpageslogicalpageoptions</a
+                    ></span
+                  >{<span class="textcolor" style="color: #000000">2</span
+                  >}{<span class="textcolor" style="color: #000000"
+                    ><a href="oo#pgf.copy">copy</a></span
+                  >
+                  <span class="textcolor" style="color: #000000">from=1</span
+                  >}<br />
+                </code>
+              </div>
+            </figure>
+
+            &bull;
+            <p>
+              <span class="textcolor" style="color: #bf0000"
+                ><span class="texttt">border shrink</span>=<span class="angle"
+                  >&langle;</span
+                ><i>size</i><span class="angle">&rangle;</span></span
+              >
+              specifies an additional reduction of the size to which the page is
+              page is scaled.
+            </p>
+
+            &bull;
+            <p>
+              <span class="textcolor" style="color: #bf0000"
+                ><span class="texttt">border code</span>=<span class="angle"
+                  >&langle;</span
+                ><i>code</i><span class="angle">&rangle;</span></span
+              >. When this option is given, the
+              <span class="angle">&langle;</span><i>code</i
+              ><span class="angle">&rangle;</span> is executed before the page
+              box is inserted with a path preinstalled that is a rectangle
+              around the current logical page. Thus, setting
+              <span class="angle">&langle;</span><i>code</i
+              ><span class="angle">&rangle;</span> to
+              <span class="texttt">\pgfstroke</span> draws a rectangle around
+              the logical page. Setting <span class="angle">&langle;</span
+              ><i>code</i><span class="angle">&rangle;</span> to
+              <span class="texttt">\pgfsetlinewidth{3pt}\pgfstroke</span>
+              results in a thick (ugly) frame. Adding dashes and filling can
+              result in arbitrarily funky and distracting borders.
+            </p>
+            <p>
+              You can also call <span class="texttt">\pgfdiscardpath</span> and
+              add your own path construction code (for example to paint a
+              rectangle with rounded corners). The coordinate system is set up
+              in such a way that a rectangle starting at the origin and having
+              the height and width of
+              <span class="latexlogofont"
+                ><span class="latexlogo"
+                  >T<span class="latexlogosub">e</span>X</span
+                ></span
+              >-box 0 will result in a rectangle filling exactly the logical
+              page currently being put on the physical page. The logical page is
+              inserted <em>after</em> these commands have been executed.
+            </p>
+            <p><i>Example: </i>Add a rectangle around the page:</p>
+
+            <figure class="example">
+              <div class="example-code">
+                <button class="clipboardButton" type="button">copy</button>
+                <code>
+                  <br />
+                  <span class="textcolor" style="color: #0000b2"
+                    ><a href="pages#pgf.back/pgfpageslogicalpageoptions"
+                      >\pgfpageslogicalpageoptions</a
+                    ></span
+                  >{<span class="textcolor" style="color: #000000">1</span
+                  >}{<span class="textcolor" style="color: #000000"
+                    >border</span
+                  >
+                  <span class="textcolor" style="color: #000000">code=</span
+                  ><span class="textcolor" style="color: #0000b2"
+                    >\pgfstroke</span
+                  >}<br />
+                </code>
+              </div>
+            </figure>
+
+            &bull;
+            <p>
+              <span class="textcolor" style="color: #bf0000"
+                ><span class="texttt">corner width</span>=<span class="angle"
+                  >&langle;</span
+                ><i>size</i><span class="angle">&rangle;</span></span
+              >
+              adds black &ldquo;rounded corners&rdquo; to the page. See the
+              description of the predefined layout
+              <span class="texttt">rounded corners</span> in section&nbsp;<a
+                href="pages#layout-rounded-corners"
+                >89.2</a
+              >.
+            </p>
+          </div>
+          <h5 id="autosec-7569">
+            <span class="sectionnumber" id="sec-89.4">89.4&emsp;</span>Creating
+            Logical Pages<a class="anchor-link" href="#sec-89.4">&para;</a>
+          </h5>
+          <a id="pgfmanual-autopage-7569"></a>
+
+          <p>
+            Logical pages are created whenever
+            <span class="latexlogofont"
+              ><span class="latexlogo"
+                >T<span class="latexlogosub">e</span>X</span
+              ></span
+            >
+            thinks that a page is full and performs a
+            <span class="texttt">\shipout</span> command. This will cause
+            <span class="texttt">pgfpages</span> to store the box that was
+            supposed to be shipped out internally until enough logical pages
+            have been collected such that a physical shipout can occur.
+          </p>
+
+          <p>
+            Normally, whenever a logical shipout occurs, that current page is
+            stored in logical page number <span class="angle">&langle;</span
+            ><i>current logical page</i><span class="angle">&rangle;</span>.
+            This counter is then incremented, until it is larger than
+            <span class="angle">&langle;</span><i>last logical shipout</i
+            ><span class="angle">&rangle;</span>. You can, however, directly
+            change the value of <span class="angle">&langle;</span
+            ><i>current logical page</i><span class="angle">&rangle;</span> by
+            calling <span class="texttt">\pgfpagesphysicalpageoptions</span>.
+          </p>
+
+          <p>
+            Another way to set the contents of a logical page is to use the
+            following command:
+          </p>
+
+          <div class="manualentry">
+            <div class="entryheadline">
+              <p>
+                <a id="pgf.back/pgfpagesshipoutlogicalpage"></a>
+                <span class="hl-def"
+                  ><span class="textcolor" style="color: #bf0000"
+                    ><kbd>\pgfpagesshipoutlogicalpage</kbd></span
+                  >{<span class="angle">&langle;</span><i>number</i
+                  ><span class="angle">&rangle;</span>}<span class="angle"
+                    >&langle;</span
+                  ><i>box</i><span class="angle">&rangle;</span></span
+                >
+                <a
+                  class="anchor-link"
+                  href="#pgf.back/pgfpagesshipoutlogicalpage"
+                  >&para;</a
+                >
+              </p>
+            </div>
+            <p>
+              This command sets to logical page
+              <span class="angle">&langle;</span><i>number</i
+              ><span class="angle">&rangle;</span> to
+              <span class="angle">&langle;</span><i>box</i
+              ><span class="angle">&rangle;</span>. The
+              <span class="angle">&langle;</span><i>box</i
+              ><span class="angle">&rangle;</span> should be the code of a
+              <span class="latexlogofont"
+                ><span class="latexlogo"
+                  >T<span class="latexlogosub">e</span>X</span
+                ></span
+              >
+              box command. This command does not influence the counter
+              <span class="angle">&langle;</span><i>current logical page</i
+              ><span class="angle">&rangle;</span> and does not cause a physical
+              shipout.
+            </p>
+
+            <figure class="example">
+              <div class="example-code">
+                <button class="clipboardButton" type="button">copy</button>
+                <code>
+                  <br />
+                  <span class="textcolor" style="color: #0000b2"
+                    ><a href="pages#pgf.back/pgfpagesshipoutlogicalpage"
+                      >\pgfpagesshipoutlogicalpage</a
+                    ></span
+                  >{<span class="textcolor" style="color: #000000">0</span
+                  >}<span class="textcolor" style="color: #0000b2">\vbox</span
+                  >{<span class="textcolor" style="color: #000000">Hi!</span
+                  >}<br />
+                </code>
+              </div>
+            </figure>
+            <p>
+              This command can be used to set the contents of logical pages that
+              are normally not filled.
+            </p>
+          </div>
+
+          <p>
+            The final way of setting a logical page is using the following
+            command:
+          </p>
+
+          <div class="manualentry">
+            <div class="entryheadline">
+              <p>
+                <a id="pgf.back/pgfpagescurrentpagewillbelogicalpage"></a>
+                <span class="hl-def"
+                  ><span class="textcolor" style="color: #bf0000"
+                    ><kbd>\pgfpagescurrentpagewillbelogicalpage</kbd></span
+                  >{<span class="angle">&langle;</span><i>number</i
+                  ><span class="angle">&rangle;</span>}</span
+                >
+                <a
+                  class="anchor-link"
+                  href="#pgf.back/pgfpagescurrentpagewillbelogicalpage"
+                  >&para;</a
+                >
+              </p>
+            </div>
+            <p>
+              When the current
+              <span class="latexlogofont"
+                ><span class="latexlogo"
+                  >T<span class="latexlogosub">e</span>X</span
+                ></span
+              >
+              page has been typeset, it will be become the given logical page
+              <span class="angle">&langle;</span><i>number</i
+              ><span class="angle">&rangle;</span>. This command
+              &ldquo;interrupts&rdquo; the normal order of logical pages, that
+              is, it behaves like the previous command and does not update the
+              <span class="angle">&langle;</span><i>current logical page</i
+              ><span class="angle">&rangle;</span> counter.
+            </p>
+
+            <figure class="example">
+              <div class="example-code">
+                <button class="clipboardButton" type="button">copy</button>
+                <code>
+                  <br />
+                  <span class="textcolor" style="color: #0000b2"
+                    ><a href="pages#pgf.back/pgfpagesuselayout"
+                      >\pgfpagesuselayout</a
+                    ></span
+                  >{<span class="textcolor" style="color: #000000">two</span>
+                  <span class="textcolor" style="color: #000000">screens</span>
+                  <span class="textcolor" style="color: #000000">with</span>
+                  <span class="textcolor" style="color: #000000">optional</span>
+                  <span class="textcolor" style="color: #000000"
+                    ><a href="gd-trees#pgf.second">second</a></span
+                  >}<br />
+                  ...<br />
+                  <span class="textcolor" style="color: #000000">Text</span>
+                  <span class="textcolor" style="color: #000000">for</span>
+                  <span class="textcolor" style="color: #000000">main</span>
+                  <span class="textcolor" style="color: #000000">page</span
+                  >.<br />
+                  <span class="textcolor" style="color: #0000b2"
+                    >\clearpage</span
+                  ><br />
+                  <br />
+                  <span class="textcolor" style="color: #0000b2"
+                    ><a
+                      href="pages#pgf.back/pgfpagescurrentpagewillbelogicalpage"
+                      >\pgfpagescurrentpagewillbelogicalpage</a
+                    ></span
+                  >{<span class="textcolor" style="color: #000000">2</span
+                  >}<br />
+                  <span class="textcolor" style="color: #000000">Text</span>
+                  <span class="textcolor" style="color: #000000">that</span>
+                  <span class="textcolor" style="color: #000000">goes</span>
+                  <span class="textcolor" style="color: #000000"
+                    ><a href="tikz-paths#pgf.to">to</a></span
+                  >
+                  <span class="textcolor" style="color: #000000"
+                    ><a href="gd-trees#pgf.second">second</a></span
+                  >
+                  <span class="textcolor" style="color: #000000">page</span
+                  ><br />
+                  <span class="textcolor" style="color: #0000b2"
+                    >\clearpage</span
+                  ><br />
+                  <br />
+                  <span class="textcolor" style="color: #000000">Text</span>
+                  <span class="textcolor" style="color: #000000">for</span>
+                  <span class="textcolor" style="color: #000000">main</span>
+                  <span class="textcolor" style="color: #000000">page</span
+                  >.<br />
+                </code>
+              </div>
+            </figure>
+          </div>
+        </section>
+      </main>
+
+      <footer>
+        <div class_="footer-left">
+          <a href="https://github.com/pgf-tikz/pgf">Github</a> &middot;
+          <a href="/license">License</a> &middot;
+          <a href="https://ctan.org/pkg/pgf">CTAN</a> &middot;
+          <a href="https://pgf-tikz.github.io/pgf/pgfmanual.pdf">PDF version</a>
+          &middot;
+          <a href="https://github.com/DominikPeters/pgf-tikz-html-manual"
+            >About this HTML version</a
+          >
+        </div>
+        <div class_="footer-right">
+          <em>Manual last updated: 2022-04-23</em>
+        </div>
+      </footer>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/@docsearch/js@alpha"></script>
+    <script>
+      docsearch({
+        apiKey: "ae66ec3fc9df4b52b4d6f24fc8508fd3",
+        indexName: "tikz.dev",
+        appId: "Q70NNMA9GC",
+        container: "#search",
+      });
+    </script>
+  </body>
+</html>

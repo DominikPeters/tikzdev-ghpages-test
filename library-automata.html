@@ -1,0 +1,3044 @@
+<!DOCTYPE html>
+<html lang="en-US">
+  <head>
+    <meta charset="utf-8" />
+    <meta content="LaTeX Lwarp package" name="generator" />
+    <meta content="width=device-width, initial-scale=1.0" name="viewport" />
+    <!--[if lt IE 9]>
+      <script src="http://html5shiv.googlecode.com/svn/trunk/html5.js"></script>
+    <![endif]-->
+    <title>Automata Drawing Library - PGF/TikZ Manual</title>
+    <link href="style.css" rel="stylesheet" type="text/css" />
+
+    <script>
+      // Lwarp MathJax emulation code
+      //
+      // Based on code by Davide P. Cervone.
+      // Equation numbering: https://github.com/mathjax/MathJax/issues/2427
+      // Starred and ifnextchar macros: https://github.com/mathjax/MathJax/issues/2428
+      // \left, \right delimiters: https://github.com/mathjax/MathJax/issues/2535
+      //
+      // Modified by Brian Dunn to adjust equation numbering and add subequations.
+      //
+      // LaTeX can use \seteqnumber{subequations?}{section}{number} before each equation.
+      // subequations? is 0 usually, 1 if inside subequations.
+      // section is a string printed as-is, or empty.
+      // number is auto-incremented by MathJax between equations.
+      //
+      MathJax = {
+        subequations: "0",
+        section: "",
+        loader: {
+          load: ["[tex]/tagformat", "[tex]/textmacros"],
+        },
+        startup: {
+          ready() {
+            // These would be replaced by import commands if you wanted to make
+            // a proper extension.
+            const Configuration =
+              MathJax._.input.tex.Configuration.Configuration;
+            const CommandMap = MathJax._.input.tex.SymbolMap.CommandMap;
+            const Macro = MathJax._.input.tex.Symbol.Macro;
+            const TexError = MathJax._.input.tex.TexError.default;
+            const ParseUtil = MathJax._.input.tex.ParseUtil.default;
+            const expandable = MathJax._.util.Options.expandable;
+
+            // Insert the replacement string into the TeX string, and check
+            // that there haven't been too many maxro substitutions (prevents
+            // infinite loops).
+            const useArgument = (parser, text) => {
+              parser.string = ParseUtil.addArgs(
+                parser,
+                text,
+                parser.string.slice(parser.i)
+              );
+              parser.i = 0;
+              if (
+                ++parser.macroCount > parser.configuration.options.maxMacros
+              ) {
+                throw new TexError(
+                  "MaxMacroSub1",
+                  "MathJax maximum macro substitution count exceeded; " +
+                    "is there a recursive macro call?"
+                );
+              }
+            };
+
+            // Create the command map for:
+            // \ifstar, \ifnextchar, \ifblank, \ifstrequal, \seteqnumber
+            new CommandMap(
+              "Lwarp-macros",
+              {
+                ifstar: "IfstarFunction",
+                ifnextchar: "IfnextcharFunction",
+                ifblank: "IfblankFunction",
+                ifstrequal: "IfstrequalFunction",
+                seteqnumber: "SeteqnumberFunction",
+              },
+              {
+                // This function implements an ifstar macro.
+                IfstarFunction(parser, name) {
+                  const resultstar = parser.GetArgument(name);
+                  const resultnostar = parser.GetArgument(name);
+                  const star = parser.GetStar(); // true if there is a *
+                  useArgument(parser, star ? resultstar : resultnostar);
+                },
+
+                // This function implements an ifnextchar macro.
+                IfnextcharFunction(parser, name) {
+                  let whichchar = parser.GetArgument(name);
+                  if (whichchar.match(/^(?:0x[0-9A-F]+|[0-9]+)$/i)) {
+                    // $ syntax highlighting
+                    whichchar = String.fromCodePoint(parseInt(whichchar));
+                  }
+                  const resultnextchar = parser.GetArgument(name);
+                  const resultnotnextchar = parser.GetArgument(name);
+                  const gotchar = parser.GetNext() === whichchar;
+                  useArgument(
+                    parser,
+                    gotchar ? resultnextchar : resultnotnextchar
+                  );
+                },
+
+                // This function implements an ifblank macro.
+                IfblankFunction(parser, name) {
+                  const blankarg = parser.GetArgument(name);
+                  const resultblank = parser.GetArgument(name);
+                  const resultnotblank = parser.GetArgument(name);
+                  const isblank = blankarg.trim() == "";
+                  useArgument(parser, isblank ? resultblank : resultnotblank);
+                },
+
+                // This function implements an ifstrequal macro.
+                IfstrequalFunction(parser, name) {
+                  const strequalfirst = parser.GetArgument(name);
+                  const strequalsecond = parser.GetArgument(name);
+                  const resultequal = parser.GetArgument(name);
+                  const resultnotequal = parser.GetArgument(name);
+                  const isequal = strequalfirst == strequalsecond;
+                  useArgument(parser, isequal ? resultequal : resultnotequal);
+                },
+
+                // This function modifies the equation numbers.
+                SeteqnumberFunction(parser, name) {
+                  // Get the macro parameters
+                  const star = parser.GetStar(); // true if there is a *
+                  const optBrackets = parser.GetBrackets(name); // contents of optional brackets
+                  const newsubequations = parser.GetArgument(name); // the subequations argument
+                  const neweqsection = parser.GetArgument(name); // the eq section argument
+                  const neweqnumber = parser.GetArgument(name); // the eq number argument
+                  MathJax.config.subequations = newsubequations; // a string with boolean meaning
+                  MathJax.config.section = neweqsection; // a string with numeric meaning
+                  parser.tags.counter = parser.tags.allCounter = neweqnumber;
+                },
+              }
+            );
+
+            // Create the Lwarp-macros package
+            Configuration.create("Lwarp-macros", {
+              handler: { macro: ["Lwarp-macros"] },
+            });
+
+            MathJax.startup.defaultReady();
+
+            // For forward references:
+            MathJax.startup.input[0].preFilters.add(({ math }) => {
+              if (math.inputData.recompile) {
+                MathJax.config.subequations =
+                  math.inputData.recompile.subequations;
+                MathJax.config.section = math.inputData.recompile.section;
+              }
+            });
+            MathJax.startup.input[0].postFilters.add(({ math }) => {
+              if (math.inputData.recompile) {
+                math.inputData.recompile.subequations =
+                  MathJax.config.subequations;
+                math.inputData.recompile.section = MathJax.config.section;
+              }
+            });
+
+            // For \left, \right with unicode-math:
+            const { DelimiterMap } = MathJax._.input.tex.SymbolMap;
+            const { Symbol } = MathJax._.input.tex.Symbol;
+            const { MapHandler } = MathJax._.input.tex.MapHandler;
+            const delimiter = MapHandler.getMap("delimiter");
+            delimiter.add("\\lBrack", new Symbol("\\lBrack", "\u27E6"));
+            delimiter.add("\\rBrack", new Symbol("\\rBrack", "\u27E7"));
+            delimiter.add("\\lAngle", new Symbol("\\lAngle", "\u27EA"));
+            delimiter.add("\\rAngle", new Symbol("\\rAngle", "\u27EB"));
+            delimiter.add("\\lbrbrak", new Symbol("\\lbrbrak", "\u2772"));
+            delimiter.add("\\rbrbrak", new Symbol("\\rbrbrak", "\u2773"));
+            delimiter.add("\\lbag", new Symbol("\\lbag", "\u27C5"));
+            delimiter.add("\\rbag", new Symbol("\\rbag", "\u27C6"));
+            delimiter.add(
+              "\\llparenthesis",
+              new Symbol("\\llparenthesis", "\u2987")
+            );
+            delimiter.add(
+              "\\rrparenthesis",
+              new Symbol("\\rrparenthesis", "\u2988")
+            );
+            delimiter.add("\\llangle", new Symbol("\\llangle", "\u2989"));
+            delimiter.add("\\rrangle", new Symbol("\\rrangle", "\u298A"));
+            delimiter.add("\\Lbrbrak", new Symbol("\\Lbrbrak", "\u27EC"));
+            delimiter.add("\\Rbrbrak", new Symbol("\\Rbrbrak", "\u27ED"));
+            delimiter.add("\\lBrace", new Symbol("\\lBrace", "\u2983"));
+            delimiter.add("\\rBrace", new Symbol("\\rBrace", "\u2984"));
+            delimiter.add("\\lParen", new Symbol("\\lParen", "\u2985"));
+            delimiter.add("\\rParen", new Symbol("\\rParen", "\u2986"));
+            delimiter.add("\\lbrackubar", new Symbol("\\lbrackubar", "\u298B"));
+            delimiter.add("\\rbrackubar", new Symbol("\\rbrackubar", "\u298C"));
+            delimiter.add(
+              "\\lbrackultick",
+              new Symbol("\\lbrackultick", "\u298D")
+            );
+            delimiter.add(
+              "\\rbracklrtick",
+              new Symbol("\\rbracklrtick", "\u298E")
+            );
+            delimiter.add(
+              "\\lbracklltick",
+              new Symbol("\\lbracklltick", "\u298F")
+            );
+            delimiter.add(
+              "\\rbrackurtick",
+              new Symbol("\\rbrackurtick", "\u2990")
+            );
+            delimiter.add("\\langledot", new Symbol("\\langledot", "\u2991"));
+            delimiter.add("\\rangledot", new Symbol("\\rangledot", "\u2992"));
+            delimiter.add("\\lparenless", new Symbol("\\lparenless", "\u2993"));
+            delimiter.add("\\rparengtr", new Symbol("\\rparengtr", "\u2994"));
+            delimiter.add("\\Lparengtr", new Symbol("\\Lparengtr", "\u2995"));
+            delimiter.add("\\Rparenless", new Symbol("\\Rparenless", "\u2996"));
+            delimiter.add("\\lblkbrbrak", new Symbol("\\lblkbrbrak", "\u2997"));
+            delimiter.add("\\rblkbrbrak", new Symbol("\\rblkbrbrak", "\u2998"));
+            delimiter.add("\\lvzigzag", new Symbol("\\lvzigzag", "\u29D8"));
+            delimiter.add("\\rvzigzag", new Symbol("\\rvzigzag", "\u29D9"));
+            delimiter.add("\\Lvzigzag", new Symbol("\\Lvzigzag", "\u29DA"));
+            delimiter.add("\\Rvzigzag", new Symbol("\\Rvzigzag", "\u29DB"));
+            delimiter.add(
+              "\\lcurvyangle",
+              new Symbol("\\lcurvyangle", "\u29FC")
+            );
+            delimiter.add(
+              "\\rcurvyangle",
+              new Symbol("\\rcurvyangle", "\u29FD")
+            );
+            delimiter.add("\\Vvert", new Symbol("\\Vvert", "\u2980"));
+          }, // ready
+        }, // startup
+
+        tex: {
+          packages: { "[+]": ["tagformat", "Lwarp-macros", "textmacros"] },
+          tags: "ams",
+          tagformat: {
+            number: function (n) {
+              if (MathJax.config.subequations == 0)
+                return MathJax.config.section + n;
+              else return MathJax.config.section + String.fromCharCode(96 + n);
+            },
+          },
+        },
+      };
+    </script>
+
+    <script
+      async
+      id="MathJax-script"
+      src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-chtml.js"
+    ></script>
+
+    <script src="pgfmanual.js"></script>
+
+    <link href="https://unpkg.com/@docsearch/css@alpha" rel="stylesheet" />
+    <link href="/favicon-16x16.png" rel="icon" sizes="16x16" type="image/png" />
+    <link href="/favicon-32x32.png" rel="icon" sizes="32x32" type="image/png" />
+    <link
+      href="/apple-touch-icon.png"
+      rel="apple-touch-icon"
+      sizes="180x180"
+      type="image/png"
+    />
+    <link href="/site.webmanifest" rel="manifest" />
+  </head>
+  <body>
+    <a id="pgfmanual-autopage-4948"></a>
+
+    <div class="bodyandsidetoc grid-container">
+      <header>
+        <strong><a href="/">PGF/Ti<i>k</i>Z Manual</a></strong>
+        <div id="search"></div>
+      </header>
+      <div class="sidetoccontainer" id="local-toc-container">
+        <nav class="sidetoc">
+          <div class="sidetoctitle"><p>On this page</p></div>
+          <div class="sidetoccontents">
+            <p>
+              <a class="tocsubsection" href="#sec-43.1">Drawing Automata</a>
+            </p>
+            <p>
+              <a class="tocsubsection" href="#sec-43.2"
+                >States With and Without Output</a
+              >
+            </p>
+            <p>
+              <a class="tocsubsection" href="#sec-43.3"
+                >Initial and Accepting States</a
+              >
+            </p>
+            <p><a class="tocsubsection" href="#sec-43.4">Examples</a></p>
+          </div>
+        </nav>
+      </div>
+      <div class="sidetoccontainer" id="chapter-toc-container">
+        <nav class="sidetoc">
+          <div class="sidetoctitle">
+            <p>
+              <span class="sidetocthetitle"
+                >The <span class="tikzname">TikZ</span> and PGF Packages<br />
+                Manual for version 3.1.9a</span
+              >
+            </p>
+
+            <p>Contents</p>
+          </div>
+
+          <div class="sidetoccontents">
+            <p></p>
+
+            <p>
+              <a class="linkintro" href="/">Introduction</a>
+            </p>
+
+            <p>
+              <a class="tocpart" href="tutorials-guidelines"
+                >Tutorials and Guidelines</a
+              >
+            </p>
+
+            <p>
+              <a class="tocpart" href="install"
+                >Installation and Configuration</a
+              >
+            </p>
+
+            <p>
+              <a class="tocpart" href="tikz">Ti<em>k</em>Z</a>
+            </p>
+
+            <p>
+              <a class="tocpart" href="gd">Graph Drawing</a>
+            </p>
+
+            <p class="current-part">
+              <a class="tocpart" href="libraries">Libraries</a>
+            </p>
+
+            <p class="current-part">
+              <a class="tocsection" href="library-3d"
+                >Three Dimensional Drawing Library</a
+              >
+            </p>
+
+            <p class="current-part">
+              <a class="tocsection" href="library-angle">Angle Library</a>
+            </p>
+
+            <p class="current-part">
+              <a class="tocsection" href="library-arrows">Arrow Tip Library</a>
+            </p>
+
+            <p class="current current-part">
+              <a class="tocsection" href="library-automata"
+                >Automata Drawing Library</a
+              >
+            </p>
+
+            <p class="current-part">
+              <a class="tocsection" href="library-babel">Babel Library</a>
+            </p>
+
+            <p class="current-part">
+              <a class="tocsection" href="library-backgrounds"
+                >Background Library</a
+              >
+            </p>
+
+            <p class="current-part">
+              <a class="tocsection" href="library-calc">Calc Library</a>
+            </p>
+
+            <p class="current-part">
+              <a class="tocsection" href="library-calender">Calendar Library</a>
+            </p>
+
+            <p class="current-part">
+              <a class="tocsection" href="library-chains">Chains</a>
+            </p>
+
+            <p class="current-part">
+              <a class="tocsection" href="library-circuits"
+                >Circuit Libraries</a
+              >
+            </p>
+
+            <p class="current-part">
+              <a class="tocsection" href="library-decorations"
+                >Decoration Library</a
+              >
+            </p>
+
+            <p class="current-part">
+              <a class="tocsection" href="library-er"
+                >Entity-Relationship Diagram Drawing Library</a
+              >
+            </p>
+
+            <p class="current-part">
+              <a class="tocsection" href="library-external"
+                >Externalization Library</a
+              >
+            </p>
+
+            <p class="current-part">
+              <a class="tocsection" href="library-fadings">Fading Library</a>
+            </p>
+
+            <p class="current-part">
+              <a class="tocsection" href="library-fit">Fitting Library</a>
+            </p>
+
+            <p class="current-part">
+              <a class="tocsection" href="library-fixedpoint"
+                >Fixed Point Arithmetic Library</a
+              >
+            </p>
+
+            <p class="current-part">
+              <a class="tocsection" href="library-fpu"
+                >Floating Point Unit Library</a
+              >
+            </p>
+
+            <p class="current-part">
+              <a class="tocsection" href="library-lsystems"
+                >Lindenmayer System Drawing Library</a
+              >
+            </p>
+
+            <p class="current-part">
+              <a class="tocsection" href="library-math">Math Library</a>
+            </p>
+
+            <p class="current-part">
+              <a class="tocsection" href="library-matrix">Matrix Library</a>
+            </p>
+
+            <p class="current-part">
+              <a class="tocsection" href="library-mindmaps"
+                >Mindmap Drawing Library</a
+              >
+            </p>
+
+            <p class="current-part">
+              <a class="tocsection" href="library-folding"
+                >Paper-Folding Diagrams Library</a
+              >
+            </p>
+
+            <p class="current-part">
+              <a class="tocsection" href="library-patterns">Pattern Library</a>
+            </p>
+
+            <p class="current-part">
+              <a class="tocsection" href="library-perspective"
+                >Three Point Perspective Drawing Library</a
+              >
+            </p>
+
+            <p class="current-part">
+              <a class="tocsection" href="library-petri"
+                >Petri-Net Drawing Library</a
+              >
+            </p>
+
+            <p class="current-part">
+              <a class="tocsection" href="library-plot-handlers"
+                >Plot Handler Library</a
+              >
+            </p>
+
+            <p class="current-part">
+              <a class="tocsection" href="library-plot-marks"
+                >Plot Mark Library</a
+              >
+            </p>
+
+            <p class="current-part">
+              <a class="tocsection" href="library-profiler">Profiler Library</a>
+            </p>
+
+            <p class="current-part">
+              <a class="tocsection" href="library-shadings">Shadings Library</a>
+            </p>
+
+            <p class="current-part">
+              <a class="tocsection" href="library-shadows">Shadows Library</a>
+            </p>
+
+            <p class="current-part">
+              <a class="tocsection" href="library-shapes">Shape Library</a>
+            </p>
+
+            <p class="current-part">
+              <a class="tocsection" href="library-spy"
+                >Spy Library: Magnifying Parts of Pictures</a
+              >
+            </p>
+
+            <p class="current-part">
+              <a class="tocsection" href="library-svg-path">SVG-Path Library</a>
+            </p>
+
+            <p class="current-part">
+              <a class="tocsection" href="library-edges">To Path Library</a>
+            </p>
+
+            <p class="current-part">
+              <a class="tocsection" href="library-through">Through Library</a>
+            </p>
+
+            <p class="current-part">
+              <a class="tocsection" href="library-trees">Tree Library</a>
+            </p>
+
+            <p class="current-part">
+              <a class="tocsection" href="library-turtle"
+                >Turtle Graphics Library</a
+              >
+            </p>
+
+            <p class="current-part">
+              <a class="tocsection" href="library-views">Views Library</a>
+            </p>
+
+            <p>
+              <a class="tocpart" href="dv">Data Visualization</a>
+            </p>
+
+            <p>
+              <a class="tocpart" href="utilities">Utilities</a>
+            </p>
+
+            <p>
+              <a class="tocpart" href="math"
+                >Mathematical and Object-Oriented Engines</a
+              >
+            </p>
+
+            <p>
+              <a class="tocpart" href="base">The Basic Layer</a>
+            </p>
+
+            <p>
+              <a class="tocpart" href="pgfsys">The System Layer</a>
+            </p>
+          </div>
+        </nav>
+      </div>
+
+      <main class="bodycontainer">
+        <section class="textbody">
+          <h1>
+            The <span class="tikzname">TikZ</span> and PGF Packages<br />
+            Manual for version 3.1.9a
+          </h1>
+          <h2 class="inserted">Libraries</h2>
+
+          <!--MathJax customizations:-->
+
+          <div class="hidden">
+            \(\newcommand{\footnotename}{footnote}\) \(\def \LWRfootnote {1}\)
+            \(\newcommand {\footnote }[2][\LWRfootnote ]{{}^{\mathrm {#1}}}\)
+            \(\newcommand {\footnotemark }[1][\LWRfootnote ]{{}^{\mathrm
+            {#1}}}\) \(\let \LWRorighspace \hspace \) \(\renewcommand {\hspace
+            }{\ifstar \LWRorighspace \LWRorighspace }\) \(\newcommand
+            {\mathnormal }[1]{{#1}}\) \(\newcommand \ensuremath [1]{#1}\)
+            \(\newcommand {\LWRframebox }[2][]{\fbox {#2}} \newcommand
+            {\framebox }[1][]{\LWRframebox } \) \(\newcommand {\setlength
+            }[2]{}\) \(\newcommand {\addtolength }[2]{}\) \(\newcommand
+            {\setcounter }[2]{}\) \(\newcommand {\addtocounter }[2]{}\)
+            \(\newcommand {\arabic }[1]{}\) \(\newcommand {\number }[1]{}\)
+            \(\newcommand {\noalign }[1]{\text {#1}\notag \\}\) \(\newcommand
+            {\cline }[1]{}\) \(\newcommand {\directlua }[1]{\text
+            {(directlua)}}\) \(\newcommand {\luatexdirectlua }[1]{\text
+            {(directlua)}}\) \(\newcommand {\protect }{}\) \(\def
+            \LWRabsorbnumber #1 {}\) \(\def \LWRabsorbquotenumber "#1 {}\)
+            \(\newcommand {\LWRabsorboption }[1][]{}\) \(\newcommand
+            {\LWRabsorbtwooptions }[1][]{\LWRabsorboption }\) \(\def \mathchar
+            {\ifnextchar "\LWRabsorbquotenumber \LWRabsorbnumber }\) \(\def
+            \mathcode #1={\mathchar }\) \(\let \delcode \mathcode \) \(\let
+            \delimiter \mathchar \) \(\def \oe {\unicode {x0153}}\) \(\def \OE
+            {\unicode {x0152}}\) \(\def \ae {\unicode {x00E6}}\) \(\def \AE
+            {\unicode {x00C6}}\) \(\def \aa {\unicode {x00E5}}\) \(\def \AA
+            {\unicode {x00C5}}\) \(\def \o {\unicode {x00F8}}\) \(\def \O
+            {\unicode {x00D8}}\) \(\def \l {\unicode {x0142}}\) \(\def \L
+            {\unicode {x0141}}\) \(\def \ss {\unicode {x00DF}}\) \(\def \SS
+            {\unicode {x1E9E}}\) \(\def \dag {\unicode {x2020}}\) \(\def \ddag
+            {\unicode {x2021}}\) \(\def \P {\unicode {x00B6}}\) \(\def
+            \copyright {\unicode {x00A9}}\) \(\def \pounds {\unicode {x00A3}}\)
+            \(\let \LWRref \ref \) \(\renewcommand {\ref }{\ifstar \LWRref
+            \LWRref }\) \( \newcommand {\multicolumn }[3]{#3}\) \(\require
+            {textcomp}\) \( \newcommand {\meta }[1]{\langle \textit {#1}\rangle
+            } \) \(\newcommand {\intertext }[1]{\text {#1}\notag \\}\) \(\let
+            \Hat \hat \) \(\let \Check \check \) \(\let \Tilde \tilde \) \(\let
+            \Acute \acute \) \(\let \Grave \grave \) \(\let \Dot \dot \) \(\let
+            \Ddot \ddot \) \(\let \Breve \breve \) \(\let \Bar \bar \) \(\let
+            \Vec \vec \)
+          </div>
+
+          <p></p>
+          <h4 id="autosec-4949">
+            <span class="sectionnumber">43&emsp;</span>Automata Drawing Library
+          </h4>
+          <a id="pgfmanual-autopage-4949"></a>
+          <a id="pgfmanual-autofile-48"></a>
+
+          <div class="manualentry">
+            <div class="entryheadline">
+              <p>
+                <a id="pgf.automata"></a>
+                <span class="hl-def"
+                  ><b><span class="tikzname">TikZ</span> Library</b>
+                  <kbd
+                    ><span class="textcolor" style="color: #bf0000"
+                      >automata</span
+                    ></kbd
+                  ></span
+                >
+                <a class="anchor-link" href="#pgf.automata">&para;</a>
+              </p>
+            </div>
+            <p>
+              <kbd
+                >\usetikzlibrary{<span class="textcolor" style="color: #bf0000"
+                  >automata</span
+                >} %
+                <span class="latexlogofont"
+                  ><span class="latexlogo"
+                    >L<span class="latexlogosup">a</span>T<span
+                      class="latexlogosub"
+                      >e</span
+                    >X</span
+                  ></span
+                >
+                and plain
+                <span class="latexlogofont"
+                  ><span class="latexlogo"
+                    >T<span class="latexlogosub">e</span>X</span
+                  ></span
+                ></kbd
+              ><br />
+              <kbd
+                >\usetikzlibrary[<span class="textcolor" style="color: #bf0000"
+                  >automata</span
+                >] % Con<span class="latexlogofont"
+                  ><span class="latexlogo"
+                    >T<span class="latexlogosub">e</span>X</span
+                  ></span
+                >t</kbd
+              ><br />
+              <br />
+              This packages provides shapes and styles for drawing finite state
+              automata and Turing machines.
+            </p>
+          </div>
+          <h5 id="autosec-4951">
+            <span class="sectionnumber" id="sec-43.1">43.1&emsp;</span>Drawing
+            Automata<a class="anchor-link" href="#sec-43.1">&para;</a>
+          </h5>
+          <a id="pgfmanual-autopage-4951"></a>
+
+          <p>
+            The <span class="texttt">automata</span> (drawing) library is
+            intended to make it easy to draw finite automata and Turing
+            machines. It does not cover every situation imaginable, but most
+            finite automata and Turing machines found in text books can be drawn
+            in a nice and convenient fashion using this library.
+          </p>
+
+          <p>To draw an automaton, proceed as follows:</p>
+          <ul style="list-style-type: none">
+            <li>
+              <p>
+                1. For each state of the automaton, there should be one node
+                with the option <span class="texttt">state</span>.
+              </p>
+            </li>
+            <li>
+              <p>
+                2. To place the states, you can either use absolute positions or
+                relative positions, using options like
+                <span class="texttt">above</span> or
+                <span class="texttt">right</span>.
+              </p>
+            </li>
+            <li>
+              <p>3. Give a unique name to each state node.</p>
+            </li>
+            <li>
+              <p>
+                4. Accepting and initial states are indicated by adding the
+                options <span class="texttt">accepting</span> and
+                <span class="texttt">initial</span>, respectively, to the state
+                nodes.
+              </p>
+            </li>
+            <li>
+              <p>
+                5. Once the states are fixed, the edges can be added. For this,
+                the <span class="texttt">edge</span> operation is most useful.
+                It is, however, also possible to add edges after each node has
+                been placed.
+              </p>
+            </li>
+            <li>
+              <p>
+                6. For loops, use the
+                <span class="texttt">edge [loop]</span> operation.
+              </p>
+            </li>
+          </ul>
+
+          <p>
+            Let us now see how this works for a real example. Let us consider a
+            nondeterministic four state automaton that checks whether an input
+            contains the sequence \(0^*1\) or the sequence \(1^*0\).
+          </p>
+
+          <figure class="example">
+            <div class="example-image">
+              <p>
+                <span class="lateximagesource" id="lateximage-pgfmanual-2052"
+                  ><!--
+                 0
+
+
+                 q1
+             0 1
+
+start q0 q3
+
+             1 0
+                 q2
+
+
+                 1
+-->
+                  <img
+                    alt="(-tikz-&nbsp;diagram)"
+                    class="lateximage"
+                    height="208.514"
+                    loading="lazy"
+                    src="pgfmanual-images/image-2052.png"
+                    style
+                    width="197.508"
+                /></span>
+              </p>
+            </div>
+
+            <div class="example-code">
+              <button class="clipboardButton" type="button">copy</button>
+
+              <code>
+                <span class="c- preamble"
+                  >\usetikzlibrary {automata,positioning} </span
+                ><br />
+                <span class="textcolor" style="color: #000000">\begin</span
+                >{<span class="textcolor" style="color: #0000b2"
+                  ><a href="tikz-scopes#pgf.tikzpicture">tikzpicture</a></span
+                >}[<span class="textcolor" style="color: #008000"
+                  ><a href="tikz-arrows#pgf.shorten:&gt;">shorten &gt;</a></span
+                >=<span class="textcolor" style="color: #008000">1pt</span
+                >,<span class="textcolor" style="color: #008000"
+                  ><a href="tikz-shapes#pgf.node:distance"
+                    >node distance</a
+                  ></span
+                >=<span class="textcolor" style="color: #008000">2cm</span
+                >,<span class="textcolor" style="color: #008000"
+                  ><a href="tikz-shapes#pgf.on:grid">on grid</a></span
+                >,<span class="textcolor" style="color: #008000"
+                  ><a href="tikz-shapes#pgf.auto">auto</a></span
+                >]<br />
+                &numsp;&numsp;<span class="textcolor" style="color: #0000b2"
+                  ><a href="tikz-actions#pgf.back/draw">\draw</a></span
+                >[<span class="textcolor" style="color: #008000"
+                  ><a href="tikz-paths#pgf.help:lines">help lines</a></span
+                >]&numsp;<span class="textcolor" style="color: #800080"
+                  >(0,0)</span
+                >&numsp;<span class="textcolor" style="color: #000000"
+                  ><a href="tikz-paths#pgf.grid">grid</a></span
+                >
+                <span class="textcolor" style="color: #800080">(3,2)</span
+                >;<br />
+                <br />
+                &numsp;&numsp;<span class="textcolor" style="color: #0000b2"
+                  ><a href="tikz-shapes#pgf.back/node">\node</a></span
+                >[<span class="textcolor" style="color: #008000"
+                  ><a href="library-automata#pgf.state">state</a></span
+                >,<span class="textcolor" style="color: #008000"
+                  ><a href="library-automata#pgf.initial">initial</a></span
+                >]&numsp;&numsp;<span class="textcolor" style="color: #800080"
+                  >(q_0)</span
+                >&numsp;&numsp;&numsp;&numsp;&numsp;&numsp;&numsp;&numsp;&numsp;&numsp;&numsp;&numsp;&numsp;&numsp;&numsp;&numsp;&numsp;&numsp;&numsp;&numsp;&numsp;&numsp;{<span
+                  class="textcolor"
+                  style="color: #000000"
+                  >$q_0$</span
+                >};<br />
+                &numsp;&numsp;<span class="textcolor" style="color: #0000b2"
+                  ><a href="tikz-shapes#pgf.back/node">\node</a></span
+                >[<span class="textcolor" style="color: #008000"
+                  ><a href="library-automata#pgf.state">state</a></span
+                >]&numsp;&numsp;&numsp;&numsp;&numsp;&numsp;&numsp;&numsp;&numsp;&numsp;<span
+                  class="textcolor"
+                  style="color: #800080"
+                  >(q_1)</span
+                >&numsp;[<span class="textcolor" style="color: #008000"
+                  ><a href="tikz-shapes#pgf.above:right">above right</a></span
+                >=<span class="textcolor" style="color: #008000"
+                  ><a href="tikz-coordinates#pgf.of">of</a> q_0</span
+                >]&numsp;{<span class="textcolor" style="color: #000000"
+                  >$q_1$</span
+                >};<br />
+                &numsp;&numsp;<span class="textcolor" style="color: #0000b2"
+                  ><a href="tikz-shapes#pgf.back/node">\node</a></span
+                >[<span class="textcolor" style="color: #008000"
+                  ><a href="library-automata#pgf.state">state</a></span
+                >]&numsp;&numsp;&numsp;&numsp;&numsp;&numsp;&numsp;&numsp;&numsp;&numsp;<span
+                  class="textcolor"
+                  style="color: #800080"
+                  >(q_2)</span
+                >&numsp;[<span class="textcolor" style="color: #008000"
+                  ><a href="tikz-shapes#pgf.below:right">below right</a></span
+                >=<span class="textcolor" style="color: #008000"
+                  ><a href="tikz-coordinates#pgf.of">of</a> q_0</span
+                >]&numsp;{<span class="textcolor" style="color: #000000"
+                  >$q_2$</span
+                >};<br />
+                &numsp;&numsp;<span class="textcolor" style="color: #0000b2"
+                  ><a href="tikz-shapes#pgf.back/node">\node</a></span
+                >[<span class="textcolor" style="color: #008000"
+                  ><a href="library-automata#pgf.state">state</a></span
+                >,<span class="textcolor" style="color: #008000"
+                  ><a href="library-automata#pgf.accepting">accepting</a></span
+                >]<span class="textcolor" style="color: #800080">(q_3)</span
+                >&numsp;[<span class="textcolor" style="color: #008000"
+                  ><a href="tikz-shapes#pgf.below:right">below right</a></span
+                >=<span class="textcolor" style="color: #008000"
+                  ><a href="tikz-coordinates#pgf.of">of</a> q_1</span
+                >]&numsp;{<span class="textcolor" style="color: #000000"
+                  >$q_3$</span
+                >};<br />
+                <br />
+                &numsp;&numsp;<span class="textcolor" style="color: #0000b2"
+                  ><a href="tikz-paths#pgf.back/path">\path</a></span
+                >[<span class="textcolor" style="color: #008000"
+                  ><a href="tikz-graphs#pgf.-&gt;">-&gt;</a></span
+                >]&numsp;<span class="textcolor" style="color: #800080"
+                  >(q_0)</span
+                >&numsp;<span class="textcolor" style="color: #000000"
+                  ><a href="tikz-shapes#pgf.edge">edge</a></span
+                >
+                &numsp;&numsp;&numsp;&numsp;&numsp;&numsp;&numsp;&numsp;&numsp;&numsp;&numsp;&numsp;&numsp;<span
+                  class="textcolor"
+                  style="color: #000000"
+                  ><a href="tikz-coordinates#pgf.node">node</a></span
+                >
+                &numsp;&numsp;&numsp;&numsp;&numsp;&numsp;&numsp;{<span
+                  class="textcolor"
+                  style="color: #000000"
+                  >0</span
+                >}&numsp;<span class="textcolor" style="color: #800080"
+                  >(q_1)</span
+                ><br />
+                &numsp;&numsp;&numsp;&numsp;&numsp;&numsp;&numsp;&numsp;&numsp;&numsp;&numsp;&numsp;&numsp;&numsp;&numsp;&numsp;&numsp;&numsp;<span
+                  class="textcolor"
+                  style="color: #000000"
+                  ><a href="tikz-shapes#pgf.edge">edge</a></span
+                >
+                &numsp;&numsp;&numsp;&numsp;&numsp;&numsp;&numsp;&numsp;&numsp;&numsp;&numsp;&numsp;&numsp;<span
+                  class="textcolor"
+                  style="color: #000000"
+                  ><a href="tikz-coordinates#pgf.node">node</a></span
+                >
+                [<span class="textcolor" style="color: #008000"
+                  ><a href="tikz-arrows#pgf.swap">swap</a></span
+                >]&numsp;{<span class="textcolor" style="color: #000000">1</span
+                >}&numsp;<span class="textcolor" style="color: #800080"
+                  >(q_2)</span
+                ><br />
+                &numsp;&numsp;&numsp;&numsp;&numsp;&numsp;&numsp;&numsp;&numsp;&numsp;&numsp;&numsp;<span
+                  class="textcolor"
+                  style="color: #800080"
+                  >(q_1)</span
+                >&numsp;<span class="textcolor" style="color: #000000"
+                  ><a href="tikz-shapes#pgf.edge">edge</a></span
+                >
+                &numsp;&numsp;&numsp;&numsp;&numsp;&numsp;&numsp;&numsp;&numsp;&numsp;&numsp;&numsp;&numsp;<span
+                  class="textcolor"
+                  style="color: #000000"
+                  ><a href="tikz-coordinates#pgf.node">node</a></span
+                >
+                &numsp;&numsp;&numsp;&numsp;&numsp;&numsp;&numsp;{<span
+                  class="textcolor"
+                  style="color: #000000"
+                  >1</span
+                >}&numsp;<span class="textcolor" style="color: #800080"
+                  >(q_3)</span
+                ><br />
+                &numsp;&numsp;&numsp;&numsp;&numsp;&numsp;&numsp;&numsp;&numsp;&numsp;&numsp;&numsp;&numsp;&numsp;&numsp;&numsp;&numsp;&numsp;<span
+                  class="textcolor"
+                  style="color: #000000"
+                  ><a href="tikz-shapes#pgf.edge">edge</a></span
+                >
+                [<span class="textcolor" style="color: #008000"
+                  ><a href="library-edges#pgf.loop:above">loop above</a></span
+                >]&numsp;<span class="textcolor" style="color: #000000"
+                  ><a href="tikz-coordinates#pgf.node">node</a></span
+                >
+                &numsp;&numsp;&numsp;&numsp;&numsp;&numsp;&numsp;{<span
+                  class="textcolor"
+                  style="color: #000000"
+                  >0</span
+                >}&numsp;<span class="textcolor" style="color: #800080">()</span
+                ><br />
+                &numsp;&numsp;&numsp;&numsp;&numsp;&numsp;&numsp;&numsp;&numsp;&numsp;&numsp;&numsp;<span
+                  class="textcolor"
+                  style="color: #800080"
+                  >(q_2)</span
+                >&numsp;<span class="textcolor" style="color: #000000"
+                  ><a href="tikz-shapes#pgf.edge">edge</a></span
+                >
+                &numsp;&numsp;&numsp;&numsp;&numsp;&numsp;&numsp;&numsp;&numsp;&numsp;&numsp;&numsp;&numsp;<span
+                  class="textcolor"
+                  style="color: #000000"
+                  ><a href="tikz-coordinates#pgf.node">node</a></span
+                >
+                [<span class="textcolor" style="color: #008000"
+                  ><a href="tikz-arrows#pgf.swap">swap</a></span
+                >]&numsp;{<span class="textcolor" style="color: #000000">0</span
+                >}&numsp;<span class="textcolor" style="color: #800080"
+                  >(q_3)</span
+                ><br />
+                &numsp;&numsp;&numsp;&numsp;&numsp;&numsp;&numsp;&numsp;&numsp;&numsp;&numsp;&numsp;&numsp;&numsp;&numsp;&numsp;&numsp;&numsp;<span
+                  class="textcolor"
+                  style="color: #000000"
+                  ><a href="tikz-shapes#pgf.edge">edge</a></span
+                >
+                [<span class="textcolor" style="color: #008000"
+                  ><a href="library-edges#pgf.loop:below">loop below</a></span
+                >]&numsp;<span class="textcolor" style="color: #000000"
+                  ><a href="tikz-coordinates#pgf.node">node</a></span
+                >
+                &numsp;&numsp;&numsp;&numsp;&numsp;&numsp;&numsp;{<span
+                  class="textcolor"
+                  style="color: #000000"
+                  >1</span
+                >}&numsp;<span class="textcolor" style="color: #800080">()</span
+                >;<br />
+                <span class="textcolor" style="color: #000000">\end</span>{<span
+                  class="textcolor"
+                  style="color: #0000b2"
+                  ><a href="tikz-scopes#pgf.tikzpicture">tikzpicture</a></span
+                >}<br />
+              </code>
+            </div>
+          </figure>
+          <h5 id="autosec-4954">
+            <span class="sectionnumber" id="sec-43.2">43.2&emsp;</span>States
+            With and Without Output<a class="anchor-link" href="#sec-43.2"
+              >&para;</a
+            >
+          </h5>
+          <a id="pgfmanual-autopage-4954"></a>
+
+          <p>
+            The <span class="texttt">state</span> style actually just
+            &ldquo;selects&rdquo; a default underlying style. Thus, you can
+            define multiple new complicated state style and then simply set the
+            <span class="texttt">state</span> style to your given style to get
+            the desired kind of styles.
+          </p>
+
+          <p>By default, the following state styles are defined:</p>
+
+          <div class="manualentry">
+            <div class="entryheadline">
+              <p>
+                <a id="pgf./tikz/state:without:output"></a
+                ><a id="pgf.state:without:output"></a>
+                <span class="hl-def"
+                  ><kbd
+                    ><span class="keyname"
+                      ><span class="textcolor" style="color: #bf0000"
+                        >/tikz/state without output</span
+                      ></span
+                    ></kbd
+                  ></span
+                ><span class="hl-default">(style, no value)</span>
+                <a class="anchor-link" href="#pgf./tikz/state:without:output"
+                  >&para;</a
+                >
+              </p>
+            </div>
+            <p>
+              This node style causes nodes to be drawn as circles. Also, this
+              style calls <span class="texttt">every state</span>.
+            </p>
+          </div>
+
+          <div class="manualentry">
+            <div class="entryheadline">
+              <p>
+                <a id="pgf./tikz/state:with:output"></a
+                ><a id="pgf.state:with:output"></a>
+                <span class="hl-def"
+                  ><kbd
+                    ><span class="keyname"
+                      ><span class="textcolor" style="color: #bf0000"
+                        >/tikz/state with output</span
+                      ></span
+                    ></kbd
+                  ></span
+                ><span class="hl-default">(style, no value)</span>
+                <a class="anchor-link" href="#pgf./tikz/state:with:output"
+                  >&para;</a
+                >
+              </p>
+            </div>
+            <p>
+              This node style causes nodes to be drawn as split circles, that
+              is, using the <span class="texttt">circle split</span> shape. In
+              the upper part of the shape you have the name of the style, in the
+              lower part the output is placed. To specify the output, use the
+              command <span class="texttt">\nodepart{lower}</span> inside the
+              node. This style also calls
+              <span class="texttt">every state</span>.
+            </p>
+
+            <figure class="example">
+              <div class="example-image">
+                <p>
+                  <span class="lateximagesource" id="lateximage-pgfmanual-2053"
+                    ><!--
+     q1
+q0
+     00
+   -->
+                    <img
+                      alt="(-tikz-&nbsp;diagram)"
+                      class="lateximage"
+                      height="99.530"
+                      loading="lazy"
+                      src="pgfmanual-images/image-2053.png"
+                      style
+                      width="133.070"
+                  /></span>
+                </p>
+              </div>
+
+              <div class="example-code">
+                <button class="clipboardButton" type="button">copy</button>
+                <code>
+                  <span class="c- preamble">\usetikzlibrary {automata} </span
+                  ><br />
+                  <span class="textcolor" style="color: #000000">\begin</span
+                  >{<span class="textcolor" style="color: #0000b2"
+                    ><a href="tikz-scopes#pgf.tikzpicture">tikzpicture</a></span
+                  >}<br />
+                  &numsp;&numsp;<span class="textcolor" style="color: #0000b2"
+                    ><a href="tikz-actions#pgf.back/draw">\draw</a></span
+                  >[<span class="textcolor" style="color: #008000"
+                    ><a href="tikz-paths#pgf.help:lines">help lines</a></span
+                  >]&numsp;<span class="textcolor" style="color: #800080"
+                    >(0,0)</span
+                  >&numsp;<span class="textcolor" style="color: #000000"
+                    ><a href="tikz-paths#pgf.grid">grid</a></span
+                  >
+                  <span class="textcolor" style="color: #800080">(3,2)</span
+                  >;<br />
+                  <br />
+                  &numsp;&numsp;<span class="textcolor" style="color: #0000b2"
+                    ><a href="tikz-shapes#pgf.back/node">\node</a></span
+                  >[<span class="textcolor" style="color: #008000"
+                    ><a href="library-automata#pgf.state:without:output"
+                      >state without output</a
+                    ></span
+                  >]&numsp;{<span class="textcolor" style="color: #000000"
+                    >$q_0$</span
+                  >};<br />
+                  <br />
+                  &numsp;&numsp;<span class="textcolor" style="color: #0000b2"
+                    ><a href="tikz-shapes#pgf.back/node">\node</a></span
+                  >[<span class="textcolor" style="color: #008000"
+                    ><a href="library-automata#pgf.state:with:output"
+                      >state with output</a
+                    ></span
+                  >]&numsp;<span class="textcolor" style="color: #000000"
+                    ><a href="tikz-paths#pgf.at">at</a></span
+                  >
+                  <span class="textcolor" style="color: #800080">(2,0)</span
+                  >&numsp;{<span class="textcolor" style="color: #000000"
+                    >$q_1$</span
+                  >
+                  <span class="textcolor" style="color: #0000b2"
+                    ><a href="tikz-shapes#pgf.back/nodepart">\nodepart</a></span
+                  >{<span class="textcolor" style="color: #000000">lower</span
+                  >}&numsp;<span class="textcolor" style="color: #000000"
+                    >$00$</span
+                  >};<br />
+                  <span class="textcolor" style="color: #000000">\end</span
+                  >{<span class="textcolor" style="color: #0000b2"
+                    ><a href="tikz-scopes#pgf.tikzpicture">tikzpicture</a></span
+                  >}<br />
+                </code>
+              </div>
+            </figure>
+          </div>
+
+          <div class="manualentry">
+            <div class="entryheadline">
+              <p>
+                <a id="pgf./tikz/state"></a><a id="pgf.state"></a>
+                <span class="hl-def"
+                  ><kbd
+                    ><span class="keyname"
+                      ><span class="textcolor" style="color: #bf0000"
+                        >/tikz/state</span
+                      ></span
+                    ></kbd
+                  ></span
+                ><span class="hl-default"
+                  >(style, initially <kbd>state without output</kbd>)</span
+                >
+                <a class="anchor-link" href="#pgf./tikz/state">&para;</a>
+              </p>
+            </div>
+            <p>
+              You should redefine it to something else, if you wish to use
+              states of a different nature.
+            </p>
+
+            <figure class="example">
+              <div class="example-image">
+                <p>
+                  <span class="lateximagesource" id="lateximage-pgfmanual-2054"
+                    ><!--
+q0 q1
+11 00
+   -->
+                    <img
+                      alt="(-tikz-&nbsp;diagram)"
+                      class="lateximage"
+                      height="44.955"
+                      loading="lazy"
+                      src="pgfmanual-images/image-2054.png"
+                      style
+                      width="120.542"
+                  /></span>
+                </p>
+              </div>
+
+              <div class="example-code">
+                <button class="clipboardButton" type="button">copy</button>
+                <code>
+                  <span class="c- preamble">\usetikzlibrary {automata} </span
+                  ><br />
+                  <span class="textcolor" style="color: #000000">\begin</span
+                  >{<span class="textcolor" style="color: #0000b2"
+                    ><a href="tikz-scopes#pgf.tikzpicture">tikzpicture</a></span
+                  >}[<span class="textcolor" style="color: #008000"
+                    ><a href="library-automata#pgf.state">state</a></span
+                  >/<span class="textcolor" style="color: #0000b2"
+                    ><a href="pgfkeys#pgf./handlers/.style">.style</a></span
+                  >=<span class="textcolor" style="color: #008000"
+                    ><a href="library-automata#pgf.state:with:output"
+                      >state with output</a
+                    ></span
+                  >]<br />
+                  &numsp;&numsp;<span class="textcolor" style="color: #0000b2"
+                    ><a href="tikz-shapes#pgf.back/node">\node</a></span
+                  >[<span class="textcolor" style="color: #008000"
+                    ><a href="library-automata#pgf.state">state</a></span
+                  >]&numsp;&numsp;&numsp;&numsp;&numsp;&numsp;&numsp;&numsp;&numsp;&numsp;{<span
+                    class="textcolor"
+                    style="color: #000000"
+                    >$q_0$</span
+                  >
+                  <span class="textcolor" style="color: #0000b2"
+                    ><a href="tikz-shapes#pgf.back/nodepart">\nodepart</a></span
+                  >{<span class="textcolor" style="color: #000000">lower</span
+                  >}&numsp;<span class="textcolor" style="color: #000000"
+                    >$11$</span
+                  >};<br />
+                  &numsp;&numsp;<span class="textcolor" style="color: #0000b2"
+                    ><a href="tikz-shapes#pgf.back/node">\node</a></span
+                  >[<span class="textcolor" style="color: #008000"
+                    ><a href="library-automata#pgf.state">state</a></span
+                  >]&numsp;<span class="textcolor" style="color: #000000"
+                    ><a href="tikz-paths#pgf.at">at</a></span
+                  >
+                  <span class="textcolor" style="color: #800080">(2,0)</span
+                  >&numsp;{<span class="textcolor" style="color: #000000"
+                    >$q_1$</span
+                  >
+                  <span class="textcolor" style="color: #0000b2"
+                    ><a href="tikz-shapes#pgf.back/nodepart">\nodepart</a></span
+                  >{<span class="textcolor" style="color: #000000">lower</span
+                  >}&numsp;<span class="textcolor" style="color: #000000"
+                    >$00$</span
+                  >};<br />
+                  <span class="textcolor" style="color: #000000">\end</span
+                  >{<span class="textcolor" style="color: #0000b2"
+                    ><a href="tikz-scopes#pgf.tikzpicture">tikzpicture</a></span
+                  >}<br />
+                </code>
+              </div>
+            </figure>
+          </div>
+
+          <div class="manualentry">
+            <div class="entryheadline">
+              <p>
+                <a id="pgf./tikz/every:state"></a><a id="pgf.every:state"></a>
+                <span class="hl-def"
+                  ><kbd
+                    ><span class="keyname"
+                      ><span class="textcolor" style="color: #bf0000"
+                        >/tikz/every state</span
+                      ></span
+                    ></kbd
+                  ></span
+                ><span class="hl-default"
+                  >(style, initially <kbd>empty</kbd>)</span
+                >
+                <a class="anchor-link" href="#pgf./tikz/every:state">&para;</a>
+              </p>
+            </div>
+            <p>
+              This style is used by
+              <span class="texttt">state with output</span> and also by
+              <span class="texttt">state without output</span>. By default, it
+              does nothing, but you can use it to make your state look more
+              fancy:
+            </p>
+
+            <figure class="example">
+              <div class="example-image">
+                <p>
+                  <span class="lateximagesource" id="lateximage-pgfmanual-2055"
+                    ><!--
+                 0
+
+
+                 q1
+             0
+
+start q0
+
+             1
+                 q2
+
+
+                 1
+-->
+                    <img
+                      alt="(-tikz-&nbsp;diagram)"
+                      class="lateximage"
+                      height="210.794"
+                      loading="lazy"
+                      src="pgfmanual-images/image-2055.png"
+                      style
+                      width="144.458"
+                  /></span>
+                </p>
+              </div>
+
+              <div class="example-code">
+                <button class="clipboardButton" type="button">copy</button>
+                <code>
+                  <span class="c- preamble"
+                    >\usetikzlibrary {arrows.meta,automata,positioning} </span
+                  ><br />
+                  <span class="textcolor" style="color: #000000">\begin</span
+                  >{<span class="textcolor" style="color: #0000b2"
+                    ><a href="tikz-scopes#pgf.tikzpicture">tikzpicture</a></span
+                  >}[<span class="textcolor" style="color: #008000"
+                    ><a href="tikz-arrows#pgf.shorten:&gt;"
+                      >shorten &gt;</a
+                    ></span
+                  >=<span class="textcolor" style="color: #008000">1pt</span
+                  >,<span class="textcolor" style="color: #008000"
+                    ><a href="tikz-shapes#pgf.node:distance"
+                      >node distance</a
+                    ></span
+                  >=<span class="textcolor" style="color: #008000">2cm</span
+                  >,<span class="textcolor" style="color: #008000"
+                    ><a href="tikz-shapes#pgf.on:grid">on grid</a></span
+                  >,<span class="textcolor" style="color: #008000"
+                    ><a href="tikz-arrows#pgf.&gt;">&gt;</a></span
+                  >=<span class="textcolor" style="color: #008000"
+                    >{Stealth[<span class="textcolor" style="color: #008000"
+                      ><a href="tikz-arrows#pgf.round">round</a></span
+                    >]}</span
+                  >,<br />
+                  &numsp;&numsp;&numsp;&numsp;<span
+                    class="textcolor"
+                    style="color: #008000"
+                    ><a href="library-automata#pgf.every:state"
+                      >every state</a
+                    ></span
+                  >/<span class="textcolor" style="color: #0000b2"
+                    ><a href="pgfkeys#pgf./handlers/.style">.style</a></span
+                  >={<span class="textcolor" style="color: #008000"
+                    ><a href="tikz-actions#pgf.draw">draw</a></span
+                  >=<span class="textcolor" style="color: #008000">blue!50</span
+                  >,<span class="textcolor" style="color: #008000"
+                    ><a href="tikz-actions#pgf.very:thick">very thick</a></span
+                  >,<span class="textcolor" style="color: #008000"
+                    ><a href="tikz-actions#pgf.fill">fill</a></span
+                  >=<span class="textcolor" style="color: #008000"
+                    >blue!20}</span
+                  >]<br />
+                  <br />
+                  &numsp;&numsp;<span class="textcolor" style="color: #0000b2"
+                    ><a href="tikz-shapes#pgf.back/node">\node</a></span
+                  >[<span class="textcolor" style="color: #008000"
+                    ><a href="library-automata#pgf.state">state</a></span
+                  >,<span class="textcolor" style="color: #008000"
+                    ><a href="library-automata#pgf.initial">initial</a></span
+                  >]&numsp;&numsp;<span class="textcolor" style="color: #800080"
+                    >(q_0)</span
+                  >&numsp;&numsp;&numsp;&numsp;&numsp;&numsp;&numsp;&numsp;&numsp;&numsp;&numsp;&numsp;&numsp;&numsp;&numsp;&numsp;&numsp;&numsp;&numsp;&numsp;&numsp;&numsp;{<span
+                    class="textcolor"
+                    style="color: #000000"
+                    >$q_0$</span
+                  >};<br />
+                  &numsp;&numsp;<span class="textcolor" style="color: #0000b2"
+                    ><a href="tikz-shapes#pgf.back/node">\node</a></span
+                  >[<span class="textcolor" style="color: #008000"
+                    ><a href="library-automata#pgf.state">state</a></span
+                  >]&numsp;&numsp;&numsp;&numsp;&numsp;&numsp;&numsp;&numsp;&numsp;&numsp;<span
+                    class="textcolor"
+                    style="color: #800080"
+                    >(q_1)</span
+                  >&numsp;[<span class="textcolor" style="color: #008000"
+                    ><a href="tikz-shapes#pgf.above:right">above right</a></span
+                  >=<span class="textcolor" style="color: #008000"
+                    ><a href="tikz-coordinates#pgf.of">of</a> q_0</span
+                  >]&numsp;{<span class="textcolor" style="color: #000000"
+                    >$q_1$</span
+                  >};<br />
+                  &numsp;&numsp;<span class="textcolor" style="color: #0000b2"
+                    ><a href="tikz-shapes#pgf.back/node">\node</a></span
+                  >[<span class="textcolor" style="color: #008000"
+                    ><a href="library-automata#pgf.state">state</a></span
+                  >]&numsp;&numsp;&numsp;&numsp;&numsp;&numsp;&numsp;&numsp;&numsp;&numsp;<span
+                    class="textcolor"
+                    style="color: #800080"
+                    >(q_2)</span
+                  >&numsp;[<span class="textcolor" style="color: #008000"
+                    ><a href="tikz-shapes#pgf.below:right">below right</a></span
+                  >=<span class="textcolor" style="color: #008000"
+                    ><a href="tikz-coordinates#pgf.of">of</a> q_0</span
+                  >]&numsp;{<span class="textcolor" style="color: #000000"
+                    >$q_2$</span
+                  >};<br />
+                  <br />
+                  &numsp;&numsp;<span class="textcolor" style="color: #0000b2"
+                    ><a href="tikz-paths#pgf.back/path">\path</a></span
+                  >[<span class="textcolor" style="color: #008000"
+                    ><a href="tikz-graphs#pgf.-&gt;">-&gt;</a></span
+                  >]&numsp;<span class="textcolor" style="color: #800080"
+                    >(q_0)</span
+                  >&numsp;<span class="textcolor" style="color: #000000"
+                    ><a href="tikz-shapes#pgf.edge">edge</a></span
+                  >
+                  &numsp;&numsp;&numsp;&numsp;&numsp;&numsp;&numsp;&numsp;&numsp;&numsp;&numsp;&numsp;&numsp;<span
+                    class="textcolor"
+                    style="color: #000000"
+                    ><a href="tikz-coordinates#pgf.node">node</a></span
+                  >
+                  [<span class="textcolor" style="color: #008000"
+                    ><a href="tikz-shapes#pgf.above:left">above left</a></span
+                  >]&numsp;&numsp;{<span
+                    class="textcolor"
+                    style="color: #000000"
+                    >0</span
+                  >}&numsp;<span class="textcolor" style="color: #800080"
+                    >(q_1)</span
+                  ><br />
+                  &numsp;&numsp;&numsp;&numsp;&numsp;&numsp;&numsp;&numsp;&numsp;&numsp;&numsp;&numsp;&numsp;&numsp;&numsp;&numsp;&numsp;&numsp;<span
+                    class="textcolor"
+                    style="color: #000000"
+                    ><a href="tikz-shapes#pgf.edge">edge</a></span
+                  >
+                  &numsp;&numsp;&numsp;&numsp;&numsp;&numsp;&numsp;&numsp;&numsp;&numsp;&numsp;&numsp;&numsp;<span
+                    class="textcolor"
+                    style="color: #000000"
+                    ><a href="tikz-coordinates#pgf.node">node</a></span
+                  >
+                  [<span class="textcolor" style="color: #008000"
+                    ><a href="tikz-shapes#pgf.below:left">below left</a></span
+                  >]&numsp;&numsp;{<span
+                    class="textcolor"
+                    style="color: #000000"
+                    >1</span
+                  >}&numsp;<span class="textcolor" style="color: #800080"
+                    >(q_2)</span
+                  ><br />
+                  &numsp;&numsp;&numsp;&numsp;&numsp;&numsp;&numsp;&numsp;&numsp;&numsp;&numsp;&numsp;<span
+                    class="textcolor"
+                    style="color: #800080"
+                    >(q_1)</span
+                  >&numsp;<span class="textcolor" style="color: #000000"
+                    ><a href="tikz-shapes#pgf.edge">edge</a></span
+                  >
+                  [<span class="textcolor" style="color: #008000"
+                    ><a href="library-edges#pgf.loop:above">loop above</a></span
+                  >]&numsp;<span class="textcolor" style="color: #000000"
+                    ><a href="tikz-coordinates#pgf.node">node</a></span
+                  >
+                  &numsp;&numsp;&numsp;&numsp;&numsp;&numsp;&numsp;&numsp;&numsp;&numsp;&numsp;&numsp;&numsp;&numsp;{<span
+                    class="textcolor"
+                    style="color: #000000"
+                    >0</span
+                  >}&numsp;<span class="textcolor" style="color: #800080"
+                    >()</span
+                  ><br />
+                  &numsp;&numsp;&numsp;&numsp;&numsp;&numsp;&numsp;&numsp;&numsp;&numsp;&numsp;&numsp;<span
+                    class="textcolor"
+                    style="color: #800080"
+                    >(q_2)</span
+                  >&numsp;<span class="textcolor" style="color: #000000"
+                    ><a href="tikz-shapes#pgf.edge">edge</a></span
+                  >
+                  [<span class="textcolor" style="color: #008000"
+                    ><a href="library-edges#pgf.loop:below">loop below</a></span
+                  >]&numsp;<span class="textcolor" style="color: #000000"
+                    ><a href="tikz-coordinates#pgf.node">node</a></span
+                  >
+                  &numsp;&numsp;&numsp;&numsp;&numsp;&numsp;&numsp;&numsp;&numsp;&numsp;&numsp;&numsp;&numsp;&numsp;{<span
+                    class="textcolor"
+                    style="color: #000000"
+                    >1</span
+                  >}&numsp;<span class="textcolor" style="color: #800080"
+                    >()</span
+                  >;<br />
+                  <span class="textcolor" style="color: #000000">\end</span
+                  >{<span class="textcolor" style="color: #0000b2"
+                    ><a href="tikz-scopes#pgf.tikzpicture">tikzpicture</a></span
+                  >}<br />
+                </code>
+              </div>
+            </figure>
+          </div>
+          <h5 id="autosec-4961">
+            <span class="sectionnumber" id="sec-43.3">43.3&emsp;</span>Initial
+            and Accepting States<a class="anchor-link" href="#sec-43.3"
+              >&para;</a
+            >
+          </h5>
+          <a id="pgfmanual-autopage-4961"></a>
+
+          <p>
+            The styles <span class="texttt">initial</span> and
+            <span class="texttt">accepting</span> are similar to the
+            <span class="texttt">state</span> style as they also just select an
+            &ldquo;underlying&rdquo; style, which installs the actual settings
+            for initial and accepting states.
+          </p>
+
+          <p>Let us start with the initial states.</p>
+
+          <div class="manualentry">
+            <div class="entryheadline">
+              <p>
+                <a id="pgf./tikz/initial"></a><a id="pgf.initial"></a>
+                <span class="hl-def"
+                  ><kbd
+                    ><span class="keyname"
+                      ><span class="textcolor" style="color: #bf0000"
+                        >/tikz/initial</span
+                      ></span
+                    ></kbd
+                  ></span
+                ><span class="hl-default"
+                  >(style, initially <kbd>initial by arrow</kbd>)</span
+                >
+                <a class="anchor-link" href="#pgf./tikz/initial">&para;</a>
+              </p>
+            </div>
+            <p>This style is used to draw initial states.</p>
+          </div>
+
+          <div class="manualentry">
+            <div class="entryheadline">
+              <p>
+                <a id="pgf./tikz/initial:by:arrow"></a
+                ><a id="pgf.initial:by:arrow"></a>
+                <span class="hl-def"
+                  ><kbd
+                    ><span class="keyname"
+                      ><span class="textcolor" style="color: #bf0000"
+                        >/tikz/initial by arrow</span
+                      ></span
+                    ></kbd
+                  ></span
+                ><span class="hl-default">(style, no value)</span>
+                <a class="anchor-link" href="#pgf./tikz/initial:by:arrow"
+                  >&para;</a
+                >
+              </p>
+            </div>
+            <p>
+              This style causes an arrow and, possibly, some text to be added to
+              the node. The arrow points from the text to the node. The node
+              text and the direction and the distance can be set using the
+              following key:
+            </p>
+
+            <div class="manualentry">
+              <div class="entryheadline">
+                <p>
+                  <a id="pgf./tikz/initial:text"></a
+                  ><a id="pgf.initial:text"></a>
+                  <span class="hl-def"
+                    ><kbd
+                      ><span class="keyname"
+                        ><span class="textcolor" style="color: #bf0000"
+                          >/tikz/initial text</span
+                        ></span
+                      >=</kbd
+                    ><span class="angle">&langle;</span><i>text</i
+                    ><span class="angle">&rangle;</span> </span
+                  ><span class="hl-default"
+                    >(no default, initially <kbd>start</kbd>)</span
+                  >
+                  <a class="anchor-link" href="#pgf./tikz/initial:text"
+                    >&para;</a
+                  >
+                </p>
+              </div>
+              <p>
+                This key sets the text to be used. Use an empty text to suppress
+                all text.
+              </p>
+            </div>
+
+            <div class="manualentry">
+              <div class="entryheadline">
+                <p>
+                  <a id="pgf./tikz/initial:where"></a
+                  ><a id="pgf.initial:where"></a>
+                  <span class="hl-def"
+                    ><kbd
+                      ><span class="keyname"
+                        ><span class="textcolor" style="color: #bf0000"
+                          >/tikz/initial where</span
+                        ></span
+                      >=</kbd
+                    ><span class="angle">&langle;</span><i>direction</i
+                    ><span class="angle">&rangle;</span> </span
+                  ><span class="hl-default"
+                    >(no default, initially <kbd>left</kbd>)</span
+                  >
+                  <a class="anchor-link" href="#pgf./tikz/initial:where"
+                    >&para;</a
+                  >
+                </p>
+              </div>
+              <p>
+                Set the place where the text should be shown. Allowed values are
+                <span class="texttt">above</span>,
+                <span class="texttt">below</span>,
+                <span class="texttt">left</span>, and
+                <span class="texttt">right</span>.
+              </p>
+            </div>
+
+            <div class="manualentry">
+              <div class="entryheadline">
+                <p>
+                  <a id="pgf./tikz/initial:distance"></a
+                  ><a id="pgf.initial:distance"></a>
+                  <span class="hl-def"
+                    ><kbd
+                      ><span class="keyname"
+                        ><span class="textcolor" style="color: #bf0000"
+                          >/tikz/initial distance</span
+                        ></span
+                      >=</kbd
+                    ><span class="angle">&langle;</span><i>distance</i
+                    ><span class="angle">&rangle;</span> </span
+                  ><span class="hl-default"
+                    >(no default, initially <kbd>3ex</kbd>)</span
+                  >
+                  <a class="anchor-link" href="#pgf./tikz/initial:distance"
+                    >&para;</a
+                  >
+                </p>
+              </div>
+              <p>
+                Sets the length of the arrow leading from the text to the state
+                node.
+              </p>
+            </div>
+
+            <div class="manualentry">
+              <div class="entryheadline">
+                <p>
+                  <a id="pgf./tikz/every:initial:by:arrow"></a
+                  ><a id="pgf.every:initial:by:arrow"></a>
+                  <span class="hl-def"
+                    ><kbd
+                      ><span class="keyname"
+                        ><span class="textcolor" style="color: #bf0000"
+                          >/tikz/every initial by arrow</span
+                        ></span
+                      ></kbd
+                    ></span
+                  ><span class="hl-default"
+                    >(style, initially <kbd>empty</kbd>)</span
+                  >
+                  <a
+                    class="anchor-link"
+                    href="#pgf./tikz/every:initial:by:arrow"
+                    >&para;</a
+                  >
+                </p>
+              </div>
+              <p>
+                This style is executed at the beginning of every path that
+                contains the arrow and the text. You can use it to, say, make
+                the text red or whatever.
+              </p>
+            </div>
+
+            <figure class="example">
+              <div class="example-image">
+                <p>
+                  <span class="lateximagesource" id="lateximage-pgfmanual-2056"
+                    ><!--
+start q0
+   -->
+                    <img
+                      alt="(-tikz-&nbsp;diagram)"
+                      class="lateximage"
+                      height="36.435"
+                      loading="lazy"
+                      src="pgfmanual-images/image-2056.png"
+                      style
+                      width="147.842"
+                  /></span>
+                </p>
+              </div>
+
+              <div class="example-code">
+                <button class="clipboardButton" type="button">copy</button>
+                <code>
+                  <span class="c- preamble">\usetikzlibrary {automata} </span
+                  ><br />
+                  <span class="textcolor" style="color: #000000">\begin</span
+                  >{<span class="textcolor" style="color: #0000b2"
+                    ><a href="tikz-scopes#pgf.tikzpicture">tikzpicture</a></span
+                  >}[<span class="textcolor" style="color: #008000"
+                    ><a href="library-automata#pgf.every:initial:by:arrow"
+                      >every initial by arrow</a
+                    ></span
+                  >/<span class="textcolor" style="color: #0000b2"
+                    ><a href="pgfkeys#pgf./handlers/.style">.style</a></span
+                  >={<span class="textcolor" style="color: #008000"
+                    ><a href="tikz-shapes#pgf.text">text</a></span
+                  >=<span class="textcolor" style="color: #008000">red</span
+                  >,<span class="textcolor" style="color: #008000"
+                    >-&gt;&gt;</span
+                  >}]<br />
+                  &numsp;&numsp;<span class="textcolor" style="color: #0000b2"
+                    ><a href="tikz-shapes#pgf.back/node">\node</a></span
+                  >[<span class="textcolor" style="color: #008000"
+                    ><a href="library-automata#pgf.state">state</a></span
+                  >,<span class="textcolor" style="color: #008000"
+                    ><a href="library-automata#pgf.initial">initial</a></span
+                  >,<span class="textcolor" style="color: #008000"
+                    ><a href="library-automata#pgf.initial:distance"
+                      >initial distance</a
+                    ></span
+                  >=<span class="textcolor" style="color: #008000">2cm</span
+                  >]&numsp;{<span class="textcolor" style="color: #000000"
+                    >$q_0$</span
+                  >};<br />
+                  <span class="textcolor" style="color: #000000">\end</span
+                  >{<span class="textcolor" style="color: #0000b2"
+                    ><a href="tikz-scopes#pgf.tikzpicture">tikzpicture</a></span
+                  >}<br />
+                </code>
+              </div>
+            </figure>
+          </div>
+
+          <div class="manualentry">
+            <div class="entryheadline">
+              <p>
+                <a id="pgf./tikz/initial:above"></a
+                ><a id="pgf.initial:above"></a>
+                <span class="hl-def"
+                  ><kbd
+                    ><span class="keyname"
+                      ><span class="textcolor" style="color: #bf0000"
+                        >/tikz/initial above</span
+                      ></span
+                    ></kbd
+                  ></span
+                ><span class="hl-default">(style, no value)</span>
+                <a class="anchor-link" href="#pgf./tikz/initial:above"
+                  >&para;</a
+                >
+              </p>
+            </div>
+            <p>
+              This is a shorthand for
+              <span class="texttt">initial by arrow,initial where=above</span>.
+            </p>
+          </div>
+
+          <div class="manualentry">
+            <div class="entryheadline">
+              <p>
+                <a id="pgf./tikz/initial:below"></a
+                ><a id="pgf.initial:below"></a>
+                <span class="hl-def"
+                  ><kbd
+                    ><span class="keyname"
+                      ><span class="textcolor" style="color: #bf0000"
+                        >/tikz/initial below</span
+                      ></span
+                    ></kbd
+                  ></span
+                ><span class="hl-default">(style, no value)</span>
+                <a class="anchor-link" href="#pgf./tikz/initial:below"
+                  >&para;</a
+                >
+              </p>
+            </div>
+            <p>Works similarly to the previous option.</p>
+          </div>
+
+          <div class="manualentry">
+            <div class="entryheadline">
+              <p>
+                <a id="pgf./tikz/initial:left"></a
+                ><a id="pgf.initial:left"></a>
+                <span class="hl-def"
+                  ><kbd
+                    ><span class="keyname"
+                      ><span class="textcolor" style="color: #bf0000"
+                        >/tikz/initial left</span
+                      ></span
+                    ></kbd
+                  ></span
+                ><span class="hl-default">(style, no value)</span>
+                <a class="anchor-link" href="#pgf./tikz/initial:left">&para;</a>
+              </p>
+            </div>
+            <p>Works similarly to the previous option.</p>
+          </div>
+
+          <div class="manualentry">
+            <div class="entryheadline">
+              <p>
+                <a id="pgf./tikz/initial:right"></a
+                ><a id="pgf.initial:right"></a>
+                <span class="hl-def"
+                  ><kbd
+                    ><span class="keyname"
+                      ><span class="textcolor" style="color: #bf0000"
+                        >/tikz/initial right</span
+                      ></span
+                    ></kbd
+                  ></span
+                ><span class="hl-default">(style, no value)</span>
+                <a class="anchor-link" href="#pgf./tikz/initial:right"
+                  >&para;</a
+                >
+              </p>
+            </div>
+            <p>Works similarly to the previous option.</p>
+          </div>
+
+          <div class="manualentry">
+            <div class="entryheadline">
+              <p>
+                <a id="pgf./tikz/initial:by:diamond"></a
+                ><a id="pgf.initial:by:diamond"></a>
+                <span class="hl-def"
+                  ><kbd
+                    ><span class="keyname"
+                      ><span class="textcolor" style="color: #bf0000"
+                        >/tikz/initial by diamond</span
+                      ></span
+                    ></kbd
+                  ></span
+                ><span class="hl-default">(style, no value)</span>
+                <a class="anchor-link" href="#pgf./tikz/initial:by:diamond"
+                  >&para;</a
+                >
+              </p>
+            </div>
+            <p>This style uses a diamond to indicate an initial node.</p>
+          </div>
+
+          <p>
+            For the accepting states, the situation is similar: There is also an
+            <span class="texttt">accepting</span> style that selects the way
+            accepting states are rendered. There are now two options: First,
+            <span class="texttt">accepting by arrow</span>, which works the same
+            way as <span class="texttt">initial by arrow</span>, only with the
+            direction of arrow reversed, and
+            <span class="texttt">accepting by double</span>, where accepting
+            states get a double line around them.
+          </p>
+
+          <div class="manualentry">
+            <div class="entryheadline">
+              <p>
+                <a id="pgf./tikz/accepting"></a><a id="pgf.accepting"></a>
+                <span class="hl-def"
+                  ><kbd
+                    ><span class="keyname"
+                      ><span class="textcolor" style="color: #bf0000"
+                        >/tikz/accepting</span
+                      ></span
+                    ></kbd
+                  ></span
+                ><span class="hl-default"
+                  >(style, initially <kbd>accepting by double</kbd>)</span
+                >
+                <a class="anchor-link" href="#pgf./tikz/accepting">&para;</a>
+              </p>
+            </div>
+            <p>
+              This style is used to draw accepting states. You can replace this
+              by the style <span class="texttt">accepting by arrow</span> to get
+              accepting states with an arrow leaving them.
+            </p>
+          </div>
+
+          <div class="manualentry">
+            <div class="entryheadline">
+              <p>
+                <a id="pgf./tikz/accepting:by:double"></a
+                ><a id="pgf.accepting:by:double"></a>
+                <span class="hl-def"
+                  ><kbd
+                    ><span class="keyname"
+                      ><span class="textcolor" style="color: #bf0000"
+                        >/tikz/accepting by double</span
+                      ></span
+                    ></kbd
+                  ></span
+                ><span class="hl-default">(style, no value)</span>
+                <a class="anchor-link" href="#pgf./tikz/accepting:by:double"
+                  >&para;</a
+                >
+              </p>
+            </div>
+            <p>This style causes a double line to be drawn around a state.</p>
+          </div>
+
+          <div class="manualentry">
+            <div class="entryheadline">
+              <p>
+                <a id="pgf./tikz/accepting:by:arrow"></a
+                ><a id="pgf.accepting:by:arrow"></a>
+                <span class="hl-def"
+                  ><kbd
+                    ><span class="keyname"
+                      ><span class="textcolor" style="color: #bf0000"
+                        >/tikz/accepting by arrow</span
+                      ></span
+                    ></kbd
+                  ></span
+                ><span class="hl-default">(style, no value)</span>
+                <a class="anchor-link" href="#pgf./tikz/accepting:by:arrow"
+                  >&para;</a
+                >
+              </p>
+            </div>
+            <p>
+              This style causes an arrow and, possibly, some text to be added to
+              the node. The arrow points to the text from the node.
+            </p>
+            <p>
+              The same options as for initial states can be used, only with
+              <span class="texttt">initial</span> replaced by
+              <span class="texttt">accepting</span>:
+            </p>
+
+            <div class="manualentry">
+              <div class="entryheadline">
+                <p>
+                  <a id="pgf./tikz/accepting:text"></a
+                  ><a id="pgf.accepting:text"></a>
+                  <span class="hl-def"
+                    ><kbd
+                      ><span class="keyname"
+                        ><span class="textcolor" style="color: #bf0000"
+                          >/tikz/accepting text</span
+                        ></span
+                      >=</kbd
+                    ><span class="angle">&langle;</span><i>text</i
+                    ><span class="angle">&rangle;</span> </span
+                  ><span class="hl-default"
+                    >(no default, initially <kbd>empty</kbd>)</span
+                  >
+                  <a class="anchor-link" href="#pgf./tikz/accepting:text"
+                    >&para;</a
+                  >
+                </p>
+              </div>
+              <p>This key sets the text to be used.</p>
+            </div>
+
+            <div class="manualentry">
+              <div class="entryheadline">
+                <p>
+                  <a id="pgf./tikz/accepting:where"></a
+                  ><a id="pgf.accepting:where"></a>
+                  <span class="hl-def"
+                    ><kbd
+                      ><span class="keyname"
+                        ><span class="textcolor" style="color: #bf0000"
+                          >/tikz/accepting where</span
+                        ></span
+                      >=</kbd
+                    ><span class="angle">&langle;</span><i>direction</i
+                    ><span class="angle">&rangle;</span> </span
+                  ><span class="hl-default"
+                    >(no default, initially <kbd>right</kbd>)</span
+                  >
+                  <a class="anchor-link" href="#pgf./tikz/accepting:where"
+                    >&para;</a
+                  >
+                </p>
+              </div>
+              <p>
+                Set the place where the text should be shown. Allowed values are
+                <span class="texttt">above</span>,
+                <span class="texttt">below</span>,
+                <span class="texttt">left</span>, and
+                <span class="texttt">right</span>.
+              </p>
+            </div>
+
+            <div class="manualentry">
+              <div class="entryheadline">
+                <p>
+                  <span class="hl-def"
+                    ><kbd
+                      ><span class="keyname"
+                        ><span class="textcolor" style="color: #bf0000"
+                          >/tikz/initial distance</span
+                        ></span
+                      >=</kbd
+                    ><span class="angle">&langle;</span><i>distance</i
+                    ><span class="angle">&rangle;</span> </span
+                  ><span class="hl-default"
+                    >(no default, initially <kbd>3ex</kbd>)</span
+                  >
+                </p>
+              </div>
+              <p>
+                Sets the length of the arrow leading from the text to the state
+                node.
+              </p>
+            </div>
+
+            <div class="manualentry">
+              <div class="entryheadline">
+                <p>
+                  <a id="pgf./tikz/every:accepting:by:arrow"></a
+                  ><a id="pgf.every:accepting:by:arrow"></a>
+                  <span class="hl-def"
+                    ><kbd
+                      ><span class="keyname"
+                        ><span class="textcolor" style="color: #bf0000"
+                          >/tikz/every accepting by arrow</span
+                        ></span
+                      ></kbd
+                    ></span
+                  ><span class="hl-default"
+                    >(style, initially <kbd>empty</kbd>)</span
+                  >
+                  <a
+                    class="anchor-link"
+                    href="#pgf./tikz/every:accepting:by:arrow"
+                    >&para;</a
+                  >
+                </p>
+              </div>
+              <p>
+                Executed at the beginning of every path that contains the arrow
+                and the text.
+              </p>
+            </div>
+
+            <figure class="example">
+              <div class="example-image">
+                <p>
+                  <span class="lateximagesource" id="lateximage-pgfmanual-2057"
+                    ><!--
+         0
+
+
+         q1
+     0 1
+
+q0 q3
+
+     1 0
+         q2
+
+
+         1
+   -->
+                    <img
+                      alt="(-tikz-&nbsp;diagram)"
+                      class="lateximage"
+                      height="210.794"
+                      loading="lazy"
+                      src="pgfmanual-images/image-2057.png"
+                      style
+                      width="178.454"
+                  /></span>
+                </p>
+              </div>
+
+              <div class="example-code">
+                <button class="clipboardButton" type="button">copy</button>
+                <code>
+                  <span class="c- preamble"
+                    >\usetikzlibrary {arrows.meta,automata,positioning} </span
+                  ><br />
+                  <span class="textcolor" style="color: #000000">\begin</span
+                  >{<span class="textcolor" style="color: #0000b2"
+                    ><a href="tikz-scopes#pgf.tikzpicture">tikzpicture</a></span
+                  >}<br />
+                  &numsp;&numsp;[<span class="textcolor" style="color: #008000"
+                    ><a href="tikz-arrows#pgf.shorten:&gt;"
+                      >shorten &gt;</a
+                    ></span
+                  >=<span class="textcolor" style="color: #008000">1pt</span
+                  >,<span class="textcolor" style="color: #008000"
+                    ><a href="tikz-shapes#pgf.node:distance"
+                      >node distance</a
+                    ></span
+                  >=<span class="textcolor" style="color: #008000">2cm</span
+                  >,<span class="textcolor" style="color: #008000"
+                    ><a href="tikz-shapes#pgf.on:grid">on grid</a></span
+                  >,<span class="textcolor" style="color: #008000"
+                    ><a href="tikz-arrows#pgf.&gt;">&gt;</a></span
+                  >=<span class="textcolor" style="color: #008000"
+                    >{Stealth[<span class="textcolor" style="color: #008000"
+                      ><a href="tikz-arrows#pgf.round">round</a></span
+                    >]}</span
+                  >,<span class="textcolor" style="color: #008000"
+                    ><a href="library-automata#pgf.initial:text"
+                      >initial text</a
+                    ></span
+                  >=<span class="textcolor" style="color: #008000"></span
+                  >,<br />
+                  &numsp;&numsp;&numsp;<span
+                    class="textcolor"
+                    style="color: #008000"
+                    ><a href="library-automata#pgf.every:state"
+                      >every state</a
+                    ></span
+                  >/<span class="textcolor" style="color: #0000b2"
+                    ><a href="pgfkeys#pgf./handlers/.style">.style</a></span
+                  >={<span class="textcolor" style="color: #008000"
+                    ><a href="tikz-actions#pgf.draw">draw</a></span
+                  >=<span class="textcolor" style="color: #008000">blue!50</span
+                  >,<span class="textcolor" style="color: #008000"
+                    ><a href="tikz-actions#pgf.very:thick">very thick</a></span
+                  >,<span class="textcolor" style="color: #008000"
+                    ><a href="tikz-actions#pgf.fill">fill</a></span
+                  >=<span class="textcolor" style="color: #008000"
+                    >blue!20}</span
+                  >,<br />
+                  &numsp;&numsp;&numsp;<span
+                    class="textcolor"
+                    style="color: #008000"
+                    ><a href="library-automata#pgf.accepting"
+                      >accepting</a
+                    ></span
+                  >/<span class="textcolor" style="color: #0000b2"
+                    ><a href="pgfkeys#pgf./handlers/.style">.style</a></span
+                  >=<span class="textcolor" style="color: #008000"
+                    ><a href="library-automata#pgf.accepting:by:arrow"
+                      >accepting by arrow</a
+                    ></span
+                  >]<br />
+                  <br />
+                  &numsp;&numsp;<span class="textcolor" style="color: #0000b2"
+                    ><a href="tikz-shapes#pgf.back/node">\node</a></span
+                  >[<span class="textcolor" style="color: #008000"
+                    ><a href="library-automata#pgf.state">state</a></span
+                  >,<span class="textcolor" style="color: #008000"
+                    ><a href="library-automata#pgf.initial">initial</a></span
+                  >]&numsp;&numsp;<span class="textcolor" style="color: #800080"
+                    >(q_0)</span
+                  >&numsp;&numsp;&numsp;&numsp;&numsp;&numsp;&numsp;&numsp;&numsp;&numsp;&numsp;&numsp;&numsp;&numsp;&numsp;&numsp;&numsp;&numsp;&numsp;&numsp;&numsp;&numsp;{<span
+                    class="textcolor"
+                    style="color: #000000"
+                    >$q_0$</span
+                  >};<br />
+                  &numsp;&numsp;<span class="textcolor" style="color: #0000b2"
+                    ><a href="tikz-shapes#pgf.back/node">\node</a></span
+                  >[<span class="textcolor" style="color: #008000"
+                    ><a href="library-automata#pgf.state">state</a></span
+                  >]&numsp;&numsp;&numsp;&numsp;&numsp;&numsp;&numsp;&numsp;&numsp;&numsp;<span
+                    class="textcolor"
+                    style="color: #800080"
+                    >(q_1)</span
+                  >&numsp;[<span class="textcolor" style="color: #008000"
+                    ><a href="tikz-shapes#pgf.above:right">above right</a></span
+                  >=<span class="textcolor" style="color: #008000"
+                    ><a href="tikz-coordinates#pgf.of">of</a> q_0</span
+                  >]&numsp;{<span class="textcolor" style="color: #000000"
+                    >$q_1$</span
+                  >};<br />
+                  &numsp;&numsp;<span class="textcolor" style="color: #0000b2"
+                    ><a href="tikz-shapes#pgf.back/node">\node</a></span
+                  >[<span class="textcolor" style="color: #008000"
+                    ><a href="library-automata#pgf.state">state</a></span
+                  >]&numsp;&numsp;&numsp;&numsp;&numsp;&numsp;&numsp;&numsp;&numsp;&numsp;<span
+                    class="textcolor"
+                    style="color: #800080"
+                    >(q_2)</span
+                  >&numsp;[<span class="textcolor" style="color: #008000"
+                    ><a href="tikz-shapes#pgf.below:right">below right</a></span
+                  >=<span class="textcolor" style="color: #008000"
+                    ><a href="tikz-coordinates#pgf.of">of</a> q_0</span
+                  >]&numsp;{<span class="textcolor" style="color: #000000"
+                    >$q_2$</span
+                  >};<br />
+                  &numsp;&numsp;<span class="textcolor" style="color: #0000b2"
+                    ><a href="tikz-shapes#pgf.back/node">\node</a></span
+                  >[<span class="textcolor" style="color: #008000"
+                    ><a href="library-automata#pgf.state">state</a></span
+                  >,<span class="textcolor" style="color: #008000"
+                    ><a href="library-automata#pgf.accepting"
+                      >accepting</a
+                    ></span
+                  >]<span class="textcolor" style="color: #800080">(q_3)</span
+                  >&numsp;[<span class="textcolor" style="color: #008000"
+                    ><a href="tikz-shapes#pgf.below:right">below right</a></span
+                  >=<span class="textcolor" style="color: #008000"
+                    ><a href="tikz-coordinates#pgf.of">of</a> q_1</span
+                  >]&numsp;{<span class="textcolor" style="color: #000000"
+                    >$q_3$</span
+                  >};<br />
+                  <br />
+                  &numsp;&numsp;<span class="textcolor" style="color: #0000b2"
+                    ><a href="tikz-paths#pgf.back/path">\path</a></span
+                  >[<span class="textcolor" style="color: #008000"
+                    ><a href="tikz-graphs#pgf.-&gt;">-&gt;</a></span
+                  >]&numsp;<span class="textcolor" style="color: #800080"
+                    >(q_0)</span
+                  >&numsp;<span class="textcolor" style="color: #000000"
+                    ><a href="tikz-shapes#pgf.edge">edge</a></span
+                  >
+                  &numsp;&numsp;&numsp;&numsp;&numsp;&numsp;&numsp;&numsp;&numsp;&numsp;&numsp;&numsp;&numsp;<span
+                    class="textcolor"
+                    style="color: #000000"
+                    ><a href="tikz-coordinates#pgf.node">node</a></span
+                  >
+                  [<span class="textcolor" style="color: #008000"
+                    ><a href="tikz-shapes#pgf.above:left">above left</a></span
+                  >]&numsp;&numsp;{<span
+                    class="textcolor"
+                    style="color: #000000"
+                    >0</span
+                  >}&numsp;<span class="textcolor" style="color: #800080"
+                    >(q_1)</span
+                  ><br />
+                  &numsp;&numsp;&numsp;&numsp;&numsp;&numsp;&numsp;&numsp;&numsp;&numsp;&numsp;&numsp;&numsp;&numsp;&numsp;&numsp;&numsp;&numsp;<span
+                    class="textcolor"
+                    style="color: #000000"
+                    ><a href="tikz-shapes#pgf.edge">edge</a></span
+                  >
+                  &numsp;&numsp;&numsp;&numsp;&numsp;&numsp;&numsp;&numsp;&numsp;&numsp;&numsp;&numsp;&numsp;<span
+                    class="textcolor"
+                    style="color: #000000"
+                    ><a href="tikz-coordinates#pgf.node">node</a></span
+                  >
+                  [<span class="textcolor" style="color: #008000"
+                    ><a href="tikz-shapes#pgf.below:left">below left</a></span
+                  >]&numsp;&numsp;{<span
+                    class="textcolor"
+                    style="color: #000000"
+                    >1</span
+                  >}&numsp;<span class="textcolor" style="color: #800080"
+                    >(q_2)</span
+                  ><br />
+                  &numsp;&numsp;&numsp;&numsp;&numsp;&numsp;&numsp;&numsp;&numsp;&numsp;&numsp;&numsp;<span
+                    class="textcolor"
+                    style="color: #800080"
+                    >(q_1)</span
+                  >&numsp;<span class="textcolor" style="color: #000000"
+                    ><a href="tikz-shapes#pgf.edge">edge</a></span
+                  >
+                  &numsp;&numsp;&numsp;&numsp;&numsp;&numsp;&numsp;&numsp;&numsp;&numsp;&numsp;&numsp;&numsp;<span
+                    class="textcolor"
+                    style="color: #000000"
+                    ><a href="tikz-coordinates#pgf.node">node</a></span
+                  >
+                  [<span class="textcolor" style="color: #008000"
+                    ><a href="tikz-shapes#pgf.above:right">above right</a></span
+                  >]&numsp;{<span class="textcolor" style="color: #000000"
+                    >1</span
+                  >}&numsp;<span class="textcolor" style="color: #800080"
+                    >(q_3)</span
+                  ><br />
+                  &numsp;&numsp;&numsp;&numsp;&numsp;&numsp;&numsp;&numsp;&numsp;&numsp;&numsp;&numsp;&numsp;&numsp;&numsp;&numsp;&numsp;&numsp;<span
+                    class="textcolor"
+                    style="color: #000000"
+                    ><a href="tikz-shapes#pgf.edge">edge</a></span
+                  >
+                  [<span class="textcolor" style="color: #008000"
+                    ><a href="library-edges#pgf.loop:above">loop above</a></span
+                  >]&numsp;<span class="textcolor" style="color: #000000"
+                    ><a href="tikz-coordinates#pgf.node">node</a></span
+                  >
+                  &numsp;&numsp;&numsp;&numsp;&numsp;&numsp;&numsp;&numsp;&numsp;&numsp;&numsp;&numsp;&numsp;&numsp;{<span
+                    class="textcolor"
+                    style="color: #000000"
+                    >0</span
+                  >}&numsp;<span class="textcolor" style="color: #800080"
+                    >()</span
+                  ><br />
+                  &numsp;&numsp;&numsp;&numsp;&numsp;&numsp;&numsp;&numsp;&numsp;&numsp;&numsp;&numsp;<span
+                    class="textcolor"
+                    style="color: #800080"
+                    >(q_2)</span
+                  >&numsp;<span class="textcolor" style="color: #000000"
+                    ><a href="tikz-shapes#pgf.edge">edge</a></span
+                  >
+                  &numsp;&numsp;&numsp;&numsp;&numsp;&numsp;&numsp;&numsp;&numsp;&numsp;&numsp;&numsp;&numsp;<span
+                    class="textcolor"
+                    style="color: #000000"
+                    ><a href="tikz-coordinates#pgf.node">node</a></span
+                  >
+                  [<span class="textcolor" style="color: #008000"
+                    ><a href="tikz-shapes#pgf.below:right">below right</a></span
+                  >]&numsp;{<span class="textcolor" style="color: #000000"
+                    >0</span
+                  >}&numsp;<span class="textcolor" style="color: #800080"
+                    >(q_3)</span
+                  ><br />
+                  &numsp;&numsp;&numsp;&numsp;&numsp;&numsp;&numsp;&numsp;&numsp;&numsp;&numsp;&numsp;&numsp;&numsp;&numsp;&numsp;&numsp;&numsp;<span
+                    class="textcolor"
+                    style="color: #000000"
+                    ><a href="tikz-shapes#pgf.edge">edge</a></span
+                  >
+                  [<span class="textcolor" style="color: #008000"
+                    ><a href="library-edges#pgf.loop:below">loop below</a></span
+                  >]&numsp;<span class="textcolor" style="color: #000000"
+                    ><a href="tikz-coordinates#pgf.node">node</a></span
+                  >
+                  &numsp;&numsp;&numsp;&numsp;&numsp;&numsp;&numsp;&numsp;&numsp;&numsp;&numsp;&numsp;&numsp;&numsp;{<span
+                    class="textcolor"
+                    style="color: #000000"
+                    >1</span
+                  >}&numsp;<span class="textcolor" style="color: #800080"
+                    >()</span
+                  >;<br />
+                  <span class="textcolor" style="color: #000000">\end</span
+                  >{<span class="textcolor" style="color: #0000b2"
+                    ><a href="tikz-scopes#pgf.tikzpicture">tikzpicture</a></span
+                  >}<br />
+                </code>
+              </div>
+            </figure>
+          </div>
+
+          <div class="manualentry">
+            <div class="entryheadline">
+              <p>
+                <a id="pgf./tikz/accepting:above"></a
+                ><a id="pgf.accepting:above"></a>
+                <span class="hl-def"
+                  ><kbd
+                    ><span class="keyname"
+                      ><span class="textcolor" style="color: #bf0000"
+                        >/tikz/accepting above</span
+                      ></span
+                    ></kbd
+                  ></span
+                ><span class="hl-default">(style, no value)</span>
+                <a class="anchor-link" href="#pgf./tikz/accepting:above"
+                  >&para;</a
+                >
+              </p>
+            </div>
+            <p>
+              This is a shorthand for
+              <span class="texttt"
+                >accepting by arrow,accepting where=above</span
+              >.
+            </p>
+          </div>
+
+          <div class="manualentry">
+            <div class="entryheadline">
+              <p>
+                <a id="pgf./tikz/accepting:below"></a
+                ><a id="pgf.accepting:below"></a>
+                <span class="hl-def"
+                  ><kbd
+                    ><span class="keyname"
+                      ><span class="textcolor" style="color: #bf0000"
+                        >/tikz/accepting below</span
+                      ></span
+                    ></kbd
+                  ></span
+                ><span class="hl-default">(style, no value)</span>
+                <a class="anchor-link" href="#pgf./tikz/accepting:below"
+                  >&para;</a
+                >
+              </p>
+            </div>
+            <p>Works similarly to the previous option.</p>
+          </div>
+
+          <div class="manualentry">
+            <div class="entryheadline">
+              <p>
+                <a id="pgf./tikz/accepting:left"></a
+                ><a id="pgf.accepting:left"></a>
+                <span class="hl-def"
+                  ><kbd
+                    ><span class="keyname"
+                      ><span class="textcolor" style="color: #bf0000"
+                        >/tikz/accepting left</span
+                      ></span
+                    ></kbd
+                  ></span
+                ><span class="hl-default">(style, no value)</span>
+                <a class="anchor-link" href="#pgf./tikz/accepting:left"
+                  >&para;</a
+                >
+              </p>
+            </div>
+            <p>Works similarly to the previous option.</p>
+          </div>
+
+          <div class="manualentry">
+            <div class="entryheadline">
+              <p>
+                <a id="pgf./tikz/accepting:right"></a
+                ><a id="pgf.accepting:right"></a>
+                <span class="hl-def"
+                  ><kbd
+                    ><span class="keyname"
+                      ><span class="textcolor" style="color: #bf0000"
+                        >/tikz/accepting right</span
+                      ></span
+                    ></kbd
+                  ></span
+                ><span class="hl-default">(style, no value)</span>
+                <a class="anchor-link" href="#pgf./tikz/accepting:right"
+                  >&para;</a
+                >
+              </p>
+            </div>
+            <p>Works similarly to the previous option.</p>
+          </div>
+          <h5 id="autosec-4966">
+            <span class="sectionnumber" id="sec-43.4">43.4&emsp;</span
+            >Examples<a class="anchor-link" href="#sec-43.4">&para;</a>
+          </h5>
+          <a id="pgfmanual-autopage-4966"></a>
+
+          <p>
+            In the following example, we once more typeset the automaton
+            presented in the previous sections. This time, we use the following
+            rule for accepting/initial state: Initial states are red, accepting
+            states are green, and normal states are orange. Then, we must find a
+            path from a red state to a green state.
+          </p>
+
+          <figure class="example">
+            <div class="example-image">
+              <p>
+                <span class="lateximagesource" id="lateximage-pgfmanual-2058"
+                  ><!--
+         0
+
+
+         q1
+     0 1
+
+q0 q3
+
+     1 0
+         q2
+
+
+         1
+-->
+                  <img
+                    alt="(-tikz-&nbsp;diagram)"
+                    class="lateximage"
+                    height="210.194"
+                    loading="lazy"
+                    src="pgfmanual-images/image-2058.png"
+                    style
+                    width="182.954"
+                /></span>
+              </p>
+            </div>
+
+            <div class="example-code">
+              <button class="clipboardButton" type="button">copy</button>
+
+              <code>
+                <span class="c- preamble"
+                  >\usetikzlibrary {arrows.meta,automata,positioning,shadows} </span
+                ><br />
+                <span class="textcolor" style="color: #000000">\begin</span
+                >{<span class="textcolor" style="color: #0000b2"
+                  ><a href="tikz-scopes#pgf.tikzpicture">tikzpicture</a></span
+                >}[<span class="textcolor" style="color: #008000"
+                  ><a href="tikz-arrows#pgf.shorten:&gt;">shorten &gt;</a></span
+                >=<span class="textcolor" style="color: #008000">1pt</span
+                >,<span class="textcolor" style="color: #008000"
+                  ><a href="tikz-shapes#pgf.node:distance"
+                    >node distance</a
+                  ></span
+                >=<span class="textcolor" style="color: #008000">2cm</span
+                >,<span class="textcolor" style="color: #008000"
+                  ><a href="tikz-shapes#pgf.on:grid">on grid</a></span
+                >,<span class="textcolor" style="color: #008000"
+                  ><a href="tikz-arrows#pgf.&gt;">&gt;</a></span
+                >=<span class="textcolor" style="color: #008000"
+                  >{Stealth[<span class="textcolor" style="color: #008000"
+                    ><a href="tikz-arrows#pgf.round">round</a></span
+                  >]}</span
+                >,<span class="textcolor" style="color: #008000"
+                  ><a href="tikz-actions#pgf.thick">thick</a></span
+                >,<br />
+                &numsp;&numsp;&numsp;&numsp;<span
+                  class="textcolor"
+                  style="color: #008000"
+                  ><a href="library-automata#pgf.every:state"
+                    >every state</a
+                  ></span
+                >/<span class="textcolor" style="color: #0000b2"
+                  ><a href="pgfkeys#pgf./handlers/.style">.style</a></span
+                >={<span class="textcolor" style="color: #008000"
+                  ><a href="tikz-actions#pgf.fill">fill</a></span
+                >,<span class="textcolor" style="color: #008000"
+                  ><a href="tikz-actions#pgf.draw">draw</a></span
+                >=<span class="textcolor" style="color: #008000"
+                  ><a href="dv-axes#pgf.none">none</a></span
+                >,<span class="textcolor" style="color: #008000">orange</span
+                >,<span class="textcolor" style="color: #008000"
+                  ><a href="tikz-shapes#pgf.text">text</a></span
+                >=<span class="textcolor" style="color: #008000">white</span
+                >,<span class="textcolor" style="color: #008000"
+                  ><a href="library-shadows#pgf.circular:drop:shadow"
+                    >circular drop shadow</a
+                  ></span
+                >},<br />
+                &numsp;&numsp;&numsp;&numsp;<span
+                  class="textcolor"
+                  style="color: #008000"
+                  ><a href="library-automata#pgf.accepting">accepting</a></span
+                >/<span class="textcolor" style="color: #0000b2">.style </span
+                >={<span class="textcolor" style="color: #008000"
+                  >green!50!black</span
+                >,<span class="textcolor" style="color: #008000"
+                  ><a href="tikz-shapes#pgf.text">text</a></span
+                >=<span class="textcolor" style="color: #008000">white}</span
+                >,<br />
+                &numsp;&numsp;&numsp;&numsp;<span
+                  class="textcolor"
+                  style="color: #008000"
+                  ><a href="library-automata#pgf.initial">initial</a></span
+                >/<span class="textcolor" style="color: #0000b2">.style </span
+                >={<span class="textcolor" style="color: #008000">red</span
+                >,<span class="textcolor" style="color: #008000"
+                  ><a href="tikz-shapes#pgf.text">text</a></span
+                >=<span class="textcolor" style="color: #008000">white}</span
+                >]<br />
+                <br />
+                &numsp;&numsp;<span class="textcolor" style="color: #0000b2"
+                  ><a href="tikz-shapes#pgf.back/node">\node</a></span
+                >[<span class="textcolor" style="color: #008000"
+                  ><a href="library-automata#pgf.state">state</a></span
+                >,<span class="textcolor" style="color: #008000"
+                  ><a href="library-automata#pgf.initial">initial</a></span
+                >]&numsp;&numsp;<span class="textcolor" style="color: #800080"
+                  >(q_0)</span
+                >&numsp;&numsp;&numsp;&numsp;&numsp;&numsp;&numsp;&numsp;&numsp;&numsp;&numsp;&numsp;&numsp;&numsp;&numsp;&numsp;&numsp;&numsp;&numsp;&numsp;&numsp;&numsp;{<span
+                  class="textcolor"
+                  style="color: #000000"
+                  >$q_0$</span
+                >};<br />
+                &numsp;&numsp;<span class="textcolor" style="color: #0000b2"
+                  ><a href="tikz-shapes#pgf.back/node">\node</a></span
+                >[<span class="textcolor" style="color: #008000"
+                  ><a href="library-automata#pgf.state">state</a></span
+                >]&numsp;&numsp;&numsp;&numsp;&numsp;&numsp;&numsp;&numsp;&numsp;&numsp;<span
+                  class="textcolor"
+                  style="color: #800080"
+                  >(q_1)</span
+                >&numsp;[<span class="textcolor" style="color: #008000"
+                  ><a href="tikz-shapes#pgf.above:right">above right</a></span
+                >=<span class="textcolor" style="color: #008000"
+                  ><a href="tikz-coordinates#pgf.of">of</a> q_0</span
+                >]&numsp;{<span class="textcolor" style="color: #000000"
+                  >$q_1$</span
+                >};<br />
+                &numsp;&numsp;<span class="textcolor" style="color: #0000b2"
+                  ><a href="tikz-shapes#pgf.back/node">\node</a></span
+                >[<span class="textcolor" style="color: #008000"
+                  ><a href="library-automata#pgf.state">state</a></span
+                >]&numsp;&numsp;&numsp;&numsp;&numsp;&numsp;&numsp;&numsp;&numsp;&numsp;<span
+                  class="textcolor"
+                  style="color: #800080"
+                  >(q_2)</span
+                >&numsp;[<span class="textcolor" style="color: #008000"
+                  ><a href="tikz-shapes#pgf.below:right">below right</a></span
+                >=<span class="textcolor" style="color: #008000"
+                  ><a href="tikz-coordinates#pgf.of">of</a> q_0</span
+                >]&numsp;{<span class="textcolor" style="color: #000000"
+                  >$q_2$</span
+                >};<br />
+                &numsp;&numsp;<span class="textcolor" style="color: #0000b2"
+                  ><a href="tikz-shapes#pgf.back/node">\node</a></span
+                >[<span class="textcolor" style="color: #008000"
+                  ><a href="library-automata#pgf.state">state</a></span
+                >,<span class="textcolor" style="color: #008000"
+                  ><a href="library-automata#pgf.accepting">accepting</a></span
+                >]<span class="textcolor" style="color: #800080">(q_3)</span
+                >&numsp;[<span class="textcolor" style="color: #008000"
+                  ><a href="tikz-shapes#pgf.below:right">below right</a></span
+                >=<span class="textcolor" style="color: #008000"
+                  ><a href="tikz-coordinates#pgf.of">of</a> q_1</span
+                >]&numsp;{<span class="textcolor" style="color: #000000"
+                  >$q_3$</span
+                >};<br />
+                <br />
+                &numsp;&numsp;<span class="textcolor" style="color: #0000b2"
+                  ><a href="tikz-paths#pgf.back/path">\path</a></span
+                >[<span class="textcolor" style="color: #008000"
+                  ><a href="tikz-graphs#pgf.-&gt;">-&gt;</a></span
+                >]&numsp;<span class="textcolor" style="color: #800080"
+                  >(q_0)</span
+                >&numsp;<span class="textcolor" style="color: #000000"
+                  ><a href="tikz-shapes#pgf.edge">edge</a></span
+                >
+                &numsp;&numsp;&numsp;&numsp;&numsp;&numsp;&numsp;&numsp;&numsp;&numsp;&numsp;&numsp;&numsp;<span
+                  class="textcolor"
+                  style="color: #000000"
+                  ><a href="tikz-coordinates#pgf.node">node</a></span
+                >
+                [<span class="textcolor" style="color: #008000"
+                  ><a href="tikz-shapes#pgf.above:left">above left</a></span
+                >]&numsp;&numsp;{<span class="textcolor" style="color: #000000"
+                  >0</span
+                >}&numsp;<span class="textcolor" style="color: #800080"
+                  >(q_1)</span
+                ><br />
+                &numsp;&numsp;&numsp;&numsp;&numsp;&numsp;&numsp;&numsp;&numsp;&numsp;&numsp;&numsp;&numsp;&numsp;&numsp;&numsp;&numsp;&numsp;<span
+                  class="textcolor"
+                  style="color: #000000"
+                  ><a href="tikz-shapes#pgf.edge">edge</a></span
+                >
+                &numsp;&numsp;&numsp;&numsp;&numsp;&numsp;&numsp;&numsp;&numsp;&numsp;&numsp;&numsp;&numsp;<span
+                  class="textcolor"
+                  style="color: #000000"
+                  ><a href="tikz-coordinates#pgf.node">node</a></span
+                >
+                [<span class="textcolor" style="color: #008000"
+                  ><a href="tikz-shapes#pgf.below:left">below left</a></span
+                >]&numsp;&numsp;{<span class="textcolor" style="color: #000000"
+                  >1</span
+                >}&numsp;<span class="textcolor" style="color: #800080"
+                  >(q_2)</span
+                ><br />
+                &numsp;&numsp;&numsp;&numsp;&numsp;&numsp;&numsp;&numsp;&numsp;&numsp;&numsp;&numsp;<span
+                  class="textcolor"
+                  style="color: #800080"
+                  >(q_1)</span
+                >&numsp;<span class="textcolor" style="color: #000000"
+                  ><a href="tikz-shapes#pgf.edge">edge</a></span
+                >
+                &numsp;&numsp;&numsp;&numsp;&numsp;&numsp;&numsp;&numsp;&numsp;&numsp;&numsp;&numsp;&numsp;<span
+                  class="textcolor"
+                  style="color: #000000"
+                  ><a href="tikz-coordinates#pgf.node">node</a></span
+                >
+                [<span class="textcolor" style="color: #008000"
+                  ><a href="tikz-shapes#pgf.above:right">above right</a></span
+                >]&numsp;{<span class="textcolor" style="color: #000000">1</span
+                >}&numsp;<span class="textcolor" style="color: #800080"
+                  >(q_3)</span
+                ><br />
+                &numsp;&numsp;&numsp;&numsp;&numsp;&numsp;&numsp;&numsp;&numsp;&numsp;&numsp;&numsp;&numsp;&numsp;&numsp;&numsp;&numsp;&numsp;<span
+                  class="textcolor"
+                  style="color: #000000"
+                  ><a href="tikz-shapes#pgf.edge">edge</a></span
+                >
+                [<span class="textcolor" style="color: #008000"
+                  ><a href="library-edges#pgf.loop:above">loop above</a></span
+                >]&numsp;<span class="textcolor" style="color: #000000"
+                  ><a href="tikz-coordinates#pgf.node">node</a></span
+                >
+                &numsp;&numsp;&numsp;&numsp;&numsp;&numsp;&numsp;&numsp;&numsp;&numsp;&numsp;&numsp;&numsp;&numsp;{<span
+                  class="textcolor"
+                  style="color: #000000"
+                  >0</span
+                >}&numsp;<span class="textcolor" style="color: #800080">()</span
+                ><br />
+                &numsp;&numsp;&numsp;&numsp;&numsp;&numsp;&numsp;&numsp;&numsp;&numsp;&numsp;&numsp;<span
+                  class="textcolor"
+                  style="color: #800080"
+                  >(q_2)</span
+                >&numsp;<span class="textcolor" style="color: #000000"
+                  ><a href="tikz-shapes#pgf.edge">edge</a></span
+                >
+                &numsp;&numsp;&numsp;&numsp;&numsp;&numsp;&numsp;&numsp;&numsp;&numsp;&numsp;&numsp;&numsp;<span
+                  class="textcolor"
+                  style="color: #000000"
+                  ><a href="tikz-coordinates#pgf.node">node</a></span
+                >
+                [<span class="textcolor" style="color: #008000"
+                  ><a href="tikz-shapes#pgf.below:right">below right</a></span
+                >]&numsp;{<span class="textcolor" style="color: #000000">0</span
+                >}&numsp;<span class="textcolor" style="color: #800080"
+                  >(q_3)</span
+                ><br />
+                &numsp;&numsp;&numsp;&numsp;&numsp;&numsp;&numsp;&numsp;&numsp;&numsp;&numsp;&numsp;&numsp;&numsp;&numsp;&numsp;&numsp;&numsp;<span
+                  class="textcolor"
+                  style="color: #000000"
+                  ><a href="tikz-shapes#pgf.edge">edge</a></span
+                >
+                [<span class="textcolor" style="color: #008000"
+                  ><a href="library-edges#pgf.loop:below">loop below</a></span
+                >]&numsp;<span class="textcolor" style="color: #000000"
+                  ><a href="tikz-coordinates#pgf.node">node</a></span
+                >
+                &numsp;&numsp;&numsp;&numsp;&numsp;&numsp;&numsp;&numsp;&numsp;&numsp;&numsp;&numsp;&numsp;&numsp;{<span
+                  class="textcolor"
+                  style="color: #000000"
+                  >1</span
+                >}&numsp;<span class="textcolor" style="color: #800080">()</span
+                >;<br />
+                <span class="textcolor" style="color: #000000">\end</span>{<span
+                  class="textcolor"
+                  style="color: #0000b2"
+                  ><a href="tikz-scopes#pgf.tikzpicture">tikzpicture</a></span
+                >}<br />
+              </code>
+            </div>
+          </figure>
+
+          <p>
+            The next example is the current candidate for the five-state busiest
+            beaver:
+          </p>
+
+          <figure class="example">
+            <div class="example-image">
+              <p>
+                <span class="lateximagesource" id="lateximage-pgfmanual-2059"
+                  ><!--
+                    1,1,L
+
+
+
+                     qb
+            0,1,L 0,1,L
+
+                    1,1,R
+start qa qc
+
+            0,1,R 0,1,L
+                     qd
+
+    1,0,R 1,0,R
+                    1,1,R
+
+                     qe
+-->
+                  <img
+                    alt="(-tikz-&nbsp;diagram)"
+                    class="lateximage"
+                    height="250.874"
+                    loading="lazy"
+                    src="pgfmanual-images/image-2059.png"
+                    style
+                    width="217.922"
+                /></span>
+              </p>
+            </div>
+
+            <div class="example-code">
+              <button class="clipboardButton" type="button">copy</button>
+
+              <code>
+                <span class="c- preamble"
+                  >\usetikzlibrary {arrows.meta,automata,positioning} </span
+                ><br />
+                <span class="textcolor" style="color: #000000">\begin</span
+                >{<span class="textcolor" style="color: #0000b2"
+                  ><a href="tikz-scopes#pgf.tikzpicture">tikzpicture</a></span
+                >}[<span class="textcolor" style="color: #008000"
+                  ><a href="tikz-graphs#pgf.-&gt;">-&gt;</a></span
+                >,<span class="textcolor" style="color: #008000"
+                  ><a href="tikz-arrows#pgf.&gt;">&gt;</a></span
+                >=<span class="textcolor" style="color: #008000"
+                  >{Stealth[<span class="textcolor" style="color: #008000"
+                    ><a href="tikz-arrows#pgf.round">round</a></span
+                  >]}</span
+                >,<span class="textcolor" style="color: #008000"
+                  ><a href="tikz-arrows#pgf.shorten:&gt;">shorten &gt;</a></span
+                >=<span class="textcolor" style="color: #008000">1pt</span
+                >,<span class="example-code-comment">%</span><br />
+                &numsp;&numsp;&numsp;&numsp;&numsp;&numsp;&numsp;&numsp;&numsp;&numsp;&numsp;&numsp;&numsp;&numsp;&numsp;&numsp;&numsp;&numsp;&numsp;&numsp;<span
+                  class="textcolor"
+                  style="color: #008000"
+                  ><a href="tikz-shapes#pgf.auto">auto</a></span
+                >,<span class="textcolor" style="color: #008000"
+                  ><a href="tikz-shapes#pgf.node:distance"
+                    >node distance</a
+                  ></span
+                >=<span class="textcolor" style="color: #008000">2cm</span
+                >,<span class="textcolor" style="color: #008000"
+                  ><a href="tikz-shapes#pgf.on:grid">on grid</a></span
+                >,<span class="textcolor" style="color: #008000"
+                  ><a href="tikz-actions#pgf.semithick">semithick</a></span
+                >,<br />
+                &numsp;&numsp;&numsp;&numsp;&numsp;&numsp;&numsp;&numsp;&numsp;&numsp;&numsp;&numsp;&numsp;&numsp;&numsp;&numsp;&numsp;&numsp;&numsp;&numsp;<span
+                  class="textcolor"
+                  style="color: #008000"
+                  ><a href="tikz-shapes#pgf.inner:sep">inner sep</a></span
+                >=<span class="textcolor" style="color: #008000">2pt</span
+                >,<span class="textcolor" style="color: #008000"
+                  ><a href="library-edges#pgf.bend:angle">bend angle</a></span
+                >=<span class="textcolor" style="color: #008000">45</span
+                >]<br />
+                &numsp;&numsp;<span class="textcolor" style="color: #0000b2"
+                  ><a href="tikz-shapes#pgf.back/node">\node</a></span
+                >[<span class="textcolor" style="color: #008000"
+                  ><a href="library-automata#pgf.initial">initial</a></span
+                >,<span class="textcolor" style="color: #008000"
+                  ><a href="library-automata#pgf.state">state</a></span
+                >]&numsp;<span class="textcolor" style="color: #800080"
+                  >(A)</span
+                >&numsp;&numsp;&numsp;&numsp;&numsp;&numsp;&numsp;&numsp;&numsp;&numsp;&numsp;&numsp;&numsp;&numsp;&numsp;&numsp;&numsp;&numsp;&numsp;&numsp;{<span
+                  class="textcolor"
+                  style="color: #000000"
+                  >$q_a$</span
+                >};<br />
+                &numsp;&numsp;<span class="textcolor" style="color: #0000b2"
+                  ><a href="tikz-shapes#pgf.back/node">\node</a></span
+                >[<span class="textcolor" style="color: #008000"
+                  ><a href="library-automata#pgf.state">state</a></span
+                >]&numsp;&numsp;&numsp;&numsp;&numsp;&numsp;&numsp;&numsp;&numsp;<span
+                  class="textcolor"
+                  style="color: #800080"
+                  >(B)</span
+                >&numsp;[<span class="textcolor" style="color: #008000"
+                  ><a href="tikz-shapes#pgf.above:right">above right</a></span
+                >=<span class="textcolor" style="color: #008000"
+                  ><a href="tikz-coordinates#pgf.of">of</a> A</span
+                >]&numsp;{<span class="textcolor" style="color: #000000"
+                  >$q_b$</span
+                >};<br />
+                &numsp;&numsp;<span class="textcolor" style="color: #0000b2"
+                  ><a href="tikz-shapes#pgf.back/node">\node</a></span
+                >[<span class="textcolor" style="color: #008000"
+                  ><a href="library-automata#pgf.state">state</a></span
+                >]&numsp;&numsp;&numsp;&numsp;&numsp;&numsp;&numsp;&numsp;&numsp;<span
+                  class="textcolor"
+                  style="color: #800080"
+                  >(D)</span
+                >&numsp;[<span class="textcolor" style="color: #008000"
+                  ><a href="tikz-shapes#pgf.below:right">below right</a></span
+                >=<span class="textcolor" style="color: #008000"
+                  ><a href="tikz-coordinates#pgf.of">of</a> A</span
+                >]&numsp;{<span class="textcolor" style="color: #000000"
+                  >$q_d$</span
+                >};<br />
+                &numsp;&numsp;<span class="textcolor" style="color: #0000b2"
+                  ><a href="tikz-shapes#pgf.back/node">\node</a></span
+                >[<span class="textcolor" style="color: #008000"
+                  ><a href="library-automata#pgf.state">state</a></span
+                >]&numsp;&numsp;&numsp;&numsp;&numsp;&numsp;&numsp;&numsp;&numsp;<span
+                  class="textcolor"
+                  style="color: #800080"
+                  >(C)</span
+                >&numsp;[<span class="textcolor" style="color: #008000"
+                  ><a href="tikz-shapes#pgf.below:right">below right</a></span
+                >=<span class="textcolor" style="color: #008000"
+                  ><a href="tikz-coordinates#pgf.of">of</a> B</span
+                >]&numsp;{<span class="textcolor" style="color: #000000"
+                  >$q_c$</span
+                >};<br />
+                &numsp;&numsp;<span class="textcolor" style="color: #0000b2"
+                  ><a href="tikz-shapes#pgf.back/node">\node</a></span
+                >[<span class="textcolor" style="color: #008000"
+                  ><a href="library-automata#pgf.state">state</a></span
+                >]&numsp;&numsp;&numsp;&numsp;&numsp;&numsp;&numsp;&numsp;&numsp;<span
+                  class="textcolor"
+                  style="color: #800080"
+                  >(E)</span
+                >&numsp;[<span class="textcolor" style="color: #008000"
+                  ><a href="tikz-shapes#pgf.below">below</a></span
+                >=<span class="textcolor" style="color: #008000"
+                  ><a href="tikz-coordinates#pgf.of">of</a> D</span
+                >]&numsp;&numsp;&numsp;&numsp;&numsp;&numsp;&numsp;{<span
+                  class="textcolor"
+                  style="color: #000000"
+                  >$q_e$</span
+                >};<br />
+                <br />
+                &numsp;&numsp;<span class="textcolor" style="color: #0000b2"
+                  ><a href="tikz-paths#pgf.back/path">\path</a></span
+                >&numsp;[<span class="textcolor" style="color: #008000"
+                  ><a href="tikz-shapes#pgf.every:node">every node</a></span
+                >/<span class="textcolor" style="color: #0000b2"
+                  ><a href="pgfkeys#pgf./handlers/.style">.style</a></span
+                >={<span class="textcolor" style="color: #008000"
+                  ><a href="tikz-shapes#pgf.font">font</a></span
+                >=<span class="textcolor" style="color: #008000"
+                  ><span class="textcolor" style="color: #0000b2"
+                    >\footnotesize</span
+                  >}</span
+                >]<br />
+                &numsp;&numsp;&numsp;&numsp;&numsp;&numsp;&numsp;&numsp;<span
+                  class="textcolor"
+                  style="color: #800080"
+                  >(A)</span
+                >&numsp;<span class="textcolor" style="color: #000000"
+                  ><a href="tikz-shapes#pgf.edge">edge</a></span
+                >
+                &numsp;&numsp;&numsp;&numsp;&numsp;&numsp;&numsp;&numsp;&numsp;&numsp;&numsp;&numsp;&numsp;<span
+                  class="textcolor"
+                  style="color: #000000"
+                  ><a href="tikz-coordinates#pgf.node">node</a></span
+                >
+                {<span class="textcolor" style="color: #000000">0</span>,<span
+                  class="textcolor"
+                  style="color: #000000"
+                  >1</span
+                >,<span class="textcolor" style="color: #000000">L</span
+                >}&numsp;<span class="textcolor" style="color: #800080"
+                  >(B)</span
+                ><br />
+                &numsp;&numsp;&numsp;&numsp;&numsp;&numsp;&numsp;&numsp;&numsp;&numsp;&numsp;&numsp;<span
+                  class="textcolor"
+                  style="color: #000000"
+                  ><a href="tikz-shapes#pgf.edge">edge</a></span
+                >
+                &numsp;&numsp;&numsp;&numsp;&numsp;&numsp;&numsp;&numsp;&numsp;&numsp;&numsp;&numsp;&numsp;<span
+                  class="textcolor"
+                  style="color: #000000"
+                  ><a href="tikz-coordinates#pgf.node">node</a></span
+                >
+                {<span class="textcolor" style="color: #000000">1</span>,<span
+                  class="textcolor"
+                  style="color: #000000"
+                  >1</span
+                >,<span class="textcolor" style="color: #000000">R</span
+                >}&numsp;<span class="textcolor" style="color: #800080"
+                  >(C)</span
+                ><br />
+                &numsp;&numsp;&numsp;&numsp;&numsp;&numsp;&numsp;&numsp;<span
+                  class="textcolor"
+                  style="color: #800080"
+                  >(B)</span
+                >&numsp;<span class="textcolor" style="color: #000000"
+                  ><a href="tikz-shapes#pgf.edge">edge</a></span
+                >
+                [<span class="textcolor" style="color: #008000"
+                  ><a href="library-edges#pgf.loop:above">loop above</a></span
+                >]&numsp;<span class="textcolor" style="color: #000000"
+                  ><a href="tikz-coordinates#pgf.node">node</a></span
+                >
+                {<span class="textcolor" style="color: #000000">1</span>,<span
+                  class="textcolor"
+                  style="color: #000000"
+                  >1</span
+                >,<span class="textcolor" style="color: #000000">L</span
+                >}&numsp;<span class="textcolor" style="color: #800080"
+                  >(B)</span
+                ><br />
+                &numsp;&numsp;&numsp;&numsp;&numsp;&numsp;&numsp;&numsp;&numsp;&numsp;&numsp;&numsp;<span
+                  class="textcolor"
+                  style="color: #000000"
+                  ><a href="tikz-shapes#pgf.edge">edge</a></span
+                >
+                &numsp;&numsp;&numsp;&numsp;&numsp;&numsp;&numsp;&numsp;&numsp;&numsp;&numsp;&numsp;&numsp;<span
+                  class="textcolor"
+                  style="color: #000000"
+                  ><a href="tikz-coordinates#pgf.node">node</a></span
+                >
+                {<span class="textcolor" style="color: #000000">0</span>,<span
+                  class="textcolor"
+                  style="color: #000000"
+                  >1</span
+                >,<span class="textcolor" style="color: #000000">L</span
+                >}&numsp;<span class="textcolor" style="color: #800080"
+                  >(C)</span
+                ><br />
+                &numsp;&numsp;&numsp;&numsp;&numsp;&numsp;&numsp;&numsp;<span
+                  class="textcolor"
+                  style="color: #800080"
+                  >(C)</span
+                >&numsp;<span class="textcolor" style="color: #000000"
+                  ><a href="tikz-shapes#pgf.edge">edge</a></span
+                >
+                &numsp;&numsp;&numsp;&numsp;&numsp;&numsp;&numsp;&numsp;&numsp;&numsp;&numsp;&numsp;&numsp;<span
+                  class="textcolor"
+                  style="color: #000000"
+                  ><a href="tikz-coordinates#pgf.node">node</a></span
+                >
+                {<span class="textcolor" style="color: #000000">0</span>,<span
+                  class="textcolor"
+                  style="color: #000000"
+                  >1</span
+                >,<span class="textcolor" style="color: #000000">L</span
+                >}&numsp;<span class="textcolor" style="color: #800080"
+                  >(D)</span
+                ><br />
+                &numsp;&numsp;&numsp;&numsp;&numsp;&numsp;&numsp;&numsp;&numsp;&numsp;&numsp;&numsp;<span
+                  class="textcolor"
+                  style="color: #000000"
+                  ><a href="tikz-shapes#pgf.edge">edge</a></span
+                >
+                [<span class="textcolor" style="color: #008000"
+                  ><a href="library-edges#pgf.bend:left">bend left</a></span
+                >]&numsp;&numsp;<span class="textcolor" style="color: #000000"
+                  ><a href="tikz-coordinates#pgf.node">node</a></span
+                >
+                {<span class="textcolor" style="color: #000000">1</span>,<span
+                  class="textcolor"
+                  style="color: #000000"
+                  >0</span
+                >,<span class="textcolor" style="color: #000000">R</span
+                >}&numsp;<span class="textcolor" style="color: #800080"
+                  >(E)</span
+                ><br />
+                &numsp;&numsp;&numsp;&numsp;&numsp;&numsp;&numsp;&numsp;<span
+                  class="textcolor"
+                  style="color: #800080"
+                  >(D)</span
+                >&numsp;<span class="textcolor" style="color: #000000"
+                  ><a href="tikz-shapes#pgf.edge">edge</a></span
+                >
+                [<span class="textcolor" style="color: #008000"
+                  ><a href="library-edges#pgf.loop:below">loop below</a></span
+                >]&numsp;<span class="textcolor" style="color: #000000"
+                  ><a href="tikz-coordinates#pgf.node">node</a></span
+                >
+                {<span class="textcolor" style="color: #000000">1</span>,<span
+                  class="textcolor"
+                  style="color: #000000"
+                  >1</span
+                >,<span class="textcolor" style="color: #000000">R</span
+                >}&numsp;<span class="textcolor" style="color: #800080"
+                  >(D)</span
+                ><br />
+                &numsp;&numsp;&numsp;&numsp;&numsp;&numsp;&numsp;&numsp;&numsp;&numsp;&numsp;&numsp;<span
+                  class="textcolor"
+                  style="color: #000000"
+                  ><a href="tikz-shapes#pgf.edge">edge</a></span
+                >
+                &numsp;&numsp;&numsp;&numsp;&numsp;&numsp;&numsp;&numsp;&numsp;&numsp;&numsp;&numsp;&numsp;<span
+                  class="textcolor"
+                  style="color: #000000"
+                  ><a href="tikz-coordinates#pgf.node">node</a></span
+                >
+                {<span class="textcolor" style="color: #000000">0</span>,<span
+                  class="textcolor"
+                  style="color: #000000"
+                  >1</span
+                >,<span class="textcolor" style="color: #000000">R</span
+                >}&numsp;<span class="textcolor" style="color: #800080"
+                  >(A)</span
+                ><br />
+                &numsp;&numsp;&numsp;&numsp;&numsp;&numsp;&numsp;&numsp;<span
+                  class="textcolor"
+                  style="color: #800080"
+                  >(E)</span
+                >&numsp;<span class="textcolor" style="color: #000000"
+                  ><a href="tikz-shapes#pgf.edge">edge</a></span
+                >
+                [<span class="textcolor" style="color: #008000"
+                  ><a href="library-edges#pgf.bend:left">bend left</a></span
+                >]&numsp;&numsp;<span class="textcolor" style="color: #000000"
+                  ><a href="tikz-coordinates#pgf.node">node</a></span
+                >
+                {<span class="textcolor" style="color: #000000">1</span>,<span
+                  class="textcolor"
+                  style="color: #000000"
+                  >0</span
+                >,<span class="textcolor" style="color: #000000">R</span
+                >}&numsp;<span class="textcolor" style="color: #800080"
+                  >(A)</span
+                >;<br />
+                <span class="textcolor" style="color: #000000">\end</span>{<span
+                  class="textcolor"
+                  style="color: #0000b2"
+                  ><a href="tikz-scopes#pgf.tikzpicture">tikzpicture</a></span
+                >}<br />
+              </code>
+            </div>
+          </figure>
+        </section>
+      </main>
+
+      <footer>
+        <div class_="footer-left">
+          <a href="https://github.com/pgf-tikz/pgf">Github</a> &middot;
+          <a href="/license">License</a> &middot;
+          <a href="https://ctan.org/pkg/pgf">CTAN</a> &middot;
+          <a href="https://pgf-tikz.github.io/pgf/pgfmanual.pdf">PDF version</a>
+          &middot;
+          <a href="https://github.com/DominikPeters/pgf-tikz-html-manual"
+            >About this HTML version</a
+          >
+        </div>
+        <div class_="footer-right">
+          <em>Manual last updated: 2022-04-23</em>
+        </div>
+      </footer>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/@docsearch/js@alpha"></script>
+    <script>
+      docsearch({
+        apiKey: "ae66ec3fc9df4b52b4d6f24fc8508fd3",
+        indexName: "tikz.dev",
+        appId: "Q70NNMA9GC",
+        container: "#search",
+      });
+    </script>
+  </body>
+</html>

@@ -1,0 +1,1084 @@
+<!DOCTYPE html>
+<html lang="en-US">
+  <head>
+    <meta charset="utf-8" />
+    <meta content="LaTeX Lwarp package" name="generator" />
+    <meta content="width=device-width, initial-scale=1.0" name="viewport" />
+    <!--[if lt IE 9]>
+      <script src="http://html5shiv.googlecode.com/svn/trunk/html5.js"></script>
+    <![endif]-->
+    <title>Fixed Point Arithmetic Library - PGF/TikZ Manual</title>
+    <link href="style.css" rel="stylesheet" type="text/css" />
+
+    <script>
+      // Lwarp MathJax emulation code
+      //
+      // Based on code by Davide P. Cervone.
+      // Equation numbering: https://github.com/mathjax/MathJax/issues/2427
+      // Starred and ifnextchar macros: https://github.com/mathjax/MathJax/issues/2428
+      // \left, \right delimiters: https://github.com/mathjax/MathJax/issues/2535
+      //
+      // Modified by Brian Dunn to adjust equation numbering and add subequations.
+      //
+      // LaTeX can use \seteqnumber{subequations?}{section}{number} before each equation.
+      // subequations? is 0 usually, 1 if inside subequations.
+      // section is a string printed as-is, or empty.
+      // number is auto-incremented by MathJax between equations.
+      //
+      MathJax = {
+        subequations: "0",
+        section: "",
+        loader: {
+          load: ["[tex]/tagformat", "[tex]/textmacros"],
+        },
+        startup: {
+          ready() {
+            // These would be replaced by import commands if you wanted to make
+            // a proper extension.
+            const Configuration =
+              MathJax._.input.tex.Configuration.Configuration;
+            const CommandMap = MathJax._.input.tex.SymbolMap.CommandMap;
+            const Macro = MathJax._.input.tex.Symbol.Macro;
+            const TexError = MathJax._.input.tex.TexError.default;
+            const ParseUtil = MathJax._.input.tex.ParseUtil.default;
+            const expandable = MathJax._.util.Options.expandable;
+
+            // Insert the replacement string into the TeX string, and check
+            // that there haven't been too many maxro substitutions (prevents
+            // infinite loops).
+            const useArgument = (parser, text) => {
+              parser.string = ParseUtil.addArgs(
+                parser,
+                text,
+                parser.string.slice(parser.i)
+              );
+              parser.i = 0;
+              if (
+                ++parser.macroCount > parser.configuration.options.maxMacros
+              ) {
+                throw new TexError(
+                  "MaxMacroSub1",
+                  "MathJax maximum macro substitution count exceeded; " +
+                    "is there a recursive macro call?"
+                );
+              }
+            };
+
+            // Create the command map for:
+            // \ifstar, \ifnextchar, \ifblank, \ifstrequal, \seteqnumber
+            new CommandMap(
+              "Lwarp-macros",
+              {
+                ifstar: "IfstarFunction",
+                ifnextchar: "IfnextcharFunction",
+                ifblank: "IfblankFunction",
+                ifstrequal: "IfstrequalFunction",
+                seteqnumber: "SeteqnumberFunction",
+              },
+              {
+                // This function implements an ifstar macro.
+                IfstarFunction(parser, name) {
+                  const resultstar = parser.GetArgument(name);
+                  const resultnostar = parser.GetArgument(name);
+                  const star = parser.GetStar(); // true if there is a *
+                  useArgument(parser, star ? resultstar : resultnostar);
+                },
+
+                // This function implements an ifnextchar macro.
+                IfnextcharFunction(parser, name) {
+                  let whichchar = parser.GetArgument(name);
+                  if (whichchar.match(/^(?:0x[0-9A-F]+|[0-9]+)$/i)) {
+                    // $ syntax highlighting
+                    whichchar = String.fromCodePoint(parseInt(whichchar));
+                  }
+                  const resultnextchar = parser.GetArgument(name);
+                  const resultnotnextchar = parser.GetArgument(name);
+                  const gotchar = parser.GetNext() === whichchar;
+                  useArgument(
+                    parser,
+                    gotchar ? resultnextchar : resultnotnextchar
+                  );
+                },
+
+                // This function implements an ifblank macro.
+                IfblankFunction(parser, name) {
+                  const blankarg = parser.GetArgument(name);
+                  const resultblank = parser.GetArgument(name);
+                  const resultnotblank = parser.GetArgument(name);
+                  const isblank = blankarg.trim() == "";
+                  useArgument(parser, isblank ? resultblank : resultnotblank);
+                },
+
+                // This function implements an ifstrequal macro.
+                IfstrequalFunction(parser, name) {
+                  const strequalfirst = parser.GetArgument(name);
+                  const strequalsecond = parser.GetArgument(name);
+                  const resultequal = parser.GetArgument(name);
+                  const resultnotequal = parser.GetArgument(name);
+                  const isequal = strequalfirst == strequalsecond;
+                  useArgument(parser, isequal ? resultequal : resultnotequal);
+                },
+
+                // This function modifies the equation numbers.
+                SeteqnumberFunction(parser, name) {
+                  // Get the macro parameters
+                  const star = parser.GetStar(); // true if there is a *
+                  const optBrackets = parser.GetBrackets(name); // contents of optional brackets
+                  const newsubequations = parser.GetArgument(name); // the subequations argument
+                  const neweqsection = parser.GetArgument(name); // the eq section argument
+                  const neweqnumber = parser.GetArgument(name); // the eq number argument
+                  MathJax.config.subequations = newsubequations; // a string with boolean meaning
+                  MathJax.config.section = neweqsection; // a string with numeric meaning
+                  parser.tags.counter = parser.tags.allCounter = neweqnumber;
+                },
+              }
+            );
+
+            // Create the Lwarp-macros package
+            Configuration.create("Lwarp-macros", {
+              handler: { macro: ["Lwarp-macros"] },
+            });
+
+            MathJax.startup.defaultReady();
+
+            // For forward references:
+            MathJax.startup.input[0].preFilters.add(({ math }) => {
+              if (math.inputData.recompile) {
+                MathJax.config.subequations =
+                  math.inputData.recompile.subequations;
+                MathJax.config.section = math.inputData.recompile.section;
+              }
+            });
+            MathJax.startup.input[0].postFilters.add(({ math }) => {
+              if (math.inputData.recompile) {
+                math.inputData.recompile.subequations =
+                  MathJax.config.subequations;
+                math.inputData.recompile.section = MathJax.config.section;
+              }
+            });
+
+            // For \left, \right with unicode-math:
+            const { DelimiterMap } = MathJax._.input.tex.SymbolMap;
+            const { Symbol } = MathJax._.input.tex.Symbol;
+            const { MapHandler } = MathJax._.input.tex.MapHandler;
+            const delimiter = MapHandler.getMap("delimiter");
+            delimiter.add("\\lBrack", new Symbol("\\lBrack", "\u27E6"));
+            delimiter.add("\\rBrack", new Symbol("\\rBrack", "\u27E7"));
+            delimiter.add("\\lAngle", new Symbol("\\lAngle", "\u27EA"));
+            delimiter.add("\\rAngle", new Symbol("\\rAngle", "\u27EB"));
+            delimiter.add("\\lbrbrak", new Symbol("\\lbrbrak", "\u2772"));
+            delimiter.add("\\rbrbrak", new Symbol("\\rbrbrak", "\u2773"));
+            delimiter.add("\\lbag", new Symbol("\\lbag", "\u27C5"));
+            delimiter.add("\\rbag", new Symbol("\\rbag", "\u27C6"));
+            delimiter.add(
+              "\\llparenthesis",
+              new Symbol("\\llparenthesis", "\u2987")
+            );
+            delimiter.add(
+              "\\rrparenthesis",
+              new Symbol("\\rrparenthesis", "\u2988")
+            );
+            delimiter.add("\\llangle", new Symbol("\\llangle", "\u2989"));
+            delimiter.add("\\rrangle", new Symbol("\\rrangle", "\u298A"));
+            delimiter.add("\\Lbrbrak", new Symbol("\\Lbrbrak", "\u27EC"));
+            delimiter.add("\\Rbrbrak", new Symbol("\\Rbrbrak", "\u27ED"));
+            delimiter.add("\\lBrace", new Symbol("\\lBrace", "\u2983"));
+            delimiter.add("\\rBrace", new Symbol("\\rBrace", "\u2984"));
+            delimiter.add("\\lParen", new Symbol("\\lParen", "\u2985"));
+            delimiter.add("\\rParen", new Symbol("\\rParen", "\u2986"));
+            delimiter.add("\\lbrackubar", new Symbol("\\lbrackubar", "\u298B"));
+            delimiter.add("\\rbrackubar", new Symbol("\\rbrackubar", "\u298C"));
+            delimiter.add(
+              "\\lbrackultick",
+              new Symbol("\\lbrackultick", "\u298D")
+            );
+            delimiter.add(
+              "\\rbracklrtick",
+              new Symbol("\\rbracklrtick", "\u298E")
+            );
+            delimiter.add(
+              "\\lbracklltick",
+              new Symbol("\\lbracklltick", "\u298F")
+            );
+            delimiter.add(
+              "\\rbrackurtick",
+              new Symbol("\\rbrackurtick", "\u2990")
+            );
+            delimiter.add("\\langledot", new Symbol("\\langledot", "\u2991"));
+            delimiter.add("\\rangledot", new Symbol("\\rangledot", "\u2992"));
+            delimiter.add("\\lparenless", new Symbol("\\lparenless", "\u2993"));
+            delimiter.add("\\rparengtr", new Symbol("\\rparengtr", "\u2994"));
+            delimiter.add("\\Lparengtr", new Symbol("\\Lparengtr", "\u2995"));
+            delimiter.add("\\Rparenless", new Symbol("\\Rparenless", "\u2996"));
+            delimiter.add("\\lblkbrbrak", new Symbol("\\lblkbrbrak", "\u2997"));
+            delimiter.add("\\rblkbrbrak", new Symbol("\\rblkbrbrak", "\u2998"));
+            delimiter.add("\\lvzigzag", new Symbol("\\lvzigzag", "\u29D8"));
+            delimiter.add("\\rvzigzag", new Symbol("\\rvzigzag", "\u29D9"));
+            delimiter.add("\\Lvzigzag", new Symbol("\\Lvzigzag", "\u29DA"));
+            delimiter.add("\\Rvzigzag", new Symbol("\\Rvzigzag", "\u29DB"));
+            delimiter.add(
+              "\\lcurvyangle",
+              new Symbol("\\lcurvyangle", "\u29FC")
+            );
+            delimiter.add(
+              "\\rcurvyangle",
+              new Symbol("\\rcurvyangle", "\u29FD")
+            );
+            delimiter.add("\\Vvert", new Symbol("\\Vvert", "\u2980"));
+          }, // ready
+        }, // startup
+
+        tex: {
+          packages: { "[+]": ["tagformat", "Lwarp-macros", "textmacros"] },
+          tags: "ams",
+          tagformat: {
+            number: function (n) {
+              if (MathJax.config.subequations == 0)
+                return MathJax.config.section + n;
+              else return MathJax.config.section + String.fromCharCode(96 + n);
+            },
+          },
+        },
+      };
+    </script>
+
+    <script
+      async
+      id="MathJax-script"
+      src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-chtml.js"
+    ></script>
+
+    <script src="pgfmanual.js"></script>
+
+    <link href="https://unpkg.com/@docsearch/css@alpha" rel="stylesheet" />
+    <link href="/favicon-16x16.png" rel="icon" sizes="16x16" type="image/png" />
+    <link href="/favicon-32x32.png" rel="icon" sizes="32x32" type="image/png" />
+    <link
+      href="/apple-touch-icon.png"
+      rel="apple-touch-icon"
+      sizes="180x180"
+      type="image/png"
+    />
+    <link href="/site.webmanifest" rel="manifest" />
+  </head>
+  <body>
+    <a id="pgfmanual-autopage-5741"></a>
+
+    <div class="bodyandsidetoc grid-container">
+      <header>
+        <strong><a href="/">PGF/Ti<i>k</i>Z Manual</a></strong>
+        <div id="search"></div>
+      </header>
+      <div class="sidetoccontainer" id="local-toc-container">
+        <nav class="sidetoc">
+          <div class="sidetoctitle"><p>On this page</p></div>
+          <div class="sidetoccontents">
+            <p><a class="tocsubsection" href="#sec-55.1">Overview</a></p>
+            <p>
+              <a class="tocsubsection" href="#sec-55.2"
+                >Using Fixed Point Arithmetic in PGF and TikZ</a
+              >
+            </p>
+          </div>
+        </nav>
+      </div>
+      <div class="sidetoccontainer" id="chapter-toc-container">
+        <nav class="sidetoc">
+          <div class="sidetoctitle">
+            <p>
+              <span class="sidetocthetitle"
+                >The <span class="tikzname">TikZ</span> and PGF Packages<br />
+                Manual for version 3.1.9a</span
+              >
+            </p>
+
+            <p>Contents</p>
+          </div>
+
+          <div class="sidetoccontents">
+            <p></p>
+
+            <p>
+              <a class="linkintro" href="/">Introduction</a>
+            </p>
+
+            <p>
+              <a class="tocpart" href="tutorials-guidelines"
+                >Tutorials and Guidelines</a
+              >
+            </p>
+
+            <p>
+              <a class="tocpart" href="install"
+                >Installation and Configuration</a
+              >
+            </p>
+
+            <p>
+              <a class="tocpart" href="tikz">Ti<em>k</em>Z</a>
+            </p>
+
+            <p>
+              <a class="tocpart" href="gd">Graph Drawing</a>
+            </p>
+
+            <p class="current-part">
+              <a class="tocpart" href="libraries">Libraries</a>
+            </p>
+
+            <p class="current-part">
+              <a class="tocsection" href="library-3d"
+                >Three Dimensional Drawing Library</a
+              >
+            </p>
+
+            <p class="current-part">
+              <a class="tocsection" href="library-angle">Angle Library</a>
+            </p>
+
+            <p class="current-part">
+              <a class="tocsection" href="library-arrows">Arrow Tip Library</a>
+            </p>
+
+            <p class="current-part">
+              <a class="tocsection" href="library-automata"
+                >Automata Drawing Library</a
+              >
+            </p>
+
+            <p class="current-part">
+              <a class="tocsection" href="library-babel">Babel Library</a>
+            </p>
+
+            <p class="current-part">
+              <a class="tocsection" href="library-backgrounds"
+                >Background Library</a
+              >
+            </p>
+
+            <p class="current-part">
+              <a class="tocsection" href="library-calc">Calc Library</a>
+            </p>
+
+            <p class="current-part">
+              <a class="tocsection" href="library-calender">Calendar Library</a>
+            </p>
+
+            <p class="current-part">
+              <a class="tocsection" href="library-chains">Chains</a>
+            </p>
+
+            <p class="current-part">
+              <a class="tocsection" href="library-circuits"
+                >Circuit Libraries</a
+              >
+            </p>
+
+            <p class="current-part">
+              <a class="tocsection" href="library-decorations"
+                >Decoration Library</a
+              >
+            </p>
+
+            <p class="current-part">
+              <a class="tocsection" href="library-er"
+                >Entity-Relationship Diagram Drawing Library</a
+              >
+            </p>
+
+            <p class="current-part">
+              <a class="tocsection" href="library-external"
+                >Externalization Library</a
+              >
+            </p>
+
+            <p class="current-part">
+              <a class="tocsection" href="library-fadings">Fading Library</a>
+            </p>
+
+            <p class="current-part">
+              <a class="tocsection" href="library-fit">Fitting Library</a>
+            </p>
+
+            <p class="current current-part">
+              <a class="tocsection" href="library-fixedpoint"
+                >Fixed Point Arithmetic Library</a
+              >
+            </p>
+
+            <p class="current-part">
+              <a class="tocsection" href="library-fpu"
+                >Floating Point Unit Library</a
+              >
+            </p>
+
+            <p class="current-part">
+              <a class="tocsection" href="library-lsystems"
+                >Lindenmayer System Drawing Library</a
+              >
+            </p>
+
+            <p class="current-part">
+              <a class="tocsection" href="library-math">Math Library</a>
+            </p>
+
+            <p class="current-part">
+              <a class="tocsection" href="library-matrix">Matrix Library</a>
+            </p>
+
+            <p class="current-part">
+              <a class="tocsection" href="library-mindmaps"
+                >Mindmap Drawing Library</a
+              >
+            </p>
+
+            <p class="current-part">
+              <a class="tocsection" href="library-folding"
+                >Paper-Folding Diagrams Library</a
+              >
+            </p>
+
+            <p class="current-part">
+              <a class="tocsection" href="library-patterns">Pattern Library</a>
+            </p>
+
+            <p class="current-part">
+              <a class="tocsection" href="library-perspective"
+                >Three Point Perspective Drawing Library</a
+              >
+            </p>
+
+            <p class="current-part">
+              <a class="tocsection" href="library-petri"
+                >Petri-Net Drawing Library</a
+              >
+            </p>
+
+            <p class="current-part">
+              <a class="tocsection" href="library-plot-handlers"
+                >Plot Handler Library</a
+              >
+            </p>
+
+            <p class="current-part">
+              <a class="tocsection" href="library-plot-marks"
+                >Plot Mark Library</a
+              >
+            </p>
+
+            <p class="current-part">
+              <a class="tocsection" href="library-profiler">Profiler Library</a>
+            </p>
+
+            <p class="current-part">
+              <a class="tocsection" href="library-shadings">Shadings Library</a>
+            </p>
+
+            <p class="current-part">
+              <a class="tocsection" href="library-shadows">Shadows Library</a>
+            </p>
+
+            <p class="current-part">
+              <a class="tocsection" href="library-shapes">Shape Library</a>
+            </p>
+
+            <p class="current-part">
+              <a class="tocsection" href="library-spy"
+                >Spy Library: Magnifying Parts of Pictures</a
+              >
+            </p>
+
+            <p class="current-part">
+              <a class="tocsection" href="library-svg-path">SVG-Path Library</a>
+            </p>
+
+            <p class="current-part">
+              <a class="tocsection" href="library-edges">To Path Library</a>
+            </p>
+
+            <p class="current-part">
+              <a class="tocsection" href="library-through">Through Library</a>
+            </p>
+
+            <p class="current-part">
+              <a class="tocsection" href="library-trees">Tree Library</a>
+            </p>
+
+            <p class="current-part">
+              <a class="tocsection" href="library-turtle"
+                >Turtle Graphics Library</a
+              >
+            </p>
+
+            <p class="current-part">
+              <a class="tocsection" href="library-views">Views Library</a>
+            </p>
+
+            <p>
+              <a class="tocpart" href="dv">Data Visualization</a>
+            </p>
+
+            <p>
+              <a class="tocpart" href="utilities">Utilities</a>
+            </p>
+
+            <p>
+              <a class="tocpart" href="math"
+                >Mathematical and Object-Oriented Engines</a
+              >
+            </p>
+
+            <p>
+              <a class="tocpart" href="base">The Basic Layer</a>
+            </p>
+
+            <p>
+              <a class="tocpart" href="pgfsys">The System Layer</a>
+            </p>
+          </div>
+        </nav>
+      </div>
+
+      <main class="bodycontainer">
+        <section class="textbody">
+          <h1>
+            The <span class="tikzname">TikZ</span> and PGF Packages<br />
+            Manual for version 3.1.9a
+          </h1>
+          <h2 class="inserted">Libraries</h2>
+
+          <!--MathJax customizations:-->
+
+          <div class="hidden">
+            \(\newcommand{\footnotename}{footnote}\) \(\def \LWRfootnote {1}\)
+            \(\newcommand {\footnote }[2][\LWRfootnote ]{{}^{\mathrm {#1}}}\)
+            \(\newcommand {\footnotemark }[1][\LWRfootnote ]{{}^{\mathrm
+            {#1}}}\) \(\let \LWRorighspace \hspace \) \(\renewcommand {\hspace
+            }{\ifstar \LWRorighspace \LWRorighspace }\) \(\newcommand
+            {\mathnormal }[1]{{#1}}\) \(\newcommand \ensuremath [1]{#1}\)
+            \(\newcommand {\LWRframebox }[2][]{\fbox {#2}} \newcommand
+            {\framebox }[1][]{\LWRframebox } \) \(\newcommand {\setlength
+            }[2]{}\) \(\newcommand {\addtolength }[2]{}\) \(\newcommand
+            {\setcounter }[2]{}\) \(\newcommand {\addtocounter }[2]{}\)
+            \(\newcommand {\arabic }[1]{}\) \(\newcommand {\number }[1]{}\)
+            \(\newcommand {\noalign }[1]{\text {#1}\notag \\}\) \(\newcommand
+            {\cline }[1]{}\) \(\newcommand {\directlua }[1]{\text
+            {(directlua)}}\) \(\newcommand {\luatexdirectlua }[1]{\text
+            {(directlua)}}\) \(\newcommand {\protect }{}\) \(\def
+            \LWRabsorbnumber #1 {}\) \(\def \LWRabsorbquotenumber "#1 {}\)
+            \(\newcommand {\LWRabsorboption }[1][]{}\) \(\newcommand
+            {\LWRabsorbtwooptions }[1][]{\LWRabsorboption }\) \(\def \mathchar
+            {\ifnextchar "\LWRabsorbquotenumber \LWRabsorbnumber }\) \(\def
+            \mathcode #1={\mathchar }\) \(\let \delcode \mathcode \) \(\let
+            \delimiter \mathchar \) \(\def \oe {\unicode {x0153}}\) \(\def \OE
+            {\unicode {x0152}}\) \(\def \ae {\unicode {x00E6}}\) \(\def \AE
+            {\unicode {x00C6}}\) \(\def \aa {\unicode {x00E5}}\) \(\def \AA
+            {\unicode {x00C5}}\) \(\def \o {\unicode {x00F8}}\) \(\def \O
+            {\unicode {x00D8}}\) \(\def \l {\unicode {x0142}}\) \(\def \L
+            {\unicode {x0141}}\) \(\def \ss {\unicode {x00DF}}\) \(\def \SS
+            {\unicode {x1E9E}}\) \(\def \dag {\unicode {x2020}}\) \(\def \ddag
+            {\unicode {x2021}}\) \(\def \P {\unicode {x00B6}}\) \(\def
+            \copyright {\unicode {x00A9}}\) \(\def \pounds {\unicode {x00A3}}\)
+            \(\let \LWRref \ref \) \(\renewcommand {\ref }{\ifstar \LWRref
+            \LWRref }\) \( \newcommand {\multicolumn }[3]{#3}\) \(\require
+            {textcomp}\) \( \newcommand {\meta }[1]{\langle \textit {#1}\rangle
+            } \) \(\newcommand {\intertext }[1]{\text {#1}\notag \\}\) \(\let
+            \Hat \hat \) \(\let \Check \check \) \(\let \Tilde \tilde \) \(\let
+            \Acute \acute \) \(\let \Grave \grave \) \(\let \Dot \dot \) \(\let
+            \Ddot \ddot \) \(\let \Breve \breve \) \(\let \Bar \bar \) \(\let
+            \Vec \vec \)
+          </div>
+
+          <p></p>
+          <h4 id="autosec-5742">
+            <span class="sectionnumber">55&emsp;</span>Fixed Point Arithmetic
+            Library
+          </h4>
+          <a id="pgfmanual-autopage-5742"></a>
+          <a id="pgfmanual-autofile-60"></a>
+
+          <div class="manualentry">
+            <div class="entryheadline">
+              <p>
+                <a id="pgf.fixedpointarithmetic"></a>
+                <span class="hl-def"
+                  ><b><span class="tikzname">TikZ</span> Library</b>
+                  <kbd
+                    ><span class="textcolor" style="color: #bf0000"
+                      >fixedpointarithmetic</span
+                    ></kbd
+                  ></span
+                >
+                <a class="anchor-link" href="#pgf.fixedpointarithmetic"
+                  >&para;</a
+                >
+              </p>
+            </div>
+            <p>
+              <kbd
+                >\usepgflibrary{<span class="textcolor" style="color: #bf0000"
+                  >fixedpointarithmetic</span
+                >} %
+                <span class="latexlogofont"
+                  ><span class="latexlogo"
+                    >L<span class="latexlogosup">a</span>T<span
+                      class="latexlogosub"
+                      >e</span
+                    >X</span
+                  ></span
+                >
+                and plain
+                <span class="latexlogofont"
+                  ><span class="latexlogo"
+                    >T<span class="latexlogosub">e</span>X</span
+                  ></span
+                >
+                and pure pgf</kbd
+              ><br />
+              <kbd
+                >\usepgflibrary[<span class="textcolor" style="color: #bf0000"
+                  >fixedpointarithmetic</span
+                >] % Con<span class="latexlogofont"
+                  ><span class="latexlogo"
+                    >T<span class="latexlogosub">e</span>X</span
+                  ></span
+                >t and pure pgf</kbd
+              ><br />
+              <kbd
+                >\usetikzlibrary{<span class="textcolor" style="color: #bf0000"
+                  >fixedpointarithmetic</span
+                >} %
+                <span class="latexlogofont"
+                  ><span class="latexlogo"
+                    >L<span class="latexlogosup">a</span>T<span
+                      class="latexlogosub"
+                      >e</span
+                    >X</span
+                  ></span
+                >
+                and plain
+                <span class="latexlogofont"
+                  ><span class="latexlogo"
+                    >T<span class="latexlogosub">e</span>X</span
+                  ></span
+                >
+                when using <span class="tikzname">TikZ</span></kbd
+              ><br />
+              <kbd
+                >\usetikzlibrary[<span class="textcolor" style="color: #bf0000"
+                  >fixedpointarithmetic</span
+                >] % Con<span class="latexlogofont"
+                  ><span class="latexlogo"
+                    >T<span class="latexlogosub">e</span>X</span
+                  ></span
+                >t when using <span class="tikzname">TikZ</span></kbd
+              ><br />
+              <br />
+              This library provides an interface to the
+              <span class="latexlogofont"
+                ><span class="latexlogo"
+                  >L<span class="latexlogosup">a</span>T<span
+                    class="latexlogosub"
+                    >e</span
+                  >X</span
+                ></span
+              >
+              package <span class="texttt">fp</span> for fixed point arithmetic.
+              In addition to loading this library you must ensure
+              <span class="texttt">fp</span> is loaded, otherwise errors will
+              occur.
+            </p>
+          </div>
+          <h5 id="autosec-5744">
+            <span class="sectionnumber" id="sec-55.1">55.1&emsp;</span
+            >Overview<a class="anchor-link" href="#sec-55.1">&para;</a>
+          </h5>
+          <a id="pgfmanual-autopage-5744"></a>
+
+          <p>
+            Whilst the mathematical engine that comes with
+            <span class="textsc">pgf</span> is reasonably fast and flexible when
+            it comes to parsing, the accuracy tends to be fairly low,
+            particularly for expressions involving many operations chained
+            together. In addition the range of values that can be computed is
+            very small: \(\pm 16383.99999\). Conversely, the
+            <span class="texttt">fp</span> package has a reasonably high
+            accuracy, and can perform computations over a wide range of values
+            (approximately \(\pm 9.999\times 10^{17}\)), but is comparatively
+            slow and not very flexible, particularly regarding parsing.
+          </p>
+
+          <p>
+            This library enables the combination of the two: the flexible parser
+            of the <span class="textsc">pgf</span> mathematical engine with the
+            evaluation accuracy of <span class="texttt">fp</span>. There are,
+            however, a number of important points to bear in mind:
+          </p>
+          <ul style="list-style-type: none">
+            <li>
+              <p>
+                &bull; Whilst <span class="texttt">fp</span> supports very large
+                numbers, <span class="textsc">pgf</span> and
+                <span class="tikzname">TikZ</span> do not. It is possible to
+                calculate the result of <span class="texttt">2^20</span> or
+                <span class="texttt">1.2e10+3.4e10</span>, but it is not
+                possible to use these results in pictures directly without some
+                &ldquo;extra work&rdquo;.
+              </p>
+            </li>
+            <li>
+              <p>
+                &bull; The <span class="textsc">pgf</span> mathematical engine
+                will still be used to evaluate lengths, such as
+                <span class="texttt">10pt</span> or
+                <span class="texttt">3em</span>, so it is not possible for an
+                length to exceed the range of values supported by
+                <span class="latexlogofont"
+                  ><span class="latexlogo"
+                    >T<span class="latexlogosub">e</span>X</span
+                  ></span
+                >-dimensions (\(\pm 16383.99999\)pt), even though the resulting
+                expression is within the range of
+                <span class="texttt">fp</span>. So, for example, one can
+                calculate <span class="texttt">3cm*10000</span>, but not
+                <span class="texttt">3*10000cm</span>.
+              </p>
+            </li>
+            <li>
+              <p>
+                &bull; Not all of the functions listed in Section&nbsp;<a
+                  href="math-parsing#pgfmath-syntax"
+                  >93</a
+                >, have been mapped onto
+                <span class="texttt">fp</span> equivalents. Of those that have
+                been, it is not guaranteed that functions will perform in the
+                same way as they do in <span class="textsc">pgf</span>.
+                Reference should be made to the documentation for
+                <span class="texttt">fp</span>.
+              </p>
+            </li>
+            <li>
+              <p>
+                &bull; In <span class="textsc">pgf</span>, trigonometric
+                functions such as <span class="texttt">sin</span> and
+                <span class="texttt">cos</span> assume arguments are in degrees,
+                and functions such as <span class="texttt">asin</span> and
+                <span class="texttt">acos</span> return results in degrees.
+                Although <span class="texttt">fp</span> uses radians for such
+                functions, <span class="textsc">pgf</span> automatically
+                converts arguments from degrees to radians, and converts results
+                from radians to degrees, to ensure everything &ldquo;works
+                properly&rdquo;.
+              </p>
+            </li>
+            <li>
+              <p>
+                &bull; The overall speed will actually be slower than using
+                <span class="textsc">pgf</span> mathematical engine. The
+                calculating power of <span class="texttt">fp</span> comes at the
+                cost of an increased processing time.
+              </p>
+            </li>
+          </ul>
+          <h5 id="autosec-5745">
+            <span class="sectionnumber" id="sec-55.2">55.2&emsp;</span>Using
+            Fixed Point Arithmetic in PGF and <span class="tikzname">TikZ</span
+            ><a class="anchor-link" href="#sec-55.2">&para;</a>
+          </h5>
+          <a id="pgfmanual-autopage-5745"></a>
+
+          <p>
+            The following key is provided to use
+            <span class="texttt">fp</span> in
+            <span class="textsc">pgf</span> and
+            <span class="tikzname">TikZ</span>:
+          </p>
+
+          <div class="manualentry">
+            <div class="entryheadline">
+              <p>
+                <a id="pgf./pgf/fixed:point:arithmetic"></a
+                ><a id="pgf.fixed:point:arithmetic"></a>
+                <span class="hl-def"
+                  ><kbd
+                    ><span class="keyname"
+                      ><span class="textcolor" style="color: #bf0000"
+                        >/pgf/fixed point arithmetic</span
+                      ></span
+                    >=</kbd
+                  ><span class="angle">&langle;</span><i>options</i
+                  ><span class="angle">&rangle;</span></span
+                ><span class="hl-default">(no default)</span>
+                <a class="anchor-link" href="#pgf./pgf/fixed:point:arithmetic"
+                  >&para;</a
+                >
+              </p>
+            </div>
+
+            <p>alias <kbd>/tikz/fixed point arithmetic</kbd></p>
+            <p>
+              <a id="pgf./tikz/fixed:point:arithmetic"></a> This key will set
+              the key path to <span class="texttt">/pgf/fixed point</span>, and
+              execute <span class="angle">&langle;</span><i>options</i
+              ><span class="angle">&rangle;</span>. Then it will install the
+              necessary commands so that the
+              <span class="textsc">pgf</span> parser will use
+              <span class="texttt">fp</span> to perform calculations. The best
+              way to use this key is as an argument to a scope or picture. This
+              means that <span class="texttt">fp</span> does not always have to
+              be used, and <span class="textsc">pgf</span> can use its own
+              mathematical engine at other times, which can lead to a
+              significant reduction in the time for a document to compile.
+            </p>
+          </div>
+
+          <p>
+            Currently there are only a few keys key supported for
+            <span class="angle">&langle;</span><i>options</i
+            ><span class="angle">&rangle;</span>:
+          </p>
+
+          <div class="manualentry">
+            <div class="entryheadline">
+              <p>
+                <a id="pgf./pgf/fixed:point/scale:results"></a
+                ><a id="pgf.scale:results"></a>
+                <span class="hl-def"
+                  ><kbd
+                    ><span class="keyname"
+                      ><span class="textcolor" style="color: #bf0000"
+                        >/pgf/fixed point/scale results</span
+                      ></span
+                    >=</kbd
+                  ><span class="angle">&langle;</span><i>factor</i
+                  ><span class="angle">&rangle;</span></span
+                ><span class="hl-default">(no default)</span>
+                <a
+                  class="anchor-link"
+                  href="#pgf./pgf/fixed:point/scale:results"
+                  >&para;</a
+                >
+              </p>
+            </div>
+            <p>
+              As noted above, <span class="texttt">fp</span> can process a far
+              greater range of numbers than <span class="textsc">pgf</span> and
+              <span class="tikzname">TikZ</span>. In order to use results from
+              <span class="texttt">fp</span> in a
+              <span class="texttt">{pgfpicture}</span> or a
+              <span class="texttt">{tikzpicture}</span> they need to be scaled.
+              When this key is used <span class="textsc">pgf</span> will scale
+              results of any evaluation by <span class="angle">&langle;</span
+              ><i>factor</i><span class="angle">&rangle;</span>. However, as it
+              is not desirable for every part of every expression to be scaled,
+              scaling will only take place if a special prefix
+              <span class="texttt">*</span> is used. If
+              <span class="texttt">*</span> is used at the beginning of an
+              expression the evaluation of the expression will evaluated and
+              then multiplied by <span class="angle">&langle;</span><i>factor</i
+              ><span class="angle">&rangle;</span>.
+            </p>
+
+            <figure class="example">
+              <div class="example-image">
+                <p>
+                  <span class="lateximagesource" id="lateximage-pgfmanual-2375"
+                    ><!--
+   -->
+                    <img
+                      alt="(-tikz-&nbsp;diagram)"
+                      class="lateximage"
+                      height="82.034"
+                      loading="lazy"
+                      src="pgfmanual-images/image-2375.png"
+                      style
+                      width="118.136"
+                  /></span>
+                </p>
+              </div>
+
+              <div class="example-code">
+                <button class="clipboardButton" type="button">copy</button>
+                <code>
+                  <span class="c- preamble"
+                    >\usepgflibrary {fixedpointarithmetic} </span
+                  ><br />
+                  <span class="textcolor" style="color: #000000">\begin</span
+                  >{<span class="textcolor" style="color: #0000b2"
+                    ><a href="tikz-scopes#pgf.tikzpicture">tikzpicture</a></span
+                  >}[<span class="textcolor" style="color: #008000"
+                    ><a href="library-fixedpoint#pgf.fixed:point:arithmetic"
+                      >fixed point arithmetic</a
+                    ></span
+                  >=<span class="textcolor" style="color: #008000"
+                    >{<a href="tikz-arrows#pgf.scale">scale</a>
+                    results=10^-6}</span
+                  >]<br />
+                  <span class="textcolor" style="color: #0000b2"
+                    ><a href="tikz-actions#pgf.back/draw">\draw</a></span
+                  >&numsp;[<span class="textcolor" style="color: #008000"
+                    ><a href="tikz-paths#pgf.help:lines">help lines</a></span
+                  >]&numsp;<span class="textcolor" style="color: #000000"
+                    ><a href="tikz-paths#pgf.grid">grid</a></span
+                  >
+                  <span class="textcolor" style="color: #800080">(3,2)</span
+                  >;<br />
+                  <span class="textcolor" style="color: #0000b2"
+                    ><a href="tikz-actions#pgf.back/draw">\draw</a></span
+                  >&numsp;<span class="textcolor" style="color: #800080"
+                    >(0,0)</span
+                  >&numsp;<span class="textcolor" style="color: #000000"
+                    ><a href="tikz-paths#pgf.--">--</a></span
+                  >
+                  <span class="textcolor" style="color: #800080">(2,2)</span
+                  >;<br />
+                  <span class="textcolor" style="color: #0000b2"
+                    ><a href="tikz-actions#pgf.back/draw">\draw</a></span
+                  >&numsp;[<span class="textcolor" style="color: #008000"
+                    >red</span
+                  >,&numsp;<span class="textcolor" style="color: #008000"
+                    ><a href="tikz-actions#pgf.line:width">line width</a></span
+                  >=<span class="textcolor" style="color: #008000">4pt</span
+                  >]&numsp;<span class="textcolor" style="color: #800080"
+                    >(*1.0e6,0)</span
+                  >&numsp;<span class="textcolor" style="color: #000000"
+                    ><a href="tikz-paths#pgf.--">--</a></span
+                  >
+                  <span class="textcolor" style="color: #800080"
+                    >(*3.0e6,*2.0e6)</span
+                  >;<br />
+                  <span class="textcolor" style="color: #000000">\end</span
+                  >{<span class="textcolor" style="color: #0000b2"
+                    ><a href="tikz-scopes#pgf.tikzpicture">tikzpicture</a></span
+                  >}<br />
+                </code>
+              </div>
+            </figure>
+            <p>
+              A special case of scaling involves plots of data containing large
+              numbers from files. It is possible to &ldquo;pre-process&rdquo; a
+              file, typically using the application that generates the data, to
+              either precede the relevant column with
+              <span class="texttt">*</span> or to perform the scaling as part of
+              the calculation process. However, it may be desirable for the data
+              in a plot to appear in a table as well, so, two files would be
+              required, one pre-processed for plotting, and one not. This extra
+              work may be undesirable so the following keys are provided:
+            </p>
+
+            <div class="manualentry">
+              <div class="entryheadline">
+                <p>
+                  <a id="pgf./pgf/fixed:point/scale:file:plot:x"></a
+                  ><a id="pgf.scale:file:plot:x"></a>
+                  <span class="hl-def"
+                    ><kbd
+                      ><span class="keyname"
+                        ><span class="textcolor" style="color: #bf0000"
+                          >/pgf/fixed point/scale file plot x</span
+                        ></span
+                      >=</kbd
+                    ><span class="angle">&langle;</span><i>factor</i
+                    ><span class="angle">&rangle;</span></span
+                  ><span class="hl-default">(no default)</span>
+                  <a
+                    class="anchor-link"
+                    href="#pgf./pgf/fixed:point/scale:file:plot:x"
+                    >&para;</a
+                  >
+                </p>
+              </div>
+              <p>
+                This key will scale the first column of data read from a file
+                before it is plotted. It is independent of the
+                <span class="texttt">scale results</span> key.
+              </p>
+            </div>
+
+            <div class="manualentry">
+              <div class="entryheadline">
+                <p>
+                  <a id="pgf./pgf/fixed:point/scale:file:plot:y"></a
+                  ><a id="pgf.scale:file:plot:y"></a>
+                  <span class="hl-def"
+                    ><kbd
+                      ><span class="keyname"
+                        ><span class="textcolor" style="color: #bf0000"
+                          >/pgf/fixed point/scale file plot y</span
+                        ></span
+                      >=</kbd
+                    ><span class="angle">&langle;</span><i>factor</i
+                    ><span class="angle">&rangle;</span></span
+                  ><span class="hl-default">(no default)</span>
+                  <a
+                    class="anchor-link"
+                    href="#pgf./pgf/fixed:point/scale:file:plot:y"
+                    >&para;</a
+                  >
+                </p>
+              </div>
+              <p>
+                This key will scale the second column of data read from a file
+                before it is plotted.
+              </p>
+            </div>
+
+            <div class="manualentry">
+              <div class="entryheadline">
+                <p>
+                  <a id="pgf./pgf/fixed:point/scale:file:plot:z"></a
+                  ><a id="pgf.scale:file:plot:z"></a>
+                  <span class="hl-def"
+                    ><kbd
+                      ><span class="keyname"
+                        ><span class="textcolor" style="color: #bf0000"
+                          >/pgf/fixed point/scale file plot z</span
+                        ></span
+                      >=</kbd
+                    ><span class="angle">&langle;</span><i>factor</i
+                    ><span class="angle">&rangle;</span></span
+                  ><span class="hl-default">(no default)</span>
+                  <a
+                    class="anchor-link"
+                    href="#pgf./pgf/fixed:point/scale:file:plot:z"
+                    >&para;</a
+                  >
+                </p>
+              </div>
+              <p>
+                This key will scale the third column of data read from a file
+                before it is plotted.
+              </p>
+            </div>
+          </div>
+        </section>
+      </main>
+
+      <footer>
+        <div class_="footer-left">
+          <a href="https://github.com/pgf-tikz/pgf">Github</a> &middot;
+          <a href="/license">License</a> &middot;
+          <a href="https://ctan.org/pkg/pgf">CTAN</a> &middot;
+          <a href="https://pgf-tikz.github.io/pgf/pgfmanual.pdf">PDF version</a>
+          &middot;
+          <a href="https://github.com/DominikPeters/pgf-tikz-html-manual"
+            >About this HTML version</a
+          >
+        </div>
+        <div class_="footer-right">
+          <em>Manual last updated: 2022-04-23</em>
+        </div>
+      </footer>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/@docsearch/js@alpha"></script>
+    <script>
+      docsearch({
+        apiKey: "ae66ec3fc9df4b52b4d6f24fc8508fd3",
+        indexName: "tikz.dev",
+        appId: "Q70NNMA9GC",
+        container: "#search",
+      });
+    </script>
+  </body>
+</html>

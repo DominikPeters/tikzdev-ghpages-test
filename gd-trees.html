@@ -1,0 +1,4405 @@
+<!DOCTYPE html>
+<html lang="en-US">
+  <head>
+    <meta charset="utf-8" />
+    <meta content="LaTeX Lwarp package" name="generator" />
+    <meta content="width=device-width, initial-scale=1.0" name="viewport" />
+    <!--[if lt IE 9]>
+      <script src="http://html5shiv.googlecode.com/svn/trunk/html5.js"></script>
+    <![endif]-->
+    <title>Graph Drawing Layouts: Trees - PGF/TikZ Manual</title>
+    <link href="style.css" rel="stylesheet" type="text/css" />
+
+    <script>
+      // Lwarp MathJax emulation code
+      //
+      // Based on code by Davide P. Cervone.
+      // Equation numbering: https://github.com/mathjax/MathJax/issues/2427
+      // Starred and ifnextchar macros: https://github.com/mathjax/MathJax/issues/2428
+      // \left, \right delimiters: https://github.com/mathjax/MathJax/issues/2535
+      //
+      // Modified by Brian Dunn to adjust equation numbering and add subequations.
+      //
+      // LaTeX can use \seteqnumber{subequations?}{section}{number} before each equation.
+      // subequations? is 0 usually, 1 if inside subequations.
+      // section is a string printed as-is, or empty.
+      // number is auto-incremented by MathJax between equations.
+      //
+      MathJax = {
+        subequations: "0",
+        section: "",
+        loader: {
+          load: ["[tex]/tagformat", "[tex]/textmacros"],
+        },
+        startup: {
+          ready() {
+            // These would be replaced by import commands if you wanted to make
+            // a proper extension.
+            const Configuration =
+              MathJax._.input.tex.Configuration.Configuration;
+            const CommandMap = MathJax._.input.tex.SymbolMap.CommandMap;
+            const Macro = MathJax._.input.tex.Symbol.Macro;
+            const TexError = MathJax._.input.tex.TexError.default;
+            const ParseUtil = MathJax._.input.tex.ParseUtil.default;
+            const expandable = MathJax._.util.Options.expandable;
+
+            // Insert the replacement string into the TeX string, and check
+            // that there haven't been too many maxro substitutions (prevents
+            // infinite loops).
+            const useArgument = (parser, text) => {
+              parser.string = ParseUtil.addArgs(
+                parser,
+                text,
+                parser.string.slice(parser.i)
+              );
+              parser.i = 0;
+              if (
+                ++parser.macroCount > parser.configuration.options.maxMacros
+              ) {
+                throw new TexError(
+                  "MaxMacroSub1",
+                  "MathJax maximum macro substitution count exceeded; " +
+                    "is there a recursive macro call?"
+                );
+              }
+            };
+
+            // Create the command map for:
+            // \ifstar, \ifnextchar, \ifblank, \ifstrequal, \seteqnumber
+            new CommandMap(
+              "Lwarp-macros",
+              {
+                ifstar: "IfstarFunction",
+                ifnextchar: "IfnextcharFunction",
+                ifblank: "IfblankFunction",
+                ifstrequal: "IfstrequalFunction",
+                seteqnumber: "SeteqnumberFunction",
+              },
+              {
+                // This function implements an ifstar macro.
+                IfstarFunction(parser, name) {
+                  const resultstar = parser.GetArgument(name);
+                  const resultnostar = parser.GetArgument(name);
+                  const star = parser.GetStar(); // true if there is a *
+                  useArgument(parser, star ? resultstar : resultnostar);
+                },
+
+                // This function implements an ifnextchar macro.
+                IfnextcharFunction(parser, name) {
+                  let whichchar = parser.GetArgument(name);
+                  if (whichchar.match(/^(?:0x[0-9A-F]+|[0-9]+)$/i)) {
+                    // $ syntax highlighting
+                    whichchar = String.fromCodePoint(parseInt(whichchar));
+                  }
+                  const resultnextchar = parser.GetArgument(name);
+                  const resultnotnextchar = parser.GetArgument(name);
+                  const gotchar = parser.GetNext() === whichchar;
+                  useArgument(
+                    parser,
+                    gotchar ? resultnextchar : resultnotnextchar
+                  );
+                },
+
+                // This function implements an ifblank macro.
+                IfblankFunction(parser, name) {
+                  const blankarg = parser.GetArgument(name);
+                  const resultblank = parser.GetArgument(name);
+                  const resultnotblank = parser.GetArgument(name);
+                  const isblank = blankarg.trim() == "";
+                  useArgument(parser, isblank ? resultblank : resultnotblank);
+                },
+
+                // This function implements an ifstrequal macro.
+                IfstrequalFunction(parser, name) {
+                  const strequalfirst = parser.GetArgument(name);
+                  const strequalsecond = parser.GetArgument(name);
+                  const resultequal = parser.GetArgument(name);
+                  const resultnotequal = parser.GetArgument(name);
+                  const isequal = strequalfirst == strequalsecond;
+                  useArgument(parser, isequal ? resultequal : resultnotequal);
+                },
+
+                // This function modifies the equation numbers.
+                SeteqnumberFunction(parser, name) {
+                  // Get the macro parameters
+                  const star = parser.GetStar(); // true if there is a *
+                  const optBrackets = parser.GetBrackets(name); // contents of optional brackets
+                  const newsubequations = parser.GetArgument(name); // the subequations argument
+                  const neweqsection = parser.GetArgument(name); // the eq section argument
+                  const neweqnumber = parser.GetArgument(name); // the eq number argument
+                  MathJax.config.subequations = newsubequations; // a string with boolean meaning
+                  MathJax.config.section = neweqsection; // a string with numeric meaning
+                  parser.tags.counter = parser.tags.allCounter = neweqnumber;
+                },
+              }
+            );
+
+            // Create the Lwarp-macros package
+            Configuration.create("Lwarp-macros", {
+              handler: { macro: ["Lwarp-macros"] },
+            });
+
+            MathJax.startup.defaultReady();
+
+            // For forward references:
+            MathJax.startup.input[0].preFilters.add(({ math }) => {
+              if (math.inputData.recompile) {
+                MathJax.config.subequations =
+                  math.inputData.recompile.subequations;
+                MathJax.config.section = math.inputData.recompile.section;
+              }
+            });
+            MathJax.startup.input[0].postFilters.add(({ math }) => {
+              if (math.inputData.recompile) {
+                math.inputData.recompile.subequations =
+                  MathJax.config.subequations;
+                math.inputData.recompile.section = MathJax.config.section;
+              }
+            });
+
+            // For \left, \right with unicode-math:
+            const { DelimiterMap } = MathJax._.input.tex.SymbolMap;
+            const { Symbol } = MathJax._.input.tex.Symbol;
+            const { MapHandler } = MathJax._.input.tex.MapHandler;
+            const delimiter = MapHandler.getMap("delimiter");
+            delimiter.add("\\lBrack", new Symbol("\\lBrack", "\u27E6"));
+            delimiter.add("\\rBrack", new Symbol("\\rBrack", "\u27E7"));
+            delimiter.add("\\lAngle", new Symbol("\\lAngle", "\u27EA"));
+            delimiter.add("\\rAngle", new Symbol("\\rAngle", "\u27EB"));
+            delimiter.add("\\lbrbrak", new Symbol("\\lbrbrak", "\u2772"));
+            delimiter.add("\\rbrbrak", new Symbol("\\rbrbrak", "\u2773"));
+            delimiter.add("\\lbag", new Symbol("\\lbag", "\u27C5"));
+            delimiter.add("\\rbag", new Symbol("\\rbag", "\u27C6"));
+            delimiter.add(
+              "\\llparenthesis",
+              new Symbol("\\llparenthesis", "\u2987")
+            );
+            delimiter.add(
+              "\\rrparenthesis",
+              new Symbol("\\rrparenthesis", "\u2988")
+            );
+            delimiter.add("\\llangle", new Symbol("\\llangle", "\u2989"));
+            delimiter.add("\\rrangle", new Symbol("\\rrangle", "\u298A"));
+            delimiter.add("\\Lbrbrak", new Symbol("\\Lbrbrak", "\u27EC"));
+            delimiter.add("\\Rbrbrak", new Symbol("\\Rbrbrak", "\u27ED"));
+            delimiter.add("\\lBrace", new Symbol("\\lBrace", "\u2983"));
+            delimiter.add("\\rBrace", new Symbol("\\rBrace", "\u2984"));
+            delimiter.add("\\lParen", new Symbol("\\lParen", "\u2985"));
+            delimiter.add("\\rParen", new Symbol("\\rParen", "\u2986"));
+            delimiter.add("\\lbrackubar", new Symbol("\\lbrackubar", "\u298B"));
+            delimiter.add("\\rbrackubar", new Symbol("\\rbrackubar", "\u298C"));
+            delimiter.add(
+              "\\lbrackultick",
+              new Symbol("\\lbrackultick", "\u298D")
+            );
+            delimiter.add(
+              "\\rbracklrtick",
+              new Symbol("\\rbracklrtick", "\u298E")
+            );
+            delimiter.add(
+              "\\lbracklltick",
+              new Symbol("\\lbracklltick", "\u298F")
+            );
+            delimiter.add(
+              "\\rbrackurtick",
+              new Symbol("\\rbrackurtick", "\u2990")
+            );
+            delimiter.add("\\langledot", new Symbol("\\langledot", "\u2991"));
+            delimiter.add("\\rangledot", new Symbol("\\rangledot", "\u2992"));
+            delimiter.add("\\lparenless", new Symbol("\\lparenless", "\u2993"));
+            delimiter.add("\\rparengtr", new Symbol("\\rparengtr", "\u2994"));
+            delimiter.add("\\Lparengtr", new Symbol("\\Lparengtr", "\u2995"));
+            delimiter.add("\\Rparenless", new Symbol("\\Rparenless", "\u2996"));
+            delimiter.add("\\lblkbrbrak", new Symbol("\\lblkbrbrak", "\u2997"));
+            delimiter.add("\\rblkbrbrak", new Symbol("\\rblkbrbrak", "\u2998"));
+            delimiter.add("\\lvzigzag", new Symbol("\\lvzigzag", "\u29D8"));
+            delimiter.add("\\rvzigzag", new Symbol("\\rvzigzag", "\u29D9"));
+            delimiter.add("\\Lvzigzag", new Symbol("\\Lvzigzag", "\u29DA"));
+            delimiter.add("\\Rvzigzag", new Symbol("\\Rvzigzag", "\u29DB"));
+            delimiter.add(
+              "\\lcurvyangle",
+              new Symbol("\\lcurvyangle", "\u29FC")
+            );
+            delimiter.add(
+              "\\rcurvyangle",
+              new Symbol("\\rcurvyangle", "\u29FD")
+            );
+            delimiter.add("\\Vvert", new Symbol("\\Vvert", "\u2980"));
+          }, // ready
+        }, // startup
+
+        tex: {
+          packages: { "[+]": ["tagformat", "Lwarp-macros", "textmacros"] },
+          tags: "ams",
+          tagformat: {
+            number: function (n) {
+              if (MathJax.config.subequations == 0)
+                return MathJax.config.section + n;
+              else return MathJax.config.section + String.fromCharCode(96 + n);
+            },
+          },
+        },
+      };
+    </script>
+
+    <script
+      async
+      id="MathJax-script"
+      src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-chtml.js"
+    ></script>
+
+    <script src="pgfmanual.js"></script>
+
+    <link href="https://unpkg.com/@docsearch/css@alpha" rel="stylesheet" />
+    <link href="/favicon-16x16.png" rel="icon" sizes="16x16" type="image/png" />
+    <link href="/favicon-32x32.png" rel="icon" sizes="32x32" type="image/png" />
+    <link
+      href="/apple-touch-icon.png"
+      rel="apple-touch-icon"
+      sizes="180x180"
+      type="image/png"
+    />
+    <link href="/site.webmanifest" rel="manifest" />
+  </head>
+  <body>
+    <a id="pgfmanual-autopage-4605"></a>
+
+    <div class="bodyandsidetoc grid-container">
+      <header>
+        <strong><a href="/">PGF/Ti<i>k</i>Z Manual</a></strong>
+        <div id="search"></div>
+      </header>
+      <div class="sidetoccontainer" id="local-toc-container">
+        <nav class="sidetoc">
+          <div class="sidetoctitle"><p>On this page</p></div>
+          <div class="sidetoccontents">
+            <p>
+              <a class="tocsubsection" href="#sec-30.1">The Tree Layouts</a>
+            </p>
+            <p>
+              <a class="tocsubsubsection" href="#sec-30.1.1"
+                >The Reingold&ndash;Tilford Layout</a
+              >
+            </p>
+            <p>
+              <a class="tocsubsection" href="#sec-30.2"
+                >Specifying Missing Children</a
+              >
+            </p>
+            <p>
+              <a class="tocsubsection" href="#sec-30.3"
+                >Spanning Tree Computation</a
+              >
+            </p>
+          </div>
+        </nav>
+      </div>
+      <div class="sidetoccontainer" id="chapter-toc-container">
+        <nav class="sidetoc">
+          <div class="sidetoctitle">
+            <p>
+              <span class="sidetocthetitle"
+                >The <span class="tikzname">TikZ</span> and PGF Packages<br />
+                Manual for version 3.1.9a</span
+              >
+            </p>
+
+            <p>Contents</p>
+          </div>
+
+          <div class="sidetoccontents">
+            <p></p>
+
+            <p>
+              <a class="linkintro" href="/">Introduction</a>
+            </p>
+
+            <p>
+              <a class="tocpart" href="tutorials-guidelines"
+                >Tutorials and Guidelines</a
+              >
+            </p>
+
+            <p>
+              <a class="tocpart" href="install"
+                >Installation and Configuration</a
+              >
+            </p>
+
+            <p>
+              <a class="tocpart" href="tikz">Ti<em>k</em>Z</a>
+            </p>
+
+            <p class="current-part">
+              <a class="tocpart" href="gd">Graph Drawing</a>
+            </p>
+
+            <p class="current-part">
+              <a class="tocsection" href="gd-overview"
+                >Introduction to Algorithmic Graph Drawing</a
+              >
+            </p>
+
+            <p class="current-part">
+              <a class="tocsection" href="gd-usage-tikz"
+                >Using Graph Drawing in <span class="tikzname">TikZ</span></a
+              >
+            </p>
+
+            <p class="current-part">
+              <a class="tocsection" href="gd-usage-pgf"
+                >Using Graph Drawing in PGF</a
+              >
+            </p>
+
+            <p class="current current-part">
+              <a class="tocsection" href="gd-trees"
+                >Graph Drawing Layouts: Trees</a
+              >
+            </p>
+
+            <p class="current-part">
+              <a class="tocsection" href="gd-layered"
+                >Graph Drawing Algorithms: Layered Layouts</a
+              >
+            </p>
+
+            <p class="current-part">
+              <a class="tocsection" href="gd-force"
+                >Graph Drawing Algorithms: Force-Based Methods</a
+              >
+            </p>
+
+            <p class="current-part">
+              <a class="tocsection" href="gd-circular"
+                >Graph Drawing Algorithms: Circular Layouts</a
+              >
+            </p>
+
+            <p class="current-part">
+              <a class="tocsection" href="gd-phylogenetics"
+                >Graph Drawing Layouts: Phylogenetic Trees</a
+              >
+            </p>
+
+            <p class="current-part">
+              <a class="tocsection" href="gd-edge-routing"
+                >Graph Drawing Algorithms: Edge Routing</a
+              >
+            </p>
+
+            <p class="current-part">
+              <a class="tocsection" href="gd-algorithm-layer"
+                >The Algorithm Layer</a
+              >
+            </p>
+
+            <p class="current-part">
+              <a class="tocsection" href="gd-algorithms-in-c"
+                >Writing Graph Drawing Algorithms in C</a
+              >
+            </p>
+
+            <p class="current-part">
+              <a class="tocsection" href="gd-display-layer"
+                >The Display Layer</a
+              >
+            </p>
+
+            <p class="current-part">
+              <a class="tocsection" href="gd-binding-layer"
+                >The Binding Layer</a
+              >
+            </p>
+
+            <p>
+              <a class="tocpart" href="libraries">Libraries</a>
+            </p>
+
+            <p>
+              <a class="tocpart" href="dv">Data Visualization</a>
+            </p>
+
+            <p>
+              <a class="tocpart" href="utilities">Utilities</a>
+            </p>
+
+            <p>
+              <a class="tocpart" href="math"
+                >Mathematical and Object-Oriented Engines</a
+              >
+            </p>
+
+            <p>
+              <a class="tocpart" href="base">The Basic Layer</a>
+            </p>
+
+            <p>
+              <a class="tocpart" href="pgfsys">The System Layer</a>
+            </p>
+          </div>
+        </nav>
+      </div>
+
+      <main class="bodycontainer">
+        <section class="textbody">
+          <h1>
+            The <span class="tikzname">TikZ</span> and PGF Packages<br />
+            Manual for version 3.1.9a
+          </h1>
+          <h2 class="inserted">Graph Drawing</h2>
+
+          <!--MathJax customizations:-->
+
+          <div class="hidden">
+            \(\newcommand{\footnotename}{footnote}\) \(\def \LWRfootnote {1}\)
+            \(\newcommand {\footnote }[2][\LWRfootnote ]{{}^{\mathrm {#1}}}\)
+            \(\newcommand {\footnotemark }[1][\LWRfootnote ]{{}^{\mathrm
+            {#1}}}\) \(\let \LWRorighspace \hspace \) \(\renewcommand {\hspace
+            }{\ifstar \LWRorighspace \LWRorighspace }\) \(\newcommand
+            {\mathnormal }[1]{{#1}}\) \(\newcommand \ensuremath [1]{#1}\)
+            \(\newcommand {\LWRframebox }[2][]{\fbox {#2}} \newcommand
+            {\framebox }[1][]{\LWRframebox } \) \(\newcommand {\setlength
+            }[2]{}\) \(\newcommand {\addtolength }[2]{}\) \(\newcommand
+            {\setcounter }[2]{}\) \(\newcommand {\addtocounter }[2]{}\)
+            \(\newcommand {\arabic }[1]{}\) \(\newcommand {\number }[1]{}\)
+            \(\newcommand {\noalign }[1]{\text {#1}\notag \\}\) \(\newcommand
+            {\cline }[1]{}\) \(\newcommand {\directlua }[1]{\text
+            {(directlua)}}\) \(\newcommand {\luatexdirectlua }[1]{\text
+            {(directlua)}}\) \(\newcommand {\protect }{}\) \(\def
+            \LWRabsorbnumber #1 {}\) \(\def \LWRabsorbquotenumber "#1 {}\)
+            \(\newcommand {\LWRabsorboption }[1][]{}\) \(\newcommand
+            {\LWRabsorbtwooptions }[1][]{\LWRabsorboption }\) \(\def \mathchar
+            {\ifnextchar "\LWRabsorbquotenumber \LWRabsorbnumber }\) \(\def
+            \mathcode #1={\mathchar }\) \(\let \delcode \mathcode \) \(\let
+            \delimiter \mathchar \) \(\def \oe {\unicode {x0153}}\) \(\def \OE
+            {\unicode {x0152}}\) \(\def \ae {\unicode {x00E6}}\) \(\def \AE
+            {\unicode {x00C6}}\) \(\def \aa {\unicode {x00E5}}\) \(\def \AA
+            {\unicode {x00C5}}\) \(\def \o {\unicode {x00F8}}\) \(\def \O
+            {\unicode {x00D8}}\) \(\def \l {\unicode {x0142}}\) \(\def \L
+            {\unicode {x0141}}\) \(\def \ss {\unicode {x00DF}}\) \(\def \SS
+            {\unicode {x1E9E}}\) \(\def \dag {\unicode {x2020}}\) \(\def \ddag
+            {\unicode {x2021}}\) \(\def \P {\unicode {x00B6}}\) \(\def
+            \copyright {\unicode {x00A9}}\) \(\def \pounds {\unicode {x00A3}}\)
+            \(\let \LWRref \ref \) \(\renewcommand {\ref }{\ifstar \LWRref
+            \LWRref }\) \( \newcommand {\multicolumn }[3]{#3}\) \(\require
+            {textcomp}\) \( \newcommand {\meta }[1]{\langle \textit {#1}\rangle
+            } \) \(\newcommand {\intertext }[1]{\text {#1}\notag \\}\) \(\let
+            \Hat \hat \) \(\let \Check \check \) \(\let \Tilde \tilde \) \(\let
+            \Acute \acute \) \(\let \Grave \grave \) \(\let \Dot \dot \) \(\let
+            \Ddot \ddot \) \(\let \Breve \breve \) \(\let \Bar \bar \) \(\let
+            \Vec \vec \)
+          </div>
+
+          <p></p>
+          <h4 id="autosec-4606">
+            <a id="section-first-graphdrawing-library-in-manual"></a
+            ><span class="sectionnumber">30&emsp;</span>Graph Drawing Layouts:
+            Trees
+          </h4>
+          <a id="pgfmanual-autopage-4606"></a>
+          <a id="pgfmanual-autofile-34"></a>
+
+          <a id="section-library-graphdrawing-trees"></a>
+
+          <p>
+            <em>by Till Tantau</em>
+          </p>
+
+          <div class="manualentry">
+            <div class="entryheadline">
+              <p>
+                <a id="pgf.trees"></a>
+                <span class="hl-def"
+                  ><b>Graph Drawing Library</b>
+                  <kbd
+                    ><span class="textcolor" style="color: #bf0000"
+                      >trees</span
+                    ></kbd
+                  ></span
+                >
+                <a class="anchor-link" href="#pgf.trees">&para;</a>
+              </p>
+            </div>
+
+            <p>
+              <kbd
+                >\usegdlibrary{<span class="textcolor" style="color: #bf0000"
+                  >trees</span
+                >} %
+                <span class="latexlogofont"
+                  ><span class="latexlogo"
+                    >L<span class="latexlogosup">a</span>T<span
+                      class="latexlogosub"
+                      >e</span
+                    >X</span
+                  ></span
+                >
+                and plain
+                <span class="latexlogofont"
+                  ><span class="latexlogo"
+                    >T<span class="latexlogosub">e</span>X</span
+                  ></span
+                ></kbd
+              ><br />
+              <kbd
+                >\usegdlibrary[<span class="textcolor" style="color: #bf0000"
+                  >trees</span
+                >] % Con<span class="latexlogofont"
+                  ><span class="latexlogo"
+                    >T<span class="latexlogosub">e</span>X</span
+                  ></span
+                >t</kbd
+              >
+            </p>
+            <p>
+              <span class="tikzname">TikZ</span> offers several different syntax
+              to specify trees (see Sections
+              <a href="tikz-graphs#section-library-graphs">19</a> and&nbsp;<a
+                href="tikz-trees#section-trees"
+                >21</a
+              >). The job of the graph drawing algorithms from this library is
+              to turn the specification of trees into beautiful layouts.
+            </p>
+            <p>
+              We start this section with a description of algorithms, then we
+              have a look at how missing children can be specified and at what
+              happens when the input graph is not a tree.
+            </p>
+          </div>
+          <h5 id="autosec-4608">
+            <span class="sectionnumber" id="sec-30.1">30.1&emsp;</span>The Tree
+            Layouts<a class="anchor-link" href="#sec-30.1">&para;</a>
+          </h5>
+          <a id="pgfmanual-autopage-4608"></a>
+          <h6 id="autosec-4609">
+            <span class="sectionnumber" id="sec-30.1.1">30.1.1&emsp;</span>The
+            Reingold&ndash;Tilford Layout<a
+              class="anchor-link"
+              href="#sec-30.1.1"
+              >&para;</a
+            >
+          </h6>
+          <a id="pgfmanual-autopage-4609"></a>
+
+          <div class="manualentry">
+            <div class="entryheadline">
+              <p>
+                <a id="pgf.tree:layout"></a>
+                <span class="hl-def"
+                  ><kbd
+                    >/graph drawing/<span
+                      class="textcolor"
+                      style="color: #bf0000"
+                      >tree layout</span
+                    ><span class="textcolor" style="color: #008000"
+                      >=</span
+                    ></kbd
+                  ><span class="textcolor" style="color: #008000"
+                    ><span class="angle">&langle;</span><i>string</i
+                    ><span class="angle">&rangle;</span></span
+                  ></span
+                >&emsp;&emsp;
+                <a class="anchor-link" href="#pgf.tree:layout">&para;</a>
+              </p>
+            </div>
+            <p>
+              This layout uses the Reingold&ndash;Tilform method for drawing
+              trees. The Reingold&ndash;Tilford method is a standard method for
+              drawing trees. It is described in:
+            </p>
+
+            <p>
+              &bull; E.&nbsp;M. Reingold and J.&nbsp;S. Tilford, Tidier drawings
+              of trees,
+              <em>IEEE Transactions on Software Engineering,</em> 7(2),
+              223&ndash;228, 1981.
+            </p>
+
+            <p>
+              My implementation in
+              <span class="texttt">graphdrawing.trees</span> follows the
+              following paper, which introduces some nice extensions of the
+              basic algorithm:
+            </p>
+
+            <p>
+              &bull; A. Br&uuml;ggemann-Klein, D. Wood, Drawing trees nicely
+              with
+              <span class="latexlogofont"
+                ><span class="latexlogo"
+                  >T<span class="latexlogosub">e</span>X</span
+                ></span
+              >, <em>Electronic Publishing,</em> 2(2), 101&ndash;115, 1989.
+            </p>
+
+            <p>
+              As a historical remark, Br&uuml;ggemann-Klein and Wood have
+              implemented their version of the Reingold&ndash;Tilford algorithm
+              directly in
+              <span class="latexlogofont"
+                ><span class="latexlogo"
+                  >T<span class="latexlogosub">e</span>X</span
+                ></span
+              >
+              (resulting in the Tree<span class="latexlogofont"
+                ><span class="latexlogo"
+                  >T<span class="latexlogosub">e</span>X</span
+                ></span
+              >
+              style). With the power of Lua<span class="latexlogofont"
+                ><span class="latexlogo"
+                  >T<span class="latexlogosub">e</span>X</span
+                ></span
+              >
+              at our disposal, the 2012 implementation in the
+              <span class="texttt">graphdrawing.tree</span> library is somewhat
+              more powerful and cleaner, but it really was an impressive
+              achievement to implement this algorithm back in 1989 directly in
+              <span class="latexlogofont"
+                ><span class="latexlogo"
+                  >T<span class="latexlogosub">e</span>X</span
+                ></span
+              >.
+            </p>
+            <p>
+              The basic idea of the Reingold&ndash;Tilford algorithm is to use
+              the following rules to position the nodes of a tree (the following
+              description assumes that the tree grows downwards, other growth
+              directions are handled by the automatic orientation mechanisms of
+              the graph drawing library):
+            </p>
+
+            <p>
+              1. For a node, recursively compute a layout for each of its
+              children.
+            </p>
+
+            <p>
+              2. Place the tree rooted at the first child somewhere on the page.
+            </p>
+
+            <p>
+              3. Place the tree rooted at the second child to the right of the
+              first one as near as possible so that no two nodes touch (and such
+              that the <span class="texttt">sibling sep</span> padding is not
+              violated).
+            </p>
+
+            <p>4. Repeat for all subsequent children.</p>
+
+            <p>
+              5. Then place the root above the child trees at the middle
+              position, that is, at the half-way point between the left-most and
+              the right-most child of the node.
+            </p>
+
+            <p>
+              The standard keys <span class="texttt">level distance</span>,
+              <span class="texttt">level sep</span>,
+              <span class="texttt">sibling distance</span>, and
+              <span class="texttt">sibling sep</span>, as well as the
+              <span class="texttt">pre</span> and
+              <span class="texttt">post</span> versions of these keys, as taken
+              into consideration when nodes are positioned. See also
+              Section&nbsp;<a href="gd-usage-tikz#subsection-gd-dist-pad"
+                >28.3</a
+              >
+              for details on these keys.
+            </p>
+            <p>
+              <b>Handling of Missing Children.</b> As described in
+              Section&nbsp;<a href="gd-trees#section-gd-missing-children"
+                >30.2</a
+              >, you can specify that some child nodes are &ldquo;missing&rdquo;
+              in the tree, but some space should be reserved for them. This is
+              exactly what happens: When the subtrees of the children of a node
+              are arranged, each position with a missing child is treated as if
+              a zero-width, zero-height subtree were present at that positions:
+            </p>
+
+            <figure class="example">
+              <div class="example-image">
+                <p>
+                  <span class="lateximagesource" id="lateximage-pgfmanual-1956"
+                    ><!--
+    r
+
+a
+
+    b
+-->
+                    <img
+                      alt="(-tikz-&nbsp;diagram)"
+                      class="lateximage"
+                      height="101.978"
+                      loading="lazy"
+                      src="pgfmanual-images/image-1956.png"
+                      style
+                      width="45.711"
+                  /></span>
+                </p>
+              </div>
+
+              <div class="example-code">
+                <button class="clipboardButton" type="button">copy</button>
+                <code>
+                  <span class="c- preamble"
+                    >\usetikzlibrary {graphs,graphdrawing} \usegdlibrary {trees} </span
+                  ><br />
+                  <span class="textcolor" style="color: #0000b2"
+                    ><a href="tikz-scopes#pgf.back/tikz">\tikz</a></span
+                  >&numsp;[<span class="textcolor" style="color: #008000"
+                    ><a href="gd-trees#pgf.tree:layout">tree layout</a></span
+                  >,&numsp;<span class="textcolor" style="color: #008000"
+                    ><a href="tikz-graphs#pgf.nodes">nodes</a></span
+                  >=<span class="textcolor" style="color: #008000"
+                    >{<a href="tikz-actions#pgf.draw">draw</a>,<a
+                      href="tikz-paths#pgf.circle"
+                      >circle</a
+                    >}</span
+                  >]<br />
+                  &numsp;&numsp;<span class="textcolor" style="color: #0000b2"
+                    ><a href="tikz-shapes#pgf.back/node">\node</a></span
+                  >&numsp;{<span class="textcolor" style="color: #000000"
+                    ><a href="library-perspective#pgf.r">r</a></span
+                  >}<br />
+                  &numsp;&numsp;&numsp;&numsp;<span
+                    class="textcolor"
+                    style="color: #000000"
+                    ><a href="tikz-trees#pgf.child">child</a></span
+                  >
+                  {&numsp;<span class="textcolor" style="color: #000000"
+                    ><a href="tikz-coordinates#pgf.node">node</a></span
+                  >
+                  {<span class="textcolor" style="color: #000000">a</span
+                  >}<br />
+                  &numsp;&numsp;&numsp;&numsp;&numsp;&numsp;<span
+                    class="textcolor"
+                    style="color: #000000"
+                    ><a href="tikz-trees#pgf.child">child</a></span
+                  >
+                  [<span class="textcolor" style="color: #008000"
+                    ><a href="tikz-trees#pgf.missing">missing</a></span
+                  >]<br />
+                  &numsp;&numsp;&numsp;&numsp;&numsp;&numsp;<span
+                    class="textcolor"
+                    style="color: #000000"
+                    ><a href="tikz-trees#pgf.child">child</a></span
+                  >
+                  {&numsp;<span class="textcolor" style="color: #000000"
+                    ><a href="tikz-coordinates#pgf.node">node</a></span
+                  >
+                  {<span class="textcolor" style="color: #000000">b</span
+                  >}&numsp;}<br />
+                  &numsp;&numsp;&numsp;&numsp;}<br />
+                  &numsp;&numsp;&numsp;&numsp;<span
+                    class="textcolor"
+                    style="color: #000000"
+                    ><a href="tikz-trees#pgf.child">child</a></span
+                  >[<span class="textcolor" style="color: #008000"
+                    ><a href="tikz-trees#pgf.missing">missing</a></span
+                  >];<br />
+                </code>
+              </div>
+            </figure>
+            <p>or in <span class="texttt">graph</span> syntax:</p>
+
+            <figure class="example">
+              <div class="example-image">
+                <p>
+                  <span class="lateximagesource" id="lateximage-pgfmanual-1957"
+                    ><!--
+    r
+
+a
+
+    b
+-->
+                    <img
+                      alt="(-tikz-&nbsp;diagram)"
+                      class="lateximage"
+                      height="101.978"
+                      loading="lazy"
+                      src="pgfmanual-images/image-1957.png"
+                      style
+                      width="45.711"
+                  /></span>
+                </p>
+              </div>
+
+              <div class="example-code">
+                <button class="clipboardButton" type="button">copy</button>
+                <code>
+                  <span class="c- preamble"
+                    >\usetikzlibrary {graphs,graphdrawing} \usegdlibrary {trees} </span
+                  ><br />
+                  &numsp;&numsp;<span class="textcolor" style="color: #0000b2"
+                    ><a href="tikz-scopes#pgf.back/tikz">\tikz</a></span
+                  >&numsp;<span class="textcolor" style="color: #0000b2"
+                    ><a href="tikz-graphs#pgf.back/graph">\graph</a></span
+                  >&numsp;[<span class="textcolor" style="color: #008000"
+                    ><a href="gd-trees#pgf.tree:layout">tree layout</a></span
+                  >,&numsp;<span class="textcolor" style="color: #008000"
+                    ><a href="tikz-graphs#pgf.nodes">nodes</a></span
+                  >=<span class="textcolor" style="color: #008000"
+                    >{<a href="tikz-actions#pgf.draw">draw</a>,<a
+                      href="tikz-paths#pgf.circle"
+                      >circle</a
+                    >}</span
+                  >]<br />
+                  &numsp;&numsp;{<br />
+                  &numsp;&numsp;&numsp;&numsp;<span
+                    class="textcolor"
+                    style="color: #000000"
+                    ><a href="library-perspective#pgf.r">r</a></span
+                  >
+                  <span class="textcolor" style="color: #000000"
+                    ><a href="tikz-graphs#pgf.-&gt;">-&gt;</a></span
+                  >
+                  {<br />
+                  &numsp;&numsp;&numsp;&numsp;&numsp;&numsp;<span
+                    class="textcolor"
+                    style="color: #000000"
+                    >a</span
+                  >
+                  <span class="textcolor" style="color: #000000"
+                    ><a href="tikz-graphs#pgf.-&gt;">-&gt;</a></span
+                  >
+                  {<br />
+                  &numsp;&numsp;&numsp;&numsp;&numsp;&numsp;&numsp;&numsp;,&numsp;<span
+                    class="example-code-comment"
+                    >%missing</span
+                  ><br />
+                  &numsp;&numsp;&numsp;&numsp;&numsp;&numsp;&numsp;&numsp;<span
+                    class="textcolor"
+                    style="color: #000000"
+                    >b</span
+                  >},<br />
+                  &numsp;&numsp;&numsp;&numsp;&numsp;&numsp;<span
+                    class="example-code-comment"
+                    >% missing</span
+                  ><br />
+                  &numsp;&numsp;&numsp;&numsp;}<br />
+                  &numsp;&numsp;};<br />
+                </code>
+              </div>
+            </figure>
+            <p>More than one child can go missing:</p>
+
+            <figure class="example">
+              <div class="example-image">
+                <p>
+                  <span class="lateximagesource" id="lateximage-pgfmanual-1958"
+                    ><!--
+    r
+
+a b e
+
+    c d
+-->
+                    <img
+                      alt="(-tikz-&nbsp;diagram)"
+                      class="lateximage"
+                      height="101.978"
+                      loading="lazy"
+                      src="pgfmanual-images/image-1958.png"
+                      style
+                      width="214.142"
+                  /></span>
+                </p>
+              </div>
+
+              <div class="example-code">
+                <button class="clipboardButton" type="button">copy</button>
+                <code>
+                  <span class="c- preamble"
+                    >\usetikzlibrary {graphs,graphdrawing} \usegdlibrary {trees} </span
+                  ><br />
+                  <span class="textcolor" style="color: #0000b2"
+                    ><a href="tikz-scopes#pgf.back/tikz">\tikz</a></span
+                  >&numsp;<span class="textcolor" style="color: #0000b2"
+                    ><a href="tikz-graphs#pgf.back/graph">\graph</a></span
+                  >&numsp;[<span class="textcolor" style="color: #008000"
+                    ><a href="gd-trees#pgf.tree:layout">tree layout</a></span
+                  >,&numsp;<span class="textcolor" style="color: #008000"
+                    ><a href="tikz-graphs#pgf.nodes">nodes</a></span
+                  >=<span class="textcolor" style="color: #008000"
+                    >{<a href="tikz-actions#pgf.draw">draw</a>,<a
+                      href="tikz-paths#pgf.circle"
+                      >circle</a
+                    >}</span
+                  >,&numsp;<span class="textcolor" style="color: #008000"
+                    ><a href="gd-usage-tikz#pgf.sibling:sep"
+                      >sibling sep</a
+                    ></span
+                  >=<span class="textcolor" style="color: #008000">0pt</span
+                  >]<br />
+                  &numsp;&numsp;{&numsp;<span
+                    class="textcolor"
+                    style="color: #000000"
+                    ><a href="library-perspective#pgf.r">r</a></span
+                  >
+                  <span class="textcolor" style="color: #000000"
+                    ><a href="tikz-graphs#pgf.-&gt;">-&gt;</a></span
+                  >
+                  {&numsp;<span class="textcolor" style="color: #000000">a</span
+                  >,&numsp;,&numsp;,<span
+                    class="textcolor"
+                    style="color: #000000"
+                    >b</span
+                  >
+                  <span class="textcolor" style="color: #000000"
+                    ><a href="tikz-graphs#pgf.-&gt;">-&gt;</a></span
+                  >
+                  {<span class="textcolor" style="color: #000000">c</span>,<span
+                    class="textcolor"
+                    style="color: #000000"
+                    >d</span
+                  >},&numsp;,<span class="textcolor" style="color: #000000"
+                    >e</span
+                  >}&numsp;};<br />
+                </code>
+              </div>
+            </figure>
+            <p>
+              Although missing children are taken into consideration for the
+              computation of the placement of the children of a root node
+              relative to one another and also for the computation of the
+              position of the root node, they are usually
+              <em>not</em> considered as part of the &ldquo;outline&rdquo; of a
+              subtree (the <kbd>minimum number of children</kbd> key ensures
+              that <span class="texttt">b</span>, <span class="texttt">c</span>,
+              <span class="texttt">e</span>, and
+              <span class="texttt">f</span> all have a missing right child):
+            </p>
+
+            <figure class="example">
+              <div class="example-image">
+                <p>
+                  <span class="lateximagesource" id="lateximage-pgfmanual-1959"
+                    ><!--
+            a
+
+        b e
+
+    c f
+
+d g
+-->
+                    <img
+                      alt="(-tikz-&nbsp;diagram)"
+                      class="lateximage"
+                      height="140.210"
+                      loading="lazy"
+                      src="pgfmanual-images/image-1959.png"
+                      style
+                      width="102.296"
+                  /></span>
+                </p>
+              </div>
+
+              <div class="example-code">
+                <button class="clipboardButton" type="button">copy</button>
+                <code>
+                  <span class="c- preamble"
+                    >\usetikzlibrary {graphs,graphdrawing} \usegdlibrary {trees} </span
+                  ><br />
+                  <span class="textcolor" style="color: #0000b2"
+                    ><a href="tikz-scopes#pgf.back/tikz">\tikz</a></span
+                  >&numsp;<span class="textcolor" style="color: #0000b2"
+                    ><a href="tikz-graphs#pgf.back/graph">\graph</a></span
+                  >&numsp;[<span class="textcolor" style="color: #008000"
+                    ><a href="gd-trees#pgf.tree:layout">tree layout</a></span
+                  >,&numsp;<span class="textcolor" style="color: #008000"
+                    ><a href="gd-trees#pgf.minimum:number:of:children"
+                      >minimum number of children</a
+                    ></span
+                  >=<span class="textcolor" style="color: #008000">2</span
+                  >,<br />
+                  &numsp;&numsp;&numsp;&numsp;&numsp;&numsp;&numsp;&numsp;&numsp;&numsp;&numsp;&numsp;&numsp;&numsp;<span
+                    class="textcolor"
+                    style="color: #008000"
+                    ><a href="tikz-graphs#pgf.nodes">nodes</a></span
+                  >=<span class="textcolor" style="color: #008000"
+                    >{<a href="tikz-actions#pgf.draw">draw</a>,<a
+                      href="tikz-paths#pgf.circle"
+                      >circle</a
+                    >}</span
+                  >]<br />
+                  &numsp;&numsp;{&numsp;<span
+                    class="textcolor"
+                    style="color: #000000"
+                    >a</span
+                  >
+                  <span class="textcolor" style="color: #000000"
+                    ><a href="tikz-graphs#pgf.-&gt;">-&gt;</a></span
+                  >
+                  {&numsp;<span class="textcolor" style="color: #000000"
+                    >b</span
+                  >
+                  <span class="textcolor" style="color: #000000"
+                    ><a href="tikz-graphs#pgf.-&gt;">-&gt;</a></span
+                  >
+                  <span class="textcolor" style="color: #000000">c</span>
+                  <span class="textcolor" style="color: #000000"
+                    ><a href="tikz-graphs#pgf.-&gt;">-&gt;</a></span
+                  >
+                  <span class="textcolor" style="color: #000000">d</span
+                  >,&numsp;<span class="textcolor" style="color: #000000"
+                    >e</span
+                  >
+                  <span class="textcolor" style="color: #000000"
+                    ><a href="tikz-graphs#pgf.-&gt;">-&gt;</a></span
+                  >
+                  <span class="textcolor" style="color: #000000">f</span>
+                  <span class="textcolor" style="color: #000000"
+                    ><a href="tikz-graphs#pgf.-&gt;">-&gt;</a></span
+                  >
+                  <span class="textcolor" style="color: #000000">g</span>
+                  }&numsp;};<br />
+                </code>
+              </div>
+            </figure>
+            <p>
+              This behaviour of &ldquo;ignoring&rdquo; missing children in later
+              stages of the recursion can be changed using the key
+              <span class="texttt">missing nodes get space</span>.
+            </p>
+            <p>
+              <b>Significant Pairs of Siblings.</b> Br&uuml;ggemann-Klein and
+              Wood have proposed an extension of the Reingold&ndash;Tilford
+              method that is intended to better highlight the overall structure
+              of a tree. Consider the following two trees:
+            </p>
+
+            <figure class="example">
+              <div class="example-image">
+                <p>
+                  <span class="lateximagesource" id="lateximage-pgfmanual-1960"
+                    ><!--
+-->
+                    <img
+                      alt="(-tikz-&nbsp;diagram)"
+                      class="lateximage"
+                      height="85.826"
+                      loading="lazy"
+                      src="pgfmanual-images/image-1960.png"
+                      style
+                      width="57.495" /></span
+                  >&emsp;<span
+                    class="lateximagesource"
+                    id="lateximage-pgfmanual-1961"
+                    ><!--
+-->
+                    <img
+                      alt="(-tikz-&nbsp;diagram)"
+                      class="lateximage"
+                      height="85.826"
+                      loading="lazy"
+                      src="pgfmanual-images/image-1961.png"
+                      style
+                      width="57.495"
+                  /></span>
+                </p>
+              </div>
+
+              <div class="example-code">
+                <button class="clipboardButton" type="button">copy</button>
+                <code>
+                  <span class="c- preamble"
+                    >\usetikzlibrary {graphs,graphdrawing} \usegdlibrary {trees} </span
+                  ><br />
+                  <span class="textcolor" style="color: #0000b2"
+                    ><a href="tikz-scopes#pgf.back/tikz">\tikz</a></span
+                  >&numsp;[<span class="textcolor" style="color: #008000"
+                    ><a href="tikz-scopes#pgf.baseline">baseline</a></span
+                  >=<span class="textcolor" style="color: #008000"
+                    ><span class="textcolor" style="color: #800080"
+                      >(a.base)</span
+                    ></span
+                  >,&numsp;<span class="textcolor" style="color: #008000"
+                    ><a href="gd-trees#pgf.tree:layout">tree layout</a></span
+                  >,&numsp;<span class="textcolor" style="color: #008000"
+                    ><a href="gd-trees#pgf.minimum:number:of:children"
+                      >minimum number of children</a
+                    ></span
+                  >=<span class="textcolor" style="color: #008000">2</span
+                  >,<br />
+                  &numsp;&numsp;&numsp;&numsp;&numsp;&numsp;&numsp;<span
+                    class="textcolor"
+                    style="color: #008000"
+                    ><a href="tikz-trees#pgf.sibling:distance"
+                      >sibling distance</a
+                    ></span
+                  >=<span class="textcolor" style="color: #008000">5mm</span
+                  >,&numsp;<span class="textcolor" style="color: #008000"
+                    ><a href="tikz-trees#pgf.level:distance"
+                      >level distance</a
+                    ></span
+                  >=<span class="textcolor" style="color: #008000">5mm</span
+                  >]<br />
+                  &numsp;&numsp;<span class="textcolor" style="color: #0000b2"
+                    ><a href="tikz-graphs#pgf.back/graph">\graph</a></span
+                  >&numsp;[<span class="textcolor" style="color: #008000"
+                    ><a href="tikz-graphs#pgf.nodes">nodes</a></span
+                  >=<span class="textcolor" style="color: #008000"
+                    >{<a href="tikz-paths#pgf.circle">circle</a>,&numsp;inner
+                    sep=0pt,&numsp;minimum size=2mm,&numsp;<a
+                      href="tikz-actions#pgf.fill"
+                      >fill</a
+                    >,&numsp;as=}</span
+                  >]{<br />
+                  &numsp;&numsp;&numsp;&numsp;<span
+                    class="textcolor"
+                    style="color: #000000"
+                    >a</span
+                  >
+                  <span class="textcolor" style="color: #000000"
+                    ><a href="tikz-paths#pgf.--">--</a></span
+                  >
+                  {&numsp;<span class="textcolor" style="color: #000000"
+                    >b</span
+                  >
+                  <span class="textcolor" style="color: #000000"
+                    ><a href="tikz-paths#pgf.--">--</a></span
+                  >
+                  <span class="textcolor" style="color: #000000">c</span>
+                  <span class="textcolor" style="color: #000000"
+                    ><a href="tikz-paths#pgf.--">--</a></span
+                  >
+                  {&numsp;<span class="textcolor" style="color: #000000"
+                    >d</span
+                  >
+                  <span class="textcolor" style="color: #000000"
+                    ><a href="tikz-paths#pgf.--">--</a></span
+                  >
+                  <span class="textcolor" style="color: #000000">e</span
+                  >,&numsp;<span class="textcolor" style="color: #000000"
+                    >f</span
+                  >
+                  <span class="textcolor" style="color: #000000"
+                    ><a href="tikz-paths#pgf.--">--</a></span
+                  >
+                  {&numsp;<span class="textcolor" style="color: #000000">g</span
+                  >,&numsp;<span class="textcolor" style="color: #000000"
+                    >h</span
+                  >
+                  }},&numsp;<span class="textcolor" style="color: #000000"
+                    >i</span
+                  >
+                  <span class="textcolor" style="color: #000000"
+                    ><a href="tikz-paths#pgf.--">--</a></span
+                  >
+                  <span class="textcolor" style="color: #000000">j</span>
+                  <span class="textcolor" style="color: #000000"
+                    ><a href="tikz-paths#pgf.--">--</a></span
+                  >
+                  <span class="textcolor" style="color: #000000">k</span>[<span
+                    class="textcolor"
+                    style="color: #008000"
+                    ><a href="gd-trees#pgf.second">second</a></span
+                  >]&numsp;}<br />
+                  &numsp;&numsp;};<span class="textcolor" style="color: #0000b2"
+                    >\quad</span
+                  ><br />
+                  <span class="textcolor" style="color: #0000b2"
+                    ><a href="tikz-scopes#pgf.back/tikz">\tikz</a></span
+                  >&numsp;[<span class="textcolor" style="color: #008000"
+                    ><a href="tikz-scopes#pgf.baseline">baseline</a></span
+                  >=<span class="textcolor" style="color: #008000"
+                    ><span class="textcolor" style="color: #800080"
+                      >(a.base)</span
+                    ></span
+                  >,&numsp;<span class="textcolor" style="color: #008000"
+                    ><a href="gd-trees#pgf.tree:layout">tree layout</a></span
+                  >,&numsp;<span class="textcolor" style="color: #008000"
+                    ><a href="gd-trees#pgf.minimum:number:of:children"
+                      >minimum number of children</a
+                    ></span
+                  >=<span class="textcolor" style="color: #008000">2</span
+                  >,<br />
+                  &numsp;&numsp;&numsp;&numsp;&numsp;&numsp;&numsp;<span
+                    class="textcolor"
+                    style="color: #008000"
+                    ><a href="tikz-trees#pgf.sibling:distance"
+                      >sibling distance</a
+                    ></span
+                  >=<span class="textcolor" style="color: #008000">5mm</span
+                  >,&numsp;<span class="textcolor" style="color: #008000"
+                    ><a href="tikz-trees#pgf.level:distance"
+                      >level distance</a
+                    ></span
+                  >=<span class="textcolor" style="color: #008000">5mm</span
+                  >]<br />
+                  &numsp;&numsp;<span class="textcolor" style="color: #0000b2"
+                    ><a href="tikz-graphs#pgf.back/graph">\graph</a></span
+                  >&numsp;[<span class="textcolor" style="color: #008000"
+                    ><a href="tikz-graphs#pgf.nodes">nodes</a></span
+                  >=<span class="textcolor" style="color: #008000"
+                    >{<a href="tikz-paths#pgf.circle">circle</a>,&numsp;inner
+                    sep=0pt,&numsp;minimum size=2mm,&numsp;<a
+                      href="tikz-actions#pgf.fill"
+                      >fill</a
+                    >,&numsp;as=}</span
+                  >]{<br />
+                  &numsp;&numsp;&numsp;&numsp;<span
+                    class="textcolor"
+                    style="color: #000000"
+                    >a</span
+                  >
+                  <span class="textcolor" style="color: #000000"
+                    ><a href="tikz-paths#pgf.--">--</a></span
+                  >
+                  {&numsp;<span class="textcolor" style="color: #000000"
+                    >b</span
+                  >
+                  <span class="textcolor" style="color: #000000"
+                    ><a href="tikz-paths#pgf.--">--</a></span
+                  >
+                  <span class="textcolor" style="color: #000000">c</span>
+                  <span class="textcolor" style="color: #000000"
+                    ><a href="tikz-paths#pgf.--">--</a></span
+                  >
+                  <span class="textcolor" style="color: #000000">d</span>
+                  <span class="textcolor" style="color: #000000"
+                    ><a href="tikz-paths#pgf.--">--</a></span
+                  >
+                  <span class="textcolor" style="color: #000000">e</span
+                  >,&numsp;<span class="textcolor" style="color: #000000"
+                    >i</span
+                  >
+                  <span class="textcolor" style="color: #000000"
+                    ><a href="tikz-paths#pgf.--">--</a></span
+                  >
+                  <span class="textcolor" style="color: #000000">j</span>
+                  <span class="textcolor" style="color: #000000"
+                    ><a href="tikz-paths#pgf.--">--</a></span
+                  >
+                  {&numsp;<span class="textcolor" style="color: #000000"
+                    >f</span
+                  >
+                  <span class="textcolor" style="color: #000000"
+                    ><a href="tikz-paths#pgf.--">--</a></span
+                  >
+                  {<span class="textcolor" style="color: #000000">g</span>,<span
+                    class="textcolor"
+                    style="color: #000000"
+                    >h</span
+                  >},&numsp;<span class="textcolor" style="color: #000000"
+                    >k</span
+                  >
+                  }&numsp;}<br />
+                  &numsp;&numsp;};<br />
+                </code>
+              </div>
+            </figure>
+            <p>
+              As observed by Br&uuml;ggemann-Klein and Wood, the two trees are
+              structurally quite different, but the Reingold&ndash;Tilford
+              method places the nodes at exactly the same positions and only one
+              edge &ldquo;switches&rdquo; positions. In order to better
+              highlight the differences between the trees, they propose to add a
+              little extra separation between siblings that form a
+              <em>significant pair</em>. They define such a pair as follows:
+              Consider the subtrees of two adjacent siblings. There will be one
+              or more levels where these subtrees have a minimum distance. For
+              instance, the following two trees the subtrees of the nodes
+              <span class="texttt">a</span> and
+              <span class="texttt">b</span> have a minimum distance only at the
+              top level in the left example, and in all levels in the second
+              example. A <em>significant pair</em> is a pair of siblings where
+              the minimum distance is encountered on any level other than the
+              first level. Thus, in the first example there is no significant
+              pair, while in the second example
+              <span class="texttt">a</span> and
+              <span class="texttt">b</span> form such a pair.
+            </p>
+
+            <figure class="example">
+              <div class="example-image">
+                <p>
+                  <span class="lateximagesource" id="lateximage-pgfmanual-1962"
+                    ><!--
+a b
+-->
+                    <img
+                      alt="(-tikz-&nbsp;diagram)"
+                      class="lateximage"
+                      height="94.034"
+                      loading="lazy"
+                      src="pgfmanual-images/image-1962.png"
+                      style
+                      width="129.146"
+                  /></span>
+                  &emsp;<span
+                    class="lateximagesource"
+                    id="lateximage-pgfmanual-1963"
+                    ><!--
+a b
+-->
+                    <img
+                      alt="(-tikz-&nbsp;diagram)"
+                      class="lateximage"
+                      height="94.034"
+                      loading="lazy"
+                      src="pgfmanual-images/image-1963.png"
+                      style
+                      width="97.645"
+                  /></span>
+                </p>
+              </div>
+
+              <div class="example-code">
+                <button class="clipboardButton" type="button">copy</button>
+                <code>
+                  <span class="c- preamble"
+                    >\usetikzlibrary {graphs,graphdrawing} \usegdlibrary {trees} </span
+                  ><br />
+                  <span class="textcolor" style="color: #0000b2"
+                    ><a href="tikz-scopes#pgf.back/tikz">\tikz</a></span
+                  >&numsp;<span class="textcolor" style="color: #0000b2"
+                    ><a href="tikz-graphs#pgf.back/graph">\graph</a></span
+                  >&numsp;[<span class="textcolor" style="color: #008000"
+                    ><a href="gd-trees#pgf.tree:layout">tree layout</a></span
+                  >,&numsp;<span class="textcolor" style="color: #008000"
+                    ><a href="gd-trees#pgf.minimum:number:of:children"
+                      >minimum number of children</a
+                    ></span
+                  >=<span class="textcolor" style="color: #008000">2</span
+                  >,<br />
+                  &numsp;&numsp;&numsp;&numsp;&numsp;&numsp;&numsp;&numsp;&numsp;&numsp;&numsp;&numsp;&numsp;&numsp;&numsp;<span
+                    class="textcolor"
+                    style="color: #008000"
+                    ><a href="tikz-trees#pgf.level:distance"
+                      >level distance</a
+                    ></span
+                  >=<span class="textcolor" style="color: #008000">5mm</span
+                  >,&numsp;<span class="textcolor" style="color: #008000"
+                    ><a href="tikz-graphs#pgf.nodes">nodes</a></span
+                  >=<span class="textcolor" style="color: #008000"
+                    >{<a href="tikz-paths#pgf.circle">circle</a>,<a
+                      href="tikz-actions#pgf.draw"
+                      >draw</a
+                    >}</span
+                  >]<br />
+                  &numsp;&numsp;{&numsp;<span
+                    class="textcolor"
+                    style="color: #000000"
+                    >/</span
+                  >
+                  <span class="textcolor" style="color: #000000"
+                    ><a href="tikz-graphs#pgf.-&gt;">-&gt;</a></span
+                  >
+                  {&numsp;<span class="textcolor" style="color: #000000"
+                    >a</span
+                  >
+                  <span class="textcolor" style="color: #000000"
+                    ><a href="tikz-graphs#pgf.-&gt;">-&gt;</a></span
+                  >
+                  <span class="textcolor" style="color: #000000">/</span>
+                  <span class="textcolor" style="color: #000000"
+                    ><a href="tikz-graphs#pgf.-&gt;">-&gt;</a></span
+                  >
+                  <span class="textcolor" style="color: #000000">/</span
+                  >,&numsp;<span class="textcolor" style="color: #000000"
+                    >b</span
+                  >
+                  <span class="textcolor" style="color: #000000"
+                    ><a href="tikz-graphs#pgf.-&gt;">-&gt;</a></span
+                  >
+                  <span class="textcolor" style="color: #000000">/</span>[<span
+                    class="textcolor"
+                    style="color: #008000"
+                    ><a href="gd-trees#pgf.second">second</a></span
+                  >]&numsp;<span class="textcolor" style="color: #000000"
+                    ><a href="tikz-graphs#pgf.-&gt;">-&gt;</a></span
+                  >
+                  <span class="textcolor" style="color: #000000">/</span>[<span
+                    class="textcolor"
+                    style="color: #008000"
+                    ><a href="gd-trees#pgf.second">second</a></span
+                  >]&numsp;}};<br />
+                  &numsp;&numsp;<span class="textcolor" style="color: #0000b2"
+                    >\quad</span
+                  ><br />
+                  <span class="textcolor" style="color: #0000b2"
+                    ><a href="tikz-scopes#pgf.back/tikz">\tikz</a></span
+                  >&numsp;<span class="textcolor" style="color: #0000b2"
+                    ><a href="tikz-graphs#pgf.back/graph">\graph</a></span
+                  >&numsp;[<span class="textcolor" style="color: #008000"
+                    ><a href="gd-trees#pgf.tree:layout">tree layout</a></span
+                  >,&numsp;<span class="textcolor" style="color: #008000"
+                    ><a href="gd-trees#pgf.minimum:number:of:children"
+                      >minimum number of children</a
+                    ></span
+                  >=<span class="textcolor" style="color: #008000">2</span
+                  >,<br />
+                  &numsp;&numsp;&numsp;&numsp;&numsp;&numsp;&numsp;&numsp;&numsp;&numsp;&numsp;&numsp;&numsp;&numsp;<span
+                    class="textcolor"
+                    style="color: #008000"
+                    ><a href="tikz-trees#pgf.level:distance"
+                      >level distance</a
+                    ></span
+                  >=<span class="textcolor" style="color: #008000">5mm</span
+                  >,&numsp;<span class="textcolor" style="color: #008000"
+                    ><a href="tikz-graphs#pgf.nodes">nodes</a></span
+                  >=<span class="textcolor" style="color: #008000"
+                    >{<a href="tikz-paths#pgf.circle">circle</a>,<a
+                      href="tikz-actions#pgf.draw"
+                      >draw</a
+                    >}</span
+                  >]<br />
+                  &numsp;&numsp;{&numsp;<span
+                    class="textcolor"
+                    style="color: #000000"
+                    >/</span
+                  >
+                  <span class="textcolor" style="color: #000000"
+                    ><a href="tikz-graphs#pgf.-&gt;">-&gt;</a></span
+                  >
+                  {&numsp;<span class="textcolor" style="color: #000000"
+                    >a</span
+                  >
+                  <span class="textcolor" style="color: #000000"
+                    ><a href="tikz-graphs#pgf.-&gt;">-&gt;</a></span
+                  >
+                  <span class="textcolor" style="color: #000000">/</span>
+                  <span class="textcolor" style="color: #000000"
+                    ><a href="tikz-graphs#pgf.-&gt;">-&gt;</a></span
+                  >
+                  <span class="textcolor" style="color: #000000">/</span
+                  >,&numsp;<span class="textcolor" style="color: #000000"
+                    >b</span
+                  >
+                  <span class="textcolor" style="color: #000000"
+                    ><a href="tikz-graphs#pgf.-&gt;">-&gt;</a></span
+                  >
+                  <span class="textcolor" style="color: #000000">/</span>
+                  <span class="textcolor" style="color: #000000"
+                    ><a href="tikz-graphs#pgf.-&gt;">-&gt;</a></span
+                  >
+                  <span class="textcolor" style="color: #000000">/</span>
+                  }};<br />
+                </code>
+              </div>
+            </figure>
+            <p>
+              Whenever the algorithm encounters a significant pair, it adds
+              extra space between the siblings as specified by the
+              <span class="texttt">significant sep</span> key.
+            </p>
+            <p>
+              <em>Examples</em>
+            </p>
+
+            <figure class="example">
+              <div class="example-image">
+                <p>
+                  <span class="lateximagesource" id="lateximage-pgfmanual-1964"
+                    ><!--
+            1
+
+    2 10
+
+    3 11
+
+4 6 12 13
+
+5 7 8 9
+-->
+                    <img
+                      alt="(-tikz-&nbsp;diagram)"
+                      class="lateximage"
+                      height="171.746"
+                      loading="lazy"
+                      src="pgfmanual-images/image-1964.png"
+                      style
+                      width="146.642"
+                  /></span>
+                </p>
+              </div>
+
+              <div class="example-code">
+                <button class="clipboardButton" type="button">copy</button>
+                <code>
+                  <br />
+                  <span class="textcolor" style="color: #0000b2"
+                    ><a href="tikz-scopes#pgf.back/tikz">\tikz</a></span
+                  >&numsp;[<span class="textcolor" style="color: #008000"
+                    ><a href="gd-trees#pgf.tree:layout">tree layout</a></span
+                  >,&numsp;<span class="textcolor" style="color: #008000"
+                    ><a href="tikz-trees#pgf.sibling:distance"
+                      >sibling distance</a
+                    ></span
+                  >=<span class="textcolor" style="color: #008000">8mm</span
+                  >]<br />
+                  &numsp;&numsp;<span class="textcolor" style="color: #0000b2"
+                    ><a href="tikz-graphs#pgf.back/graph">\graph</a></span
+                  >&numsp;[<span class="textcolor" style="color: #008000"
+                    ><a href="tikz-graphs#pgf.nodes">nodes</a></span
+                  >=<span class="textcolor" style="color: #008000"
+                    >{<a href="tikz-paths#pgf.circle">circle</a>,&numsp;<a
+                      href="tikz-actions#pgf.draw"
+                      >draw</a
+                    >,&numsp;inner sep=1.5pt}</span
+                  >]{<br />
+                  &numsp;&numsp;&numsp;&numsp;<span
+                    class="textcolor"
+                    style="color: #000000"
+                    >1</span
+                  >
+                  <span class="textcolor" style="color: #000000"
+                    ><a href="tikz-paths#pgf.--">--</a></span
+                  >
+                  {&numsp;<span class="textcolor" style="color: #000000"
+                    >2</span
+                  >
+                  <span class="textcolor" style="color: #000000"
+                    ><a href="tikz-paths#pgf.--">--</a></span
+                  >
+                  <span class="textcolor" style="color: #000000">3</span>
+                  <span class="textcolor" style="color: #000000"
+                    ><a href="tikz-paths#pgf.--">--</a></span
+                  >
+                  {&numsp;<span class="textcolor" style="color: #000000"
+                    >4</span
+                  >
+                  <span class="textcolor" style="color: #000000"
+                    ><a href="tikz-paths#pgf.--">--</a></span
+                  >
+                  <span class="textcolor" style="color: #000000">5</span
+                  >,&numsp;<span class="textcolor" style="color: #000000"
+                    >6</span
+                  >
+                  <span class="textcolor" style="color: #000000"
+                    ><a href="tikz-paths#pgf.--">--</a></span
+                  >
+                  {&numsp;<span class="textcolor" style="color: #000000">7</span
+                  >,&numsp;<span class="textcolor" style="color: #000000"
+                    >8</span
+                  >,&numsp;<span class="textcolor" style="color: #000000"
+                    >9</span
+                  >
+                  }},&numsp;<span class="textcolor" style="color: #000000"
+                    >10</span
+                  >
+                  <span class="textcolor" style="color: #000000"
+                    ><a href="tikz-paths#pgf.--">--</a></span
+                  >
+                  <span class="textcolor" style="color: #000000">11</span>
+                  <span class="textcolor" style="color: #000000"
+                    ><a href="tikz-paths#pgf.--">--</a></span
+                  >
+                  {&numsp;<span class="textcolor" style="color: #000000"
+                    >12</span
+                  >,&numsp;<span class="textcolor" style="color: #000000"
+                    >13</span
+                  >
+                  }&numsp;}<br />
+                  &numsp;&numsp;};<br />
+                </code>
+              </div>
+            </figure>
+
+            <figure class="example">
+              <div class="example-image">
+                <p>
+                  <span class="lateximagesource" id="lateximage-pgfmanual-1965"
+                    ><!--
+        10
+1 11 13
+
+                     12
+    2 9
+                 6
+        3
+                          8
+                     7
+            4
+                 5
+   -->
+                    <img
+                      alt="(-tikz-&nbsp;diagram)"
+                      class="lateximage"
+                      height="169.970"
+                      loading="lazy"
+                      src="pgfmanual-images/image-1965.png"
+                      style
+                      width="148.286"
+                  /></span>
+                </p>
+              </div>
+
+              <div class="example-code">
+                <button class="clipboardButton" type="button">copy</button>
+                <code>
+                  <br />
+                  <span class="textcolor" style="color: #0000b2"
+                    ><a href="tikz-scopes#pgf.back/tikz">\tikz</a></span
+                  >&numsp;[<span class="textcolor" style="color: #008000"
+                    ><a href="gd-trees#pgf.tree:layout">tree layout</a></span
+                  >,&numsp;<span class="textcolor" style="color: #008000"
+                    ><a href="tikz-trees#pgf.grow">grow</a></span
+                  >=<span class="textcolor" style="color: #008000">-30</span
+                  >,<br />
+                  &numsp;&numsp;&numsp;&numsp;&numsp;&numsp;&numsp;<span
+                    class="textcolor"
+                    style="color: #008000"
+                    ><a href="tikz-trees#pgf.sibling:distance"
+                      >sibling distance</a
+                    ></span
+                  >=<span class="textcolor" style="color: #008000">0mm</span
+                  >,&numsp;<span class="textcolor" style="color: #008000"
+                    ><a href="tikz-trees#pgf.level:distance"
+                      >level distance</a
+                    ></span
+                  >=<span class="textcolor" style="color: #008000">0mm</span
+                  >,]<br />
+                  &numsp;&numsp;<span class="textcolor" style="color: #0000b2"
+                    ><a href="tikz-graphs#pgf.back/graph">\graph</a></span
+                  >&numsp;[<span class="textcolor" style="color: #008000"
+                    ><a href="tikz-graphs#pgf.nodes">nodes</a></span
+                  >=<span class="textcolor" style="color: #008000"
+                    >{<a href="tikz-paths#pgf.circle">circle</a>,&numsp;<a
+                      href="tikz-actions#pgf.draw"
+                      >draw</a
+                    >,&numsp;inner sep=1.5pt}</span
+                  >]{<br />
+                  &numsp;&numsp;&numsp;&numsp;<span
+                    class="textcolor"
+                    style="color: #000000"
+                    >1</span
+                  >
+                  <span class="textcolor" style="color: #000000"
+                    ><a href="tikz-paths#pgf.--">--</a></span
+                  >
+                  {&numsp;<span class="textcolor" style="color: #000000"
+                    >2</span
+                  >
+                  <span class="textcolor" style="color: #000000"
+                    ><a href="tikz-paths#pgf.--">--</a></span
+                  >
+                  <span class="textcolor" style="color: #000000">3</span>
+                  <span class="textcolor" style="color: #000000"
+                    ><a href="tikz-paths#pgf.--">--</a></span
+                  >
+                  {&numsp;<span class="textcolor" style="color: #000000"
+                    >4</span
+                  >
+                  <span class="textcolor" style="color: #000000"
+                    ><a href="tikz-paths#pgf.--">--</a></span
+                  >
+                  <span class="textcolor" style="color: #000000">5</span
+                  >,&numsp;<span class="textcolor" style="color: #000000"
+                    >6</span
+                  >
+                  <span class="textcolor" style="color: #000000"
+                    ><a href="tikz-paths#pgf.--">--</a></span
+                  >
+                  {&numsp;<span class="textcolor" style="color: #000000">7</span
+                  >,&numsp;<span class="textcolor" style="color: #000000"
+                    >8</span
+                  >,&numsp;<span class="textcolor" style="color: #000000"
+                    >9</span
+                  >
+                  }},&numsp;<span class="textcolor" style="color: #000000"
+                    >10</span
+                  >
+                  <span class="textcolor" style="color: #000000"
+                    ><a href="tikz-paths#pgf.--">--</a></span
+                  >
+                  <span class="textcolor" style="color: #000000">11</span>
+                  <span class="textcolor" style="color: #000000"
+                    ><a href="tikz-paths#pgf.--">--</a></span
+                  >
+                  {&numsp;<span class="textcolor" style="color: #000000"
+                    >12</span
+                  >,&numsp;<span class="textcolor" style="color: #000000"
+                    >13</span
+                  >
+                  }&numsp;}<br />
+                  &numsp;&numsp;};<br />
+                </code>
+              </div>
+            </figure>
+          </div>
+
+          <div class="manualentry">
+            <div class="entryheadline">
+              <p>
+                <a id="pgf.missing:nodes:get:space"></a>
+                <span class="hl-def"
+                  ><kbd
+                    >/graph drawing/<span
+                      class="textcolor"
+                      style="color: #bf0000"
+                      >missing nodes get space</span
+                    ><span class="textcolor" style="color: #008000"
+                      >=</span
+                    ></kbd
+                  ><span class="textcolor" style="color: #008000"
+                    ><span class="angle">&langle;</span><i>boolean</i
+                    ><span class="angle">&rangle;</span></span
+                  ></span
+                >&emsp;&emsp;(default <kbd>true</kbd>)
+                <a class="anchor-link" href="#pgf.missing:nodes:get:space"
+                  >&para;</a
+                >
+              </p>
+            </div>
+            <p>
+              When set to true, missing children are treated as if they where
+              zero-width, zero-height nodes during the whole tree layout
+              process.
+            </p>
+            <p>
+              <em>Example</em>
+            </p>
+
+            <figure class="example">
+              <div class="example-image">
+                <p>
+                  <span class="lateximagesource" id="lateximage-pgfmanual-1966"
+                    ><!--
+            a
+
+        b e
+
+    c f
+
+d g
+   -->
+                    <img
+                      alt="(-tikz-&nbsp;diagram)"
+                      class="lateximage"
+                      height="140.210"
+                      loading="lazy"
+                      src="pgfmanual-images/image-1966.png"
+                      style
+                      width="140.090"
+                  /></span>
+                </p>
+              </div>
+
+              <div class="example-code">
+                <button class="clipboardButton" type="button">copy</button>
+                <code>
+                  <br />
+                  <span class="textcolor" style="color: #0000b2"
+                    ><a href="tikz-scopes#pgf.back/tikz">\tikz</a></span
+                  >&numsp;<span class="textcolor" style="color: #0000b2"
+                    ><a href="tikz-graphs#pgf.back/graph">\graph</a></span
+                  >&numsp;[<span class="textcolor" style="color: #008000"
+                    ><a href="gd-trees#pgf.tree:layout">tree layout</a></span
+                  >,&numsp;<span class="textcolor" style="color: #008000"
+                    ><a href="gd-trees#pgf.missing:nodes:get:space"
+                      >missing nodes get space</a
+                    ></span
+                  >,<br />
+                  &numsp;&numsp;&numsp;&numsp;&numsp;&numsp;&numsp;&numsp;&numsp;&numsp;&numsp;&numsp;&numsp;&numsp;<span
+                    class="textcolor"
+                    style="color: #008000"
+                    ><a href="gd-trees#pgf.minimum:number:of:children"
+                      >minimum number of children</a
+                    ></span
+                  >=<span class="textcolor" style="color: #008000">2</span
+                  >,&numsp;<span class="textcolor" style="color: #008000"
+                    ><a href="tikz-graphs#pgf.nodes">nodes</a></span
+                  >=<span class="textcolor" style="color: #008000"
+                    >{<a href="tikz-actions#pgf.draw">draw</a>,<a
+                      href="tikz-paths#pgf.circle"
+                      >circle</a
+                    >}</span
+                  >]<br />
+                  {&numsp;<span class="textcolor" style="color: #000000"
+                    >a</span
+                  >
+                  <span class="textcolor" style="color: #000000"
+                    ><a href="tikz-graphs#pgf.-&gt;">-&gt;</a></span
+                  >
+                  {&numsp;<span class="textcolor" style="color: #000000"
+                    >b</span
+                  >
+                  <span class="textcolor" style="color: #000000"
+                    ><a href="tikz-graphs#pgf.-&gt;">-&gt;</a></span
+                  >
+                  <span class="textcolor" style="color: #000000">c</span>
+                  <span class="textcolor" style="color: #000000"
+                    ><a href="tikz-graphs#pgf.-&gt;">-&gt;</a></span
+                  >
+                  <span class="textcolor" style="color: #000000">d</span
+                  >,&numsp;<span class="textcolor" style="color: #000000"
+                    >e</span
+                  >
+                  <span class="textcolor" style="color: #000000"
+                    ><a href="tikz-graphs#pgf.-&gt;">-&gt;</a></span
+                  >
+                  <span class="textcolor" style="color: #000000">f</span>
+                  <span class="textcolor" style="color: #000000"
+                    ><a href="tikz-graphs#pgf.-&gt;">-&gt;</a></span
+                  >
+                  <span class="textcolor" style="color: #000000">g</span>
+                  }&numsp;};<br />
+                </code>
+              </div>
+            </figure>
+          </div>
+
+          <div class="manualentry">
+            <div class="entryheadline">
+              <p>
+                <a id="pgf.significant:sep"></a>
+                <span class="hl-def"
+                  ><kbd
+                    >/graph drawing/<span
+                      class="textcolor"
+                      style="color: #bf0000"
+                      >significant sep</span
+                    ><span class="textcolor" style="color: #008000"
+                      >=</span
+                    ></kbd
+                  ><span class="textcolor" style="color: #008000"
+                    ><span class="angle">&langle;</span><i>length</i
+                    ><span class="angle">&rangle;</span></span
+                  ></span
+                >&emsp;&emsp;(initially <kbd>0</kbd>)
+                <a class="anchor-link" href="#pgf.significant:sep">&para;</a>
+              </p>
+            </div>
+            <p>
+              This space is added to significant pairs by the modified
+              Reingold&ndash;Tilford algorithm.
+            </p>
+            <p>
+              <em>Example</em>
+            </p>
+
+            <figure class="example">
+              <div class="example-image">
+                <p>
+                  <span class="lateximagesource" id="lateximage-pgfmanual-1967"
+                    ><!--
+-->
+                    <img
+                      alt="(-tikz-&nbsp;diagram)"
+                      class="lateximage"
+                      height="85.826"
+                      loading="lazy"
+                      src="pgfmanual-images/image-1967.png"
+                      style
+                      width="84.062" /></span
+                  >&emsp;<span
+                    class="lateximagesource"
+                    id="lateximage-pgfmanual-1968"
+                    ><!--
+   -->
+                    <img
+                      alt="(-tikz-&nbsp;diagram)"
+                      class="lateximage"
+                      height="85.826"
+                      loading="lazy"
+                      src="pgfmanual-images/image-1968.png"
+                      style
+                      width="70.776"
+                  /></span>
+                </p>
+              </div>
+
+              <div class="example-code">
+                <button class="clipboardButton" type="button">copy</button>
+                <code>
+                  <br />
+                  <span class="textcolor" style="color: #0000b2"
+                    ><a href="tikz-scopes#pgf.back/tikz">\tikz</a></span
+                  >&numsp;[<span class="textcolor" style="color: #008000"
+                    ><a href="tikz-scopes#pgf.baseline">baseline</a></span
+                  >=<span class="textcolor" style="color: #008000"
+                    ><span class="textcolor" style="color: #800080"
+                      >(a.base)</span
+                    ></span
+                  >,&numsp;<span class="textcolor" style="color: #008000"
+                    ><a href="gd-trees#pgf.tree:layout">tree layout</a></span
+                  >,&numsp;<span class="textcolor" style="color: #008000"
+                    ><a href="gd-trees#pgf.significant:sep"
+                      >significant sep</a
+                    ></span
+                  >=<span class="textcolor" style="color: #008000">1em</span
+                  >,<br />
+                  &numsp;&numsp;&numsp;&numsp;&numsp;&numsp;&numsp;<span
+                    class="textcolor"
+                    style="color: #008000"
+                    ><a href="gd-trees#pgf.minimum:number:of:children"
+                      >minimum number of children</a
+                    ></span
+                  >=<span class="textcolor" style="color: #008000">2</span
+                  >,<br />
+                  &numsp;&numsp;&numsp;&numsp;&numsp;&numsp;&numsp;<span
+                    class="textcolor"
+                    style="color: #008000"
+                    ><a href="tikz-trees#pgf.sibling:distance"
+                      >sibling distance</a
+                    ></span
+                  >=<span class="textcolor" style="color: #008000">5mm</span
+                  >,&numsp;<span class="textcolor" style="color: #008000"
+                    ><a href="tikz-trees#pgf.level:distance"
+                      >level distance</a
+                    ></span
+                  >=<span class="textcolor" style="color: #008000">5mm</span
+                  >]<br />
+                  &numsp;&numsp;<span class="textcolor" style="color: #0000b2"
+                    ><a href="tikz-graphs#pgf.back/graph">\graph</a></span
+                  >&numsp;[<span class="textcolor" style="color: #008000"
+                    ><a href="tikz-graphs#pgf.nodes">nodes</a></span
+                  >=<span class="textcolor" style="color: #008000"
+                    >{<a href="tikz-paths#pgf.circle">circle</a>,&numsp;inner
+                    sep=0pt,&numsp;minimum size=2mm,&numsp;<a
+                      href="tikz-actions#pgf.fill"
+                      >fill</a
+                    >,&numsp;as=}</span
+                  >]{<br />
+                  &numsp;&numsp;&numsp;&numsp;<span
+                    class="textcolor"
+                    style="color: #000000"
+                    >a</span
+                  >
+                  <span class="textcolor" style="color: #000000"
+                    ><a href="tikz-paths#pgf.--">--</a></span
+                  >
+                  {&numsp;<span class="textcolor" style="color: #000000"
+                    >b</span
+                  >
+                  <span class="textcolor" style="color: #000000"
+                    ><a href="tikz-paths#pgf.--">--</a></span
+                  >
+                  <span class="textcolor" style="color: #000000">c</span>
+                  <span class="textcolor" style="color: #000000"
+                    ><a href="tikz-paths#pgf.--">--</a></span
+                  >
+                  {&numsp;<span class="textcolor" style="color: #000000"
+                    >d</span
+                  >
+                  <span class="textcolor" style="color: #000000"
+                    ><a href="tikz-paths#pgf.--">--</a></span
+                  >
+                  <span class="textcolor" style="color: #000000">e</span
+                  >,&numsp;<span class="textcolor" style="color: #000000"
+                    >f</span
+                  >
+                  <span class="textcolor" style="color: #000000"
+                    ><a href="tikz-paths#pgf.--">--</a></span
+                  >
+                  {&numsp;<span class="textcolor" style="color: #000000">g</span
+                  >,&numsp;<span class="textcolor" style="color: #000000"
+                    >h</span
+                  >
+                  }},&numsp;<span class="textcolor" style="color: #000000"
+                    >i</span
+                  >
+                  <span class="textcolor" style="color: #000000"
+                    ><a href="tikz-paths#pgf.--">--</a></span
+                  >
+                  <span class="textcolor" style="color: #000000">j</span>
+                  <span class="textcolor" style="color: #000000"
+                    ><a href="tikz-paths#pgf.--">--</a></span
+                  >
+                  <span class="textcolor" style="color: #000000">k</span>[<span
+                    class="textcolor"
+                    style="color: #008000"
+                    ><a href="gd-trees#pgf.second">second</a></span
+                  >]&numsp;}<br />
+                  &numsp;&numsp;};<span class="textcolor" style="color: #0000b2"
+                    >\quad</span
+                  ><br />
+                  <span class="textcolor" style="color: #0000b2"
+                    ><a href="tikz-scopes#pgf.back/tikz">\tikz</a></span
+                  >&numsp;[<span class="textcolor" style="color: #008000"
+                    ><a href="tikz-scopes#pgf.baseline">baseline</a></span
+                  >=<span class="textcolor" style="color: #008000"
+                    ><span class="textcolor" style="color: #800080"
+                      >(a.base)</span
+                    ></span
+                  >,&numsp;<span class="textcolor" style="color: #008000"
+                    ><a href="gd-trees#pgf.tree:layout">tree layout</a></span
+                  >,&numsp;<span class="textcolor" style="color: #008000"
+                    ><a href="gd-trees#pgf.significant:sep"
+                      >significant sep</a
+                    ></span
+                  >=<span class="textcolor" style="color: #008000">1em</span
+                  >,<br />
+                  &numsp;&numsp;&numsp;&numsp;&numsp;&numsp;&numsp;<span
+                    class="textcolor"
+                    style="color: #008000"
+                    ><a href="gd-trees#pgf.minimum:number:of:children"
+                      >minimum number of children</a
+                    ></span
+                  >=<span class="textcolor" style="color: #008000">2</span
+                  >,<br />
+                  &numsp;&numsp;&numsp;&numsp;&numsp;&numsp;&numsp;<span
+                    class="textcolor"
+                    style="color: #008000"
+                    ><a href="tikz-trees#pgf.sibling:distance"
+                      >sibling distance</a
+                    ></span
+                  >=<span class="textcolor" style="color: #008000">5mm</span
+                  >,&numsp;<span class="textcolor" style="color: #008000"
+                    ><a href="tikz-trees#pgf.level:distance"
+                      >level distance</a
+                    ></span
+                  >=<span class="textcolor" style="color: #008000">5mm</span
+                  >]<br />
+                  &numsp;&numsp;<span class="textcolor" style="color: #0000b2"
+                    ><a href="tikz-graphs#pgf.back/graph">\graph</a></span
+                  >&numsp;[<span class="textcolor" style="color: #008000"
+                    ><a href="tikz-graphs#pgf.nodes">nodes</a></span
+                  >=<span class="textcolor" style="color: #008000"
+                    >{<a href="tikz-paths#pgf.circle">circle</a>,&numsp;inner
+                    sep=0pt,&numsp;minimum size=2mm,&numsp;<a
+                      href="tikz-actions#pgf.fill"
+                      >fill</a
+                    >,&numsp;as=}</span
+                  >]{<br />
+                  &numsp;&numsp;&numsp;&numsp;<span
+                    class="textcolor"
+                    style="color: #000000"
+                    >a</span
+                  >
+                  <span class="textcolor" style="color: #000000"
+                    ><a href="tikz-paths#pgf.--">--</a></span
+                  >
+                  {&numsp;<span class="textcolor" style="color: #000000"
+                    >b</span
+                  >
+                  <span class="textcolor" style="color: #000000"
+                    ><a href="tikz-paths#pgf.--">--</a></span
+                  >
+                  <span class="textcolor" style="color: #000000">c</span>
+                  <span class="textcolor" style="color: #000000"
+                    ><a href="tikz-paths#pgf.--">--</a></span
+                  >
+                  <span class="textcolor" style="color: #000000">d</span>
+                  <span class="textcolor" style="color: #000000"
+                    ><a href="tikz-paths#pgf.--">--</a></span
+                  >
+                  <span class="textcolor" style="color: #000000">e</span
+                  >,&numsp;<span class="textcolor" style="color: #000000"
+                    >i</span
+                  >
+                  <span class="textcolor" style="color: #000000"
+                    ><a href="tikz-paths#pgf.--">--</a></span
+                  >
+                  <span class="textcolor" style="color: #000000">j</span>
+                  <span class="textcolor" style="color: #000000"
+                    ><a href="tikz-paths#pgf.--">--</a></span
+                  >
+                  {&numsp;<span class="textcolor" style="color: #000000"
+                    >f</span
+                  >
+                  <span class="textcolor" style="color: #000000"
+                    ><a href="tikz-paths#pgf.--">--</a></span
+                  >
+                  {<span class="textcolor" style="color: #000000">g</span>,<span
+                    class="textcolor"
+                    style="color: #000000"
+                    >h</span
+                  >},&numsp;<span class="textcolor" style="color: #000000"
+                    >k</span
+                  >
+                  }&numsp;}<br />
+                  &numsp;&numsp;};<br />
+                </code>
+              </div>
+            </figure>
+          </div>
+
+          <div class="manualentry">
+            <div class="entryheadline">
+              <p>
+                <a id="pgf.binary:tree:layout"></a>
+                <span class="hl-def"
+                  ><kbd
+                    >/graph drawing/<span
+                      class="textcolor"
+                      style="color: #bf0000"
+                      >binary tree layout</span
+                    ><span class="textcolor" style="color: #008000"
+                      >=</span
+                    ></kbd
+                  ><span class="textcolor" style="color: #008000"
+                    ><span class="angle">&langle;</span><i>string</i
+                    ><span class="angle">&rangle;</span></span
+                  ></span
+                >&emsp;&emsp;
+                <a class="anchor-link" href="#pgf.binary:tree:layout">&para;</a>
+              </p>
+            </div>
+            <p>
+              A layout based on the Reingold&ndash;Tilford method for drawing
+              binary trees. This key executes:
+            </p>
+
+            <p>
+              1. <span class="texttt">tree layout</span>, thereby selecting the
+              Reingold&ndash;Tilford method, 2.
+              <span class="texttt">minimum number of children=2</span>, thereby
+              ensuring the all nodes have (at least) two children or none at
+              all, and 3. <span class="texttt">significant sep=10pt</span> to
+              highlight significant pairs. In the examples, the last one is
+              taken from the paper of Br&uuml;ggemann-Klein and Wood. It
+              demonstrates nicely the advantages of having the full power of
+              <span class="tikzname">TikZ</span>&rsquo;s anchoring and the graph
+              drawing engine&rsquo;s orientation mechanisms at one&rsquo;s
+              disposal.
+            </p>
+            <p>
+              <em>Examples</em>
+            </p>
+
+            <figure class="example">
+              <div class="example-image">
+                <p>
+                  <span class="lateximagesource" id="lateximage-pgfmanual-1969"
+                    ><!--
+e g h
+
+    d f k
+
+        c j
+
+            b i
+                    a
+-->
+                    <img
+                      alt="(-tikz-&nbsp;diagram)"
+                      class="lateximage"
+                      height="121.754"
+                      loading="lazy"
+                      src="pgfmanual-images/image-1969.png"
+                      style
+                      width="102.218"
+                  /></span>
+                </p>
+              </div>
+
+              <div class="example-code">
+                <button class="clipboardButton" type="button">copy</button>
+                <code>
+                  <br />
+                  <span class="textcolor" style="color: #0000b2"
+                    ><a href="tikz-scopes#pgf.back/tikz">\tikz</a></span
+                  >&numsp;[<span class="textcolor" style="color: #008000"
+                    ><a href="tikz-trees#pgf.grow'">grow'</a></span
+                  >=<span class="textcolor" style="color: #008000">up</span
+                  >,&numsp;<span class="textcolor" style="color: #008000"
+                    ><a href="gd-trees#pgf.binary:tree:layout"
+                      >binary tree layout</a
+                    ></span
+                  >,&numsp;<span class="textcolor" style="color: #008000"
+                    ><a href="tikz-trees#pgf.sibling:distance"
+                      >sibling distance</a
+                    ></span
+                  >=<span class="textcolor" style="color: #008000">7mm</span
+                  >,&numsp;<span class="textcolor" style="color: #008000"
+                    ><a href="tikz-trees#pgf.level:distance"
+                      >level distance</a
+                    ></span
+                  >=<span class="textcolor" style="color: #008000">7mm</span
+                  >]<br />
+                  &numsp;&numsp;<span class="textcolor" style="color: #0000b2"
+                    ><a href="tikz-graphs#pgf.back/graph">\graph</a></span
+                  >&numsp;{<br />
+                  &numsp;&numsp;&numsp;&numsp;<span
+                    class="textcolor"
+                    style="color: #000000"
+                    >a</span
+                  >
+                  <span class="textcolor" style="color: #000000"
+                    ><a href="tikz-paths#pgf.--">--</a></span
+                  >
+                  {&numsp;<span class="textcolor" style="color: #000000"
+                    >b</span
+                  >
+                  <span class="textcolor" style="color: #000000"
+                    ><a href="tikz-paths#pgf.--">--</a></span
+                  >
+                  <span class="textcolor" style="color: #000000">c</span>
+                  <span class="textcolor" style="color: #000000"
+                    ><a href="tikz-paths#pgf.--">--</a></span
+                  >
+                  {&numsp;<span class="textcolor" style="color: #000000"
+                    >d</span
+                  >
+                  <span class="textcolor" style="color: #000000"
+                    ><a href="tikz-paths#pgf.--">--</a></span
+                  >
+                  <span class="textcolor" style="color: #000000">e</span
+                  >,&numsp;<span class="textcolor" style="color: #000000"
+                    >f</span
+                  >
+                  <span class="textcolor" style="color: #000000"
+                    ><a href="tikz-paths#pgf.--">--</a></span
+                  >
+                  {&numsp;<span class="textcolor" style="color: #000000">g</span
+                  >,&numsp;<span class="textcolor" style="color: #000000"
+                    >h</span
+                  >
+                  }},&numsp;<span class="textcolor" style="color: #000000"
+                    >i</span
+                  >
+                  <span class="textcolor" style="color: #000000"
+                    ><a href="tikz-paths#pgf.--">--</a></span
+                  >
+                  <span class="textcolor" style="color: #000000">j</span>
+                  <span class="textcolor" style="color: #000000"
+                    ><a href="tikz-paths#pgf.--">--</a></span
+                  >
+                  <span class="textcolor" style="color: #000000">k</span>[<span
+                    class="textcolor"
+                    style="color: #008000"
+                    ><a href="gd-trees#pgf.second">second</a></span
+                  >]&numsp;}<br />
+                  &numsp;&numsp;};<br />
+                </code>
+              </div>
+            </figure>
+
+            <figure class="example">
+              <div class="example-image">
+                <p>
+                  <span class="lateximagesource" id="lateximage-pgfmanual-1970"
+                    ><!--
+         Knuth
+
+Beeton Tobin
+
+ Kellermann Plass
+
+Carnes Lamport Spivak
+-->
+                    <img
+                      alt="(-tikz-&nbsp;diagram)"
+                      class="lateximage"
+                      height="126.578"
+                      loading="lazy"
+                      src="pgfmanual-images/image-1970.png"
+                      style
+                      width="205.418" /></span
+                  >&emsp;&emsp;<span
+                    class="lateximagesource"
+                    id="lateximage-pgfmanual-1971"
+                    ><!--
+        Beeton Carnes
+                 Kellermann
+Knuth Lamport
+                 Plass
+        Tobin Spivak
+   -->
+                    <img
+                      alt="(-tikz-&nbsp;diagram)"
+                      class="lateximage"
+                      height="118.970"
+                      loading="lazy"
+                      src="pgfmanual-images/image-1971.png"
+                      style
+                      width="356.775"
+                  /></span>
+                </p>
+              </div>
+
+              <div class="example-code">
+                <button class="clipboardButton" type="button">copy</button>
+                <code>
+                  <br />
+                  <span class="textcolor" style="color: #0000b2"
+                    ><a href="tikz-scopes#pgf.back/tikz">\tikz</a></span
+                  >&numsp;<span class="textcolor" style="color: #0000b2"
+                    ><a href="tikz-graphs#pgf.back/graph">\graph</a></span
+                  >&numsp;[<span class="textcolor" style="color: #008000"
+                    ><a href="gd-trees#pgf.binary:tree:layout"
+                      >binary tree layout</a
+                    ></span
+                  >]&numsp;{<br />
+                  &numsp;&numsp;<span class="textcolor" style="color: #000000"
+                    >Knuth</span
+                  >
+                  <span class="textcolor" style="color: #000000"
+                    ><a href="tikz-graphs#pgf.-&gt;">-&gt;</a></span
+                  >
+                  {<br />
+                  &numsp;&numsp;&numsp;&numsp;<span
+                    class="textcolor"
+                    style="color: #000000"
+                    >Beeton</span
+                  >
+                  <span class="textcolor" style="color: #000000"
+                    ><a href="tikz-graphs#pgf.-&gt;">-&gt;</a></span
+                  >
+                  <span class="textcolor" style="color: #000000"
+                    >Kellermann</span
+                  >
+                  [<span class="textcolor" style="color: #008000"
+                    ><a href="gd-trees#pgf.second">second</a></span
+                  >]&numsp;<span class="textcolor" style="color: #000000"
+                    ><a href="tikz-graphs#pgf.-&gt;">-&gt;</a></span
+                  >
+                  <span class="textcolor" style="color: #000000">Carnes</span
+                  >,<br />
+                  &numsp;&numsp;&numsp;&numsp;<span
+                    class="textcolor"
+                    style="color: #000000"
+                    >Tobin</span
+                  >
+                  <span class="textcolor" style="color: #000000"
+                    ><a href="tikz-graphs#pgf.-&gt;">-&gt;</a></span
+                  >
+                  <span class="textcolor" style="color: #000000">Plass</span>
+                  <span class="textcolor" style="color: #000000"
+                    ><a href="tikz-graphs#pgf.-&gt;">-&gt;</a></span
+                  >
+                  {&numsp;<span class="textcolor" style="color: #000000"
+                    >Lamport</span
+                  >,&numsp;<span class="textcolor" style="color: #000000"
+                    >Spivak</span
+                  >
+                  }<br />
+                  &numsp;&numsp;}<br />
+                  };<span class="textcolor" style="color: #0000b2">\qquad</span
+                  ><br />
+                  <span class="textcolor" style="color: #0000b2"
+                    ><a href="tikz-scopes#pgf.back/tikz">\tikz</a></span
+                  >&numsp;[<span class="textcolor" style="color: #008000"
+                    ><a href="tikz-arrows#pgf.&gt;">&gt;</a></span
+                  >=<span class="textcolor" style="color: #008000"
+                    >{Stealth[<span class="textcolor" style="color: #008000"
+                      ><a href="tikz-arrows#pgf.round">round</a></span
+                    >,<span class="textcolor" style="color: #008000"
+                      ><a href="tikz-arrows#pgf.sep">sep</a></span
+                    >]}</span
+                  >]<br />
+                  &numsp;&numsp;<span class="textcolor" style="color: #0000b2"
+                    ><a href="tikz-graphs#pgf.back/graph">\graph</a></span
+                  >&numsp;[<span class="textcolor" style="color: #008000"
+                    ><a href="gd-trees#pgf.binary:tree:layout"
+                      >binary tree layout</a
+                    ></span
+                  >,&numsp;<span class="textcolor" style="color: #008000"
+                    ><a href="tikz-trees#pgf.grow'">grow'</a></span
+                  >=<span class="textcolor" style="color: #008000"
+                    ><a href="tikz-arrows#pgf.right">right</a></span
+                  >,&numsp;<span class="textcolor" style="color: #008000"
+                    ><a href="gd-usage-tikz#pgf.level:sep">level sep</a></span
+                  >=<span class="textcolor" style="color: #008000">1.5em</span
+                  >,<br />
+                  &numsp;&numsp;&numsp;&numsp;&numsp;&numsp;&numsp;&numsp;&numsp;&numsp;<span
+                    class="textcolor"
+                    style="color: #008000"
+                    ><a href="tikz-graphs#pgf.nodes">nodes</a></span
+                  >=<span class="textcolor" style="color: #008000"
+                    >{<a href="tikz-arrows#pgf.right">right</a
+                    >,&numsp;fill=blue!50,&numsp;text=white,&numsp;chamfered
+                    <a href="tikz-paths#pgf.rectangle">rectangle</a>}</span
+                  >,<br />
+                  &numsp;&numsp;&numsp;&numsp;&numsp;&numsp;&numsp;&numsp;&numsp;&numsp;&numsp;&numsp;&numsp;&numsp;&numsp;&numsp;&numsp;<span
+                    class="textcolor"
+                    style="color: #008000"
+                    ><a href="tikz-graphs#pgf.edges">edges</a></span
+                  >=<span class="textcolor" style="color: #008000"
+                    >{<a href="tikz-decorations#pgf.decorate">decorate</a
+                    >,decoration={snake,&numsp;<a
+                      href="tikz-decorations#pgf.post"
+                      >post</a
+                    >
+                    length=5pt}}</span
+                  >]<br />
+                  &numsp;&numsp;{<br />
+                  &numsp;&numsp;&numsp;&numsp;<span
+                    class="textcolor"
+                    style="color: #000000"
+                    >Knuth</span
+                  >
+                  <span class="textcolor" style="color: #000000"
+                    ><a href="tikz-graphs#pgf.-&gt;">-&gt;</a></span
+                  >
+                  {<br />
+                  &numsp;&numsp;&numsp;&numsp;&numsp;&numsp;<span
+                    class="textcolor"
+                    style="color: #000000"
+                    >Beeton</span
+                  >
+                  <span class="textcolor" style="color: #000000"
+                    ><a href="tikz-graphs#pgf.-&gt;">-&gt;</a></span
+                  >
+                  <span class="textcolor" style="color: #000000"
+                    >Kellermann</span
+                  >
+                  [<span class="textcolor" style="color: #008000"
+                    ><a href="gd-trees#pgf.second">second</a></span
+                  >]&numsp;<span class="textcolor" style="color: #000000"
+                    ><a href="tikz-graphs#pgf.-&gt;">-&gt;</a></span
+                  >
+                  <span class="textcolor" style="color: #000000">Carnes</span
+                  >,<br />
+                  &numsp;&numsp;&numsp;&numsp;&numsp;&numsp;<span
+                    class="textcolor"
+                    style="color: #000000"
+                    >Tobin</span
+                  >
+                  <span class="textcolor" style="color: #000000"
+                    ><a href="tikz-graphs#pgf.-&gt;">-&gt;</a></span
+                  >
+                  <span class="textcolor" style="color: #000000">Plass</span>
+                  <span class="textcolor" style="color: #000000"
+                    ><a href="tikz-graphs#pgf.-&gt;">-&gt;</a></span
+                  >
+                  {&numsp;<span class="textcolor" style="color: #000000"
+                    >Lamport</span
+                  >,&numsp;<span class="textcolor" style="color: #000000"
+                    >Spivak</span
+                  >
+                  }<br />
+                  &numsp;&numsp;&numsp;&numsp;}<br />
+                  &numsp;&numsp;};<br />
+                </code>
+              </div>
+            </figure>
+          </div>
+
+          <div class="manualentry">
+            <div class="entryheadline">
+              <p>
+                <a id="pgf.extended:binary:tree:layout"></a>
+                <span class="hl-def"
+                  ><kbd
+                    >/graph drawing/<span
+                      class="textcolor"
+                      style="color: #bf0000"
+                      >extended binary tree layout</span
+                    ><span class="textcolor" style="color: #008000"
+                      >=</span
+                    ></kbd
+                  ><span class="textcolor" style="color: #008000"
+                    ><span class="angle">&langle;</span><i>string</i
+                    ><span class="angle">&rangle;</span></span
+                  ></span
+                >&emsp;&emsp;
+                <a class="anchor-link" href="#pgf.extended:binary:tree:layout"
+                  >&para;</a
+                >
+              </p>
+            </div>
+            <p>
+              This algorithm is similar to
+              <span class="texttt">binary tree layout</span>, only the option
+              <kbd>missing nodes get space</kbd> is executed and the
+              <kbd>significant sep</kbd> is zero.
+            </p>
+            <p>
+              <em>Example</em>
+            </p>
+
+            <figure class="example">
+              <div class="example-image">
+                <p>
+                  <span class="lateximagesource" id="lateximage-pgfmanual-1972"
+                    ><!--
+e g h
+
+    d f k
+
+        c j
+
+            b i
+                    a
+-->
+                    <img
+                      alt="(-tikz-&nbsp;diagram)"
+                      class="lateximage"
+                      height="121.754"
+                      loading="lazy"
+                      src="pgfmanual-images/image-1972.png"
+                      style
+                      width="128.570"
+                  /></span>
+                </p>
+              </div>
+
+              <div class="example-code">
+                <button class="clipboardButton" type="button">copy</button>
+                <code>
+                  <br />
+                  <span class="textcolor" style="color: #0000b2"
+                    ><a href="tikz-scopes#pgf.back/tikz">\tikz</a></span
+                  >&numsp;[<span class="textcolor" style="color: #008000"
+                    ><a href="tikz-trees#pgf.grow'">grow'</a></span
+                  >=<span class="textcolor" style="color: #008000">up</span
+                  >,&numsp;<span class="textcolor" style="color: #008000"
+                    ><a href="gd-trees#pgf.extended:binary:tree:layout"
+                      >extended binary tree layout</a
+                    ></span
+                  >,<br />
+                  &numsp;&numsp;&numsp;&numsp;&numsp;&numsp;&numsp;<span
+                    class="textcolor"
+                    style="color: #008000"
+                    ><a href="tikz-trees#pgf.sibling:distance"
+                      >sibling distance</a
+                    ></span
+                  >=<span class="textcolor" style="color: #008000">7mm</span
+                  >,&numsp;<span class="textcolor" style="color: #008000"
+                    ><a href="tikz-trees#pgf.level:distance"
+                      >level distance</a
+                    ></span
+                  >=<span class="textcolor" style="color: #008000">7mm</span
+                  >]<br />
+                  &numsp;&numsp;<span class="textcolor" style="color: #0000b2"
+                    ><a href="tikz-graphs#pgf.back/graph">\graph</a></span
+                  >&numsp;{<br />
+                  &numsp;&numsp;&numsp;&numsp;<span
+                    class="textcolor"
+                    style="color: #000000"
+                    >a</span
+                  >
+                  <span class="textcolor" style="color: #000000"
+                    ><a href="tikz-paths#pgf.--">--</a></span
+                  >
+                  {&numsp;<span class="textcolor" style="color: #000000"
+                    >b</span
+                  >
+                  <span class="textcolor" style="color: #000000"
+                    ><a href="tikz-paths#pgf.--">--</a></span
+                  >
+                  <span class="textcolor" style="color: #000000">c</span>
+                  <span class="textcolor" style="color: #000000"
+                    ><a href="tikz-paths#pgf.--">--</a></span
+                  >
+                  {&numsp;<span class="textcolor" style="color: #000000"
+                    >d</span
+                  >
+                  <span class="textcolor" style="color: #000000"
+                    ><a href="tikz-paths#pgf.--">--</a></span
+                  >
+                  <span class="textcolor" style="color: #000000">e</span
+                  >,&numsp;<span class="textcolor" style="color: #000000"
+                    >f</span
+                  >
+                  <span class="textcolor" style="color: #000000"
+                    ><a href="tikz-paths#pgf.--">--</a></span
+                  >
+                  {&numsp;<span class="textcolor" style="color: #000000">g</span
+                  >,&numsp;<span class="textcolor" style="color: #000000"
+                    >h</span
+                  >
+                  }},&numsp;<span class="textcolor" style="color: #000000"
+                    >i</span
+                  >
+                  <span class="textcolor" style="color: #000000"
+                    ><a href="tikz-paths#pgf.--">--</a></span
+                  >
+                  <span class="textcolor" style="color: #000000">j</span>
+                  <span class="textcolor" style="color: #000000"
+                    ><a href="tikz-paths#pgf.--">--</a></span
+                  >
+                  <span class="textcolor" style="color: #000000">k</span>[<span
+                    class="textcolor"
+                    style="color: #008000"
+                    ><a href="gd-trees#pgf.second">second</a></span
+                  >]&numsp;}<br />
+                  &numsp;&numsp;};<br />
+                </code>
+              </div>
+            </figure>
+          </div>
+          <h5 id="autosec-4644">
+            <a id="section-gd-missing-children"></a
+            ><span class="sectionnumber" id="sec-30.2">30.2&emsp;</span
+            >Specifying Missing Children<a class="anchor-link" href="#sec-30.2"
+              >&para;</a
+            >
+          </h5>
+          <a id="pgfmanual-autopage-4644"></a>
+
+          <p>
+            In the present section we discuss keys for specifying missing
+            children in a tree. For many certain kind of trees, in particular
+            for binary trees, there are not just &ldquo;a certain number of
+            children&rdquo; at each node, but, rather, there is a designated
+            &ldquo;first&rdquo; (or &ldquo;left&rdquo;) child and a
+            &ldquo;second&rdquo; (or &ldquo;right&rdquo;) child. Even if one of
+            these children is missing and a node actually has only one child,
+            the single child will still be a &ldquo;first&rdquo; or
+            &ldquo;second&rdquo; child and this information should be taken into
+            consideration when drawing a tree.
+          </p>
+
+          <p>
+            The first useful key for specifying missing children is
+            <span class="texttt">missing number of children</span> which allows
+            you to state how many children there are, at minimum.
+          </p>
+
+          <p>
+            Once the minimum number of children has been set, we still need a
+            way of specifying &ldquo;missing first children&rdquo; or, more
+            generally, missing children that are not &ldquo;at the end&rdquo; of
+            the list of children. For this, there are three methods:
+          </p>
+          <ul style="list-style-type: none">
+            <li>
+              <p>
+                1. When you use the <span class="texttt">child</span> syntax,
+                you can use the <span class="texttt">missing</span> key with the
+                <span class="texttt">child</span> command to indicate a missing
+                child:
+              </p>
+
+              <figure class="example">
+                <div class="example-image">
+                  <p>
+                    <span
+                      class="lateximagesource"
+                      id="lateximage-pgfmanual-1973"
+                      ><!--
+            a
+
+        b e
+
+    c f
+
+d g
+-->
+                      <img
+                        alt="(-tikz-&nbsp;diagram)"
+                        class="lateximage"
+                        height="91.346"
+                        loading="lazy"
+                        src="pgfmanual-images/image-1973.png"
+                        style
+                        width="123.386"
+                    /></span>
+                  </p>
+                </div>
+
+                <div class="example-code">
+                  <button class="clipboardButton" type="button">copy</button>
+                  <code>
+                    <span class="c- preamble"
+                      >\usetikzlibrary {graphs,graphdrawing} \usegdlibrary
+                      {trees} </span
+                    ><br />
+                    &numsp;<span class="textcolor" style="color: #0000b2"
+                      ><a href="tikz-scopes#pgf.back/tikz"> \tikz</a></span
+                    >&numsp;[<span class="textcolor" style="color: #008000"
+                      ><a href="gd-trees#pgf.binary:tree:layout">
+                        binary tree layout</a
+                      ></span
+                    >,&numsp;<span class="textcolor" style="color: #008000"
+                      ><a href="tikz-trees#pgf.level:distance">
+                        level distance</a
+                      ></span
+                    >=<span class="textcolor" style="color: #008000">5mm</span
+                    >]<br />
+                    &numsp;<span class="textcolor" style="color: #0000b2"
+                      ><a href="tikz-shapes#pgf.back/node"> \node</a></span
+                    >&numsp;{<span class="textcolor" style="color: #000000"
+                      >a</span
+                    >}<br />
+                    &numsp;<span class="textcolor" style="color: #000000"
+                      ><a href="tikz-trees#pgf.child"> child</a></span
+                    >
+                    {&numsp;<span class="textcolor" style="color: #000000"
+                      ><a href="tikz-coordinates#pgf.node"> node</a></span
+                    >
+                    {<span class="textcolor" style="color: #000000">b</span
+                    >}<br />
+                    &numsp;&numsp;&numsp;<span
+                      class="textcolor"
+                      style="color: #000000"
+                      ><a href="tikz-trees#pgf.child"> child</a></span
+                    >
+                    {&numsp;<span class="textcolor" style="color: #000000"
+                      ><a href="tikz-coordinates#pgf.node"> node</a></span
+                    >
+                    {<span class="textcolor" style="color: #000000">c</span
+                    >}<br />
+                    &numsp;&numsp;&numsp;&numsp;&numsp;<span
+                      class="textcolor"
+                      style="color: #000000"
+                      ><a href="tikz-trees#pgf.child"> child</a></span
+                    >
+                    {&numsp;<span class="textcolor" style="color: #000000"
+                      ><a href="tikz-coordinates#pgf.node"> node</a></span
+                    >
+                    {<span class="textcolor" style="color: #000000">d</span
+                    >}&numsp;}<br />
+                    &numsp;}&numsp;}<br />
+                    &numsp;<span class="textcolor" style="color: #000000"
+                      ><a href="tikz-trees#pgf.child"> child</a></span
+                    >
+                    {&numsp;<span class="textcolor" style="color: #000000"
+                      ><a href="tikz-coordinates#pgf.node"> node</a></span
+                    >
+                    {<span class="textcolor" style="color: #000000">e</span
+                    >}<br />
+                    &numsp;&numsp;&numsp;<span
+                      class="textcolor"
+                      style="color: #000000"
+                      ><a href="tikz-trees#pgf.child"> child</a></span
+                    >
+                    [<span class="textcolor" style="color: #008000"
+                      ><a href="tikz-trees#pgf.missing"> missing</a></span
+                    >]<br />
+                    &numsp;&numsp;&numsp;<span
+                      class="textcolor"
+                      style="color: #000000"
+                      ><a href="tikz-trees#pgf.child"> child</a></span
+                    >
+                    {&numsp;<span class="textcolor" style="color: #000000"
+                      ><a href="tikz-coordinates#pgf.node"> node</a></span
+                    >
+                    {<span class="textcolor" style="color: #000000">f</span
+                    >}<br />
+                    &numsp;&numsp;&numsp;&numsp;&numsp;<span
+                      class="textcolor"
+                      style="color: #000000"
+                      ><a href="tikz-trees#pgf.child"> child</a></span
+                    >
+                    [<span class="textcolor" style="color: #008000"
+                      ><a href="tikz-trees#pgf.missing"> missing</a></span
+                    >]<br />
+                    &numsp;&numsp;&numsp;&numsp;&numsp;<span
+                      class="textcolor"
+                      style="color: #000000"
+                      ><a href="tikz-trees#pgf.child"> child</a></span
+                    >
+                    {&numsp;<span class="textcolor" style="color: #000000"
+                      ><a href="tikz-coordinates#pgf.node"> node</a></span
+                    >
+                    {<span class="textcolor" style="color: #000000">g</span
+                    >}<br />
+                    &numsp;}&numsp;}&numsp;};<br />
+                    &numsp;
+                  </code>
+                </div>
+              </figure>
+            </li>
+            <li>
+              <p>
+                2. When using the <span class="texttt">graph</span> syntax, you
+                can use an &ldquo;empty node&rdquo;, which really must be
+                completely empty and may not even contain a slash, to indicate a
+                missing node:
+              </p>
+
+              <figure class="example">
+                <div class="example-image">
+                  <p>
+                    <span
+                      class="lateximagesource"
+                      id="lateximage-pgfmanual-1974"
+                      ><!--
+            a
+
+        b e
+
+    c f
+
+d g
+   -->
+                      <img
+                        alt="(-tikz-&nbsp;diagram)"
+                        class="lateximage"
+                        height="91.346"
+                        loading="lazy"
+                        src="pgfmanual-images/image-1974.png"
+                        style
+                        width="123.386"
+                    /></span>
+                  </p>
+                </div>
+
+                <div class="example-code">
+                  <button class="clipboardButton" type="button">copy</button>
+                  <code>
+                    <span class="c- preamble"
+                      >\usetikzlibrary {graphs,graphdrawing} \usegdlibrary
+                      {trees} </span
+                    ><br />
+                    &numsp;<span class="textcolor" style="color: #0000b2"
+                      ><a href="tikz-scopes#pgf.back/tikz"> \tikz</a></span
+                    >&numsp;[<span class="textcolor" style="color: #008000"
+                      ><a href="gd-trees#pgf.binary:tree:layout">
+                        binary tree layout</a
+                      ></span
+                    >,&numsp;<span class="textcolor" style="color: #008000"
+                      ><a href="tikz-trees#pgf.level:distance">
+                        level distance</a
+                      ></span
+                    >=<span class="textcolor" style="color: #008000">5mm</span
+                    >]<br />
+                    &numsp;<span class="textcolor" style="color: #0000b2"
+                      ><a href="tikz-graphs#pgf.back/graph"> \graph</a></span
+                    >&numsp;{&numsp;<span
+                      class="textcolor"
+                      style="color: #000000"
+                      >a</span
+                    >
+                    <span class="textcolor" style="color: #000000"
+                      ><a href="tikz-graphs#pgf.-&gt;"> -&gt;</a></span
+                    >
+                    {&numsp;<span class="textcolor" style="color: #000000"
+                      >b</span
+                    >
+                    <span class="textcolor" style="color: #000000"
+                      ><a href="tikz-graphs#pgf.-&gt;"> -&gt;</a></span
+                    >
+                    <span class="textcolor" style="color: #000000">c</span>
+                    <span class="textcolor" style="color: #000000"
+                      ><a href="tikz-graphs#pgf.-&gt;"> -&gt;</a></span
+                    >
+                    <span class="textcolor" style="color: #000000">d</span
+                    >,&numsp;<span class="textcolor" style="color: #000000"
+                      >e</span
+                    >
+                    <span class="textcolor" style="color: #000000"
+                      ><a href="tikz-graphs#pgf.-&gt;"> -&gt;</a></span
+                    >
+                    {&numsp;,&numsp;<span
+                      class="textcolor"
+                      style="color: #000000"
+                      >f</span
+                    >
+                    <span class="textcolor" style="color: #000000"
+                      ><a href="tikz-graphs#pgf.-&gt;"> -&gt;</a></span
+                    >
+                    {&numsp;,&numsp;<span
+                      class="textcolor"
+                      style="color: #000000"
+                      >g</span
+                    >}&numsp;}&numsp;}&numsp;};<br />
+                    &numsp;
+                  </code>
+                </div>
+              </figure>
+            </li>
+            <li>
+              <p>
+                3. You can simply specify the index of a child directly using
+                the key <span class="texttt">desired child index</span>.
+              </p>
+            </li>
+          </ul>
+
+          <div class="manualentry">
+            <div class="entryheadline">
+              <p>
+                <a id="pgf.minimum:number:of:children"></a>
+                <span class="hl-def"
+                  ><kbd
+                    >/graph drawing/<span
+                      class="textcolor"
+                      style="color: #bf0000"
+                      >minimum number of children</span
+                    ><span class="textcolor" style="color: #008000"
+                      >=</span
+                    ></kbd
+                  ><span class="textcolor" style="color: #008000"
+                    ><span class="angle">&langle;</span><i>number</i
+                    ><span class="angle">&rangle;</span></span
+                  ></span
+                >&emsp;&emsp;(initially <kbd>0</kbd>)
+                <a class="anchor-link" href="#pgf.minimum:number:of:children"
+                  >&para;</a
+                >
+              </p>
+            </div>
+            <p>
+              Specifies how many children a tree node must have at least. If
+              there are less, &ldquo;virtual&rdquo; children are added. When
+              this key is set to <span class="texttt">2</span> or more, the
+              following happens: We first compute a spanning tree for the graph,
+              see Section&nbsp;<a href="gd-trees#subsection-gd-spanning-tree"
+                >30.3</a
+              >. Then, whenever a node is not a leaf in this spanning tree (when
+              it has at least one child), we add &ldquo;virtual&rdquo; or
+              &ldquo;dummy&rdquo; nodes as children of the node until the total
+              number of real and dummy children is at least
+              <span class="angle">&langle;</span><i>number</i
+              ><span class="angle">&rangle;</span>. If there where at least
+              <span class="angle">&langle;</span><i>number</i
+              ><span class="angle">&rangle;</span> children at the beginning,
+              nothing happens.
+            </p>
+            <p>
+              The new children are added after the existing children. This means
+              that, for instance, in a tree with
+              <span class="angle">&langle;</span><i>number</i
+              ><span class="angle">&rangle;</span> set to
+              <span class="texttt">2</span>, for every node with a single child,
+              this child will be the first child and the second child will be
+              missing.
+            </p>
+            <p>
+              <em>Example</em>
+            </p>
+
+            <figure class="example">
+              <div class="example-image">
+                <p>
+                  <span class="lateximagesource" id="lateximage-pgfmanual-1975"
+                    ><!--
+                a
+
+        b e
+
+    c f
+
+d g
+   -->
+                    <img
+                      alt="(-tikz-&nbsp;diagram)"
+                      class="lateximage"
+                      height="91.346"
+                      loading="lazy"
+                      src="pgfmanual-images/image-1975.png"
+                      style
+                      width="98.354"
+                  /></span>
+                </p>
+              </div>
+
+              <div class="example-code">
+                <button class="clipboardButton" type="button">copy</button>
+                <code>
+                  <br />
+                  <span class="textcolor" style="color: #0000b2"
+                    ><a href="tikz-scopes#pgf.back/tikz">\tikz</a></span
+                  >&numsp;<span class="textcolor" style="color: #0000b2"
+                    ><a href="tikz-graphs#pgf.back/graph">\graph</a></span
+                  >&numsp;[<span class="textcolor" style="color: #008000"
+                    ><a href="gd-trees#pgf.binary:tree:layout"
+                      >binary tree layout</a
+                    ></span
+                  >,<span class="textcolor" style="color: #008000"
+                    ><a href="tikz-trees#pgf.level:distance"
+                      >level distance</a
+                    ></span
+                  >=<span class="textcolor" style="color: #008000">5mm</span
+                  >]<br />
+                  {&numsp;<span class="textcolor" style="color: #000000"
+                    >a</span
+                  >
+                  <span class="textcolor" style="color: #000000"
+                    ><a href="tikz-graphs#pgf.-&gt;">-&gt;</a></span
+                  >
+                  {&numsp;<span class="textcolor" style="color: #000000"
+                    >b-&gt;c-&gt;d</span
+                  >,&numsp;<span class="textcolor" style="color: #000000"
+                    >e-&gt;f-&gt;g</span
+                  >
+                  }&numsp;};<br />
+                </code>
+              </div>
+            </figure>
+          </div>
+
+          <div class="manualentry">
+            <div class="entryheadline">
+              <p>
+                <a id="pgf.desired:child:index"></a>
+                <span class="hl-def"
+                  ><kbd
+                    >/graph drawing/<span
+                      class="textcolor"
+                      style="color: #bf0000"
+                      >desired child index</span
+                    ><span class="textcolor" style="color: #008000"
+                      >=</span
+                    ></kbd
+                  ><span class="textcolor" style="color: #008000"
+                    ><span class="angle">&langle;</span><i>number</i
+                    ><span class="angle">&rangle;</span></span
+                  ></span
+                >&emsp;&emsp;
+                <a class="anchor-link" href="#pgf.desired:child:index"
+                  >&para;</a
+                >
+              </p>
+            </div>
+            <p>
+              Pass this key to a node to tell the graph drawing engine which
+              child number you &ldquo;desired&rdquo; for the node. Whenever all
+              desires for the children of a node are conflict-free, they will
+              all be met; children for which no desired indices were given will
+              remain at their position, whenever possible, but will &ldquo;make
+              way&rdquo; for children with a desired position. In detail, the
+              following happens: We first determine the total number of children
+              (real or dummy) needed, which is the maximum of the actual number
+              of children, of the <kbd>minimum number of children</kbd>, and of
+              the highest desired child index. Then we go over all children that
+              have a desired child index and put they at this position. If the
+              position is already taken (because some other child had the same
+              desired index), the next free position is used with a wrap-around
+              occurring at the end. Next, all children without a desired index
+              are place using the same mechanism, but they want to be placed at
+              the position they had in the original spanning tree.
+            </p>
+            <p>
+              While all of this might sound a bit complicated, the application
+              of the key in a binary tree is pretty straightforward: To indicate
+              that a node is a &ldquo;right&rdquo; child in a tree, just add
+              <kbd>desired child index=2</kbd> to it. This will make it a second
+              child, possibly causing the fist child to be missing. If there are
+              two nodes specified as children of a node, by saying
+              <kbd>desired child index=</kbd><span class="angle">&langle;</span
+              ><i>number</i><span class="angle">&rangle;</span> for one of them,
+              you will cause it be first or second child, depending on
+              <span class="angle">&langle;</span><i>number</i
+              ><span class="angle">&rangle;</span>, and cause the
+              <em>other</em> child to become the other child.
+            </p>
+            <p>
+              Since <span class="texttt">desired child index=2</span> is a bit
+              long, the following shortcuts are available:
+              <span class="texttt">first</span>,
+              <span class="texttt">second</span>,
+              <span class="texttt">third</span>, and
+              <span class="texttt">fourth</span>. You might wonder why
+              <span class="texttt">second</span> is used rather than
+              <span class="texttt">right</span>. The reason is that trees may
+              also grow left and right and, additionally, the
+              <span class="texttt">right</span> and
+              <span class="texttt">left</span> keys are already in use for
+              anchoring. Naturally, you can locally redefine them, if you want.
+            </p>
+            <p>
+              <em>Examples</em>
+            </p>
+
+            <figure class="example">
+              <div class="example-image">
+                <p>
+                  <span class="lateximagesource" id="lateximage-pgfmanual-1976"
+                    ><!--
+a
+
+    b
+-->
+                    <img
+                      alt="(-tikz-&nbsp;diagram)"
+                      class="lateximage"
+                      height="36.267"
+                      loading="lazy"
+                      src="pgfmanual-images/image-1976.png"
+                      style
+                      width="28.659"
+                  /></span>
+                </p>
+              </div>
+
+              <div class="example-code">
+                <button class="clipboardButton" type="button">copy</button>
+                <code>
+                  <br />
+                  <span class="textcolor" style="color: #0000b2"
+                    ><a href="tikz-scopes#pgf.back/tikz">\tikz</a></span
+                  >&numsp;<span class="textcolor" style="color: #0000b2"
+                    ><a href="tikz-graphs#pgf.back/graph">\graph</a></span
+                  >&numsp;[<span class="textcolor" style="color: #008000"
+                    ><a href="gd-trees#pgf.binary:tree:layout"
+                      >binary tree layout</a
+                    ></span
+                  >,&numsp;<span class="textcolor" style="color: #008000"
+                    ><a href="tikz-trees#pgf.level:distance"
+                      >level distance</a
+                    ></span
+                  >=<span class="textcolor" style="color: #008000">5mm</span
+                  >]<br />
+                  {&numsp;<span class="textcolor" style="color: #000000"
+                    >a</span
+                  >
+                  <span class="textcolor" style="color: #000000"
+                    ><a href="tikz-graphs#pgf.-&gt;">-&gt;</a></span
+                  >
+                  <span class="textcolor" style="color: #000000">b</span>[<span
+                    class="textcolor"
+                    style="color: #008000"
+                    ><a href="gd-trees#pgf.second">second</a></span
+                  >]&numsp;};<br />
+                </code>
+              </div>
+            </figure>
+
+            <figure class="example">
+              <div class="example-image">
+                <p>
+                  <span class="lateximagesource" id="lateximage-pgfmanual-1977"
+                    ><!--
+    a
+c b
+-->
+                    <img
+                      alt="(-tikz-&nbsp;diagram)"
+                      class="lateximage"
+                      height="36.267"
+                      loading="lazy"
+                      src="pgfmanual-images/image-1977.png"
+                      style
+                      width="47.067"
+                  /></span>
+                </p>
+              </div>
+
+              <div class="example-code">
+                <button class="clipboardButton" type="button">copy</button>
+                <code>
+                  <br />
+                  <span class="textcolor" style="color: #0000b2"
+                    ><a href="tikz-scopes#pgf.back/tikz">\tikz</a></span
+                  >&numsp;<span class="textcolor" style="color: #0000b2"
+                    ><a href="tikz-graphs#pgf.back/graph">\graph</a></span
+                  >&numsp;[<span class="textcolor" style="color: #008000"
+                    ><a href="gd-trees#pgf.binary:tree:layout"
+                      >binary tree layout</a
+                    ></span
+                  >,&numsp;<span class="textcolor" style="color: #008000"
+                    ><a href="tikz-trees#pgf.level:distance"
+                      >level distance</a
+                    ></span
+                  >=<span class="textcolor" style="color: #008000">5mm</span
+                  >]<br />
+                  {&numsp;<span class="textcolor" style="color: #000000"
+                    >a</span
+                  >
+                  <span class="textcolor" style="color: #000000"
+                    ><a href="tikz-graphs#pgf.-&gt;">-&gt;</a></span
+                  >
+                  {&numsp;<span class="textcolor" style="color: #000000">b</span
+                  >[<span class="textcolor" style="color: #008000"
+                    ><a href="gd-trees#pgf.second">second</a></span
+                  >],&numsp;<span class="textcolor" style="color: #000000"
+                    >c</span
+                  >}&numsp;};<br />
+                </code>
+              </div>
+            </figure>
+
+            <figure class="example">
+              <div class="example-image">
+                <p>
+                  <span class="lateximagesource" id="lateximage-pgfmanual-1978"
+                    ><!--
+    a
+c b
+-->
+                    <img
+                      alt="(-tikz-&nbsp;diagram)"
+                      class="lateximage"
+                      height="36.267"
+                      loading="lazy"
+                      src="pgfmanual-images/image-1978.png"
+                      style
+                      width="47.067"
+                  /></span>
+                </p>
+              </div>
+
+              <div class="example-code">
+                <button class="clipboardButton" type="button">copy</button>
+                <code>
+                  <br />
+                  <span class="textcolor" style="color: #0000b2"
+                    ><a href="tikz-scopes#pgf.back/tikz">\tikz</a></span
+                  >&numsp;<span class="textcolor" style="color: #0000b2"
+                    ><a href="tikz-graphs#pgf.back/graph">\graph</a></span
+                  >&numsp;[<span class="textcolor" style="color: #008000"
+                    ><a href="gd-trees#pgf.binary:tree:layout"
+                      >binary tree layout</a
+                    ></span
+                  >,&numsp;<span class="textcolor" style="color: #008000"
+                    ><a href="tikz-trees#pgf.level:distance"
+                      >level distance</a
+                    ></span
+                  >=<span class="textcolor" style="color: #008000">5mm</span
+                  >]<br />
+                  {&numsp;<span class="textcolor" style="color: #000000"
+                    >a</span
+                  >
+                  <span class="textcolor" style="color: #000000"
+                    ><a href="tikz-graphs#pgf.-&gt;">-&gt;</a></span
+                  >
+                  {&numsp;<span class="textcolor" style="color: #000000">b</span
+                  >,&numsp;<span class="textcolor" style="color: #000000"
+                    >c</span
+                  >[<span class="textcolor" style="color: #008000"
+                    ><a href="gd-trees#pgf.first">first</a></span
+                  >]}&numsp;};<br />
+                </code>
+              </div>
+            </figure>
+
+            <figure class="example">
+              <div class="example-image">
+                <p>
+                  <span class="lateximagesource" id="lateximage-pgfmanual-1979"
+                    ><!--
+    a
+c b
+-->
+                    <img
+                      alt="(-tikz-&nbsp;diagram)"
+                      class="lateximage"
+                      height="36.267"
+                      loading="lazy"
+                      src="pgfmanual-images/image-1979.png"
+                      style
+                      width="47.067"
+                  /></span>
+                </p>
+              </div>
+
+              <div class="example-code">
+                <button class="clipboardButton" type="button">copy</button>
+                <code>
+                  <br />
+                  <span class="textcolor" style="color: #0000b2"
+                    ><a href="tikz-scopes#pgf.back/tikz">\tikz</a></span
+                  >&numsp;<span class="textcolor" style="color: #0000b2"
+                    ><a href="tikz-graphs#pgf.back/graph">\graph</a></span
+                  >&numsp;[<span class="textcolor" style="color: #008000"
+                    ><a href="gd-trees#pgf.binary:tree:layout"
+                      >binary tree layout</a
+                    ></span
+                  >,&numsp;<span class="textcolor" style="color: #008000"
+                    ><a href="tikz-trees#pgf.level:distance"
+                      >level distance</a
+                    ></span
+                  >=<span class="textcolor" style="color: #008000">5mm</span
+                  >]<br />
+                  {&numsp;<span class="textcolor" style="color: #000000"
+                    >a</span
+                  >
+                  <span class="textcolor" style="color: #000000"
+                    ><a href="tikz-graphs#pgf.-&gt;">-&gt;</a></span
+                  >
+                  {&numsp;<span class="textcolor" style="color: #000000">b</span
+                  >[<span class="textcolor" style="color: #008000"
+                    ><a href="gd-trees#pgf.second">second</a></span
+                  >],&numsp;<span class="textcolor" style="color: #000000"
+                    >c</span
+                  >[<span class="textcolor" style="color: #008000"
+                    ><a href="gd-trees#pgf.second">second</a></span
+                  >]}&numsp;};<br />
+                </code>
+              </div>
+            </figure>
+
+            <figure class="example">
+              <div class="example-image">
+                <p>
+                  <span class="lateximagesource" id="lateximage-pgfmanual-1980"
+                    ><!--
+    a
+c d b
+   -->
+                    <img
+                      alt="(-tikz-&nbsp;diagram)"
+                      class="lateximage"
+                      height="36.267"
+                      loading="lazy"
+                      src="pgfmanual-images/image-1980.png"
+                      style
+                      width="84.866"
+                  /></span>
+                </p>
+              </div>
+
+              <div class="example-code">
+                <button class="clipboardButton" type="button">copy</button>
+                <code>
+                  <br />
+                  <span class="textcolor" style="color: #0000b2"
+                    ><a href="tikz-scopes#pgf.back/tikz">\tikz</a></span
+                  >&numsp;<span class="textcolor" style="color: #0000b2"
+                    ><a href="tikz-graphs#pgf.back/graph">\graph</a></span
+                  >&numsp;[<span class="textcolor" style="color: #008000"
+                    ><a href="gd-trees#pgf.binary:tree:layout"
+                      >binary tree layout</a
+                    ></span
+                  >,&numsp;<span class="textcolor" style="color: #008000"
+                    ><a href="tikz-trees#pgf.level:distance"
+                      >level distance</a
+                    ></span
+                  >=<span class="textcolor" style="color: #008000">5mm</span
+                  >]<br />
+                  {&numsp;<span class="textcolor" style="color: #000000"
+                    >a</span
+                  >
+                  <span class="textcolor" style="color: #000000"
+                    ><a href="tikz-graphs#pgf.-&gt;">-&gt;</a></span
+                  >
+                  {&numsp;<span class="textcolor" style="color: #000000">b</span
+                  >[<span class="textcolor" style="color: #008000"
+                    ><a href="gd-trees#pgf.third">third</a></span
+                  >],&numsp;<span class="textcolor" style="color: #000000"
+                    >c</span
+                  >[<span class="textcolor" style="color: #008000"
+                    ><a href="gd-trees#pgf.first">first</a></span
+                  >],&numsp;<span class="textcolor" style="color: #000000"
+                    >d</span
+                  >}&numsp;};<br />
+                </code>
+              </div>
+            </figure>
+          </div>
+
+          <div class="manualentry">
+            <div class="entryheadline">
+              <p>
+                <a id="pgf.first"></a>
+                <span class="hl-def"
+                  ><kbd
+                    >/graph drawing/<span
+                      class="textcolor"
+                      style="color: #bf0000"
+                      >first</span
+                    ><span class="textcolor" style="color: #008000"
+                      >=</span
+                    ></kbd
+                  ><span class="textcolor" style="color: #008000"
+                    ><span class="angle">&langle;</span><i>string</i
+                    ><span class="angle">&rangle;</span></span
+                  ></span
+                >&emsp;&emsp;
+                <a class="anchor-link" href="#pgf.first">&para;</a>
+              </p>
+            </div>
+            <p>
+              A shorthand for setting the desired child number to
+              <span class="texttt">1</span>.
+            </p>
+          </div>
+
+          <div class="manualentry">
+            <div class="entryheadline">
+              <p>
+                <a id="pgf.second"></a>
+                <span class="hl-def"
+                  ><kbd
+                    >/graph drawing/<span
+                      class="textcolor"
+                      style="color: #bf0000"
+                      >second</span
+                    ><span class="textcolor" style="color: #008000"
+                      >=</span
+                    ></kbd
+                  ><span class="textcolor" style="color: #008000"
+                    ><span class="angle">&langle;</span><i>string</i
+                    ><span class="angle">&rangle;</span></span
+                  ></span
+                >&emsp;&emsp;
+                <a class="anchor-link" href="#pgf.second">&para;</a>
+              </p>
+            </div>
+            <p>
+              A shorthand for setting the desired child number to
+              <span class="texttt">2</span>.
+            </p>
+          </div>
+
+          <div class="manualentry">
+            <div class="entryheadline">
+              <p>
+                <a id="pgf.third"></a>
+                <span class="hl-def"
+                  ><kbd
+                    >/graph drawing/<span
+                      class="textcolor"
+                      style="color: #bf0000"
+                      >third</span
+                    ><span class="textcolor" style="color: #008000"
+                      >=</span
+                    ></kbd
+                  ><span class="textcolor" style="color: #008000"
+                    ><span class="angle">&langle;</span><i>string</i
+                    ><span class="angle">&rangle;</span></span
+                  ></span
+                >&emsp;&emsp;
+                <a class="anchor-link" href="#pgf.third">&para;</a>
+              </p>
+            </div>
+            <p>
+              A shorthand for setting the desired child number to
+              <span class="texttt">3</span>.
+            </p>
+          </div>
+
+          <div class="manualentry">
+            <div class="entryheadline">
+              <p>
+                <a id="pgf.fourth"></a>
+                <span class="hl-def"
+                  ><kbd
+                    >/graph drawing/<span
+                      class="textcolor"
+                      style="color: #bf0000"
+                      >fourth</span
+                    ><span class="textcolor" style="color: #008000"
+                      >=</span
+                    ></kbd
+                  ><span class="textcolor" style="color: #008000"
+                    ><span class="angle">&langle;</span><i>string</i
+                    ><span class="angle">&rangle;</span></span
+                  ></span
+                >&emsp;&emsp;
+                <a class="anchor-link" href="#pgf.fourth">&para;</a>
+              </p>
+            </div>
+            <p>
+              A shorthand for setting the desired child number to
+              <span class="texttt">4</span>.
+            </p>
+          </div>
+          <h5 id="autosec-4661">
+            <a id="subsection-gd-spanning-tree"></a
+            ><span class="sectionnumber" id="sec-30.3">30.3&emsp;</span>Spanning
+            Tree Computation<a class="anchor-link" href="#sec-30.3">&para;</a>
+          </h5>
+          <a id="pgfmanual-autopage-4661"></a>
+
+          <p>
+            Although the algorithms of this library are tailored to layout
+            trees, they will work for any graph as input. First, if the graph is
+            not connected, it is decomposed into connected components and these
+            are laid out individually. Second, for each component, a spanning
+            tree of the graph is computed first and the layout is computed for
+            this spanning tree; all other edges will still be drawn, but they
+            have no impact on the placement of the nodes. If the graph is
+            already a tree, the spanning tree will be the original graph.
+          </p>
+
+          <p>
+            The computation of the spanning tree is a non-trivial process since
+            a non-tree graph has many different possible spanning trees. You can
+            choose between different methods for deciding on a spanning tree, it
+            is even possible to implement new algorithms. (In the future, the
+            computation of spanning trees and the cycle removal in layered graph
+            drawing algorithms will be unified, but, currently, they are
+            implemented differently.)
+          </p>
+
+          <p>
+            Selects the (sub)algorithm that is to be used for computing spanning
+            trees whenever this is requested by a tree layout algorithm. The
+            default algorithm is
+            <span class="texttt">breadth first spanning tree</span>.
+          </p>
+
+          <figure class="example">
+            <div class="example-image">
+              <p>
+                <span class="lateximagesource" id="lateximage-pgfmanual-1981"
+                  ><!--
+        1
+
+2 3 4 5
+
+                6
+-->
+                  <img
+                    alt="(-tikz-&nbsp;diagram)"
+                    class="lateximage"
+                    height="87.002"
+                    loading="lazy"
+                    src="pgfmanual-images/image-1981.png"
+                    style
+                    width="122.282"
+                /></span>
+              </p>
+            </div>
+
+            <div class="example-code">
+              <button class="clipboardButton" type="button">copy</button>
+
+              <code>
+                <span class="c- preamble"
+                  >\usetikzlibrary {graphs,graphdrawing} \usegdlibrary {trees} </span
+                ><br />
+                <span class="textcolor" style="color: #0000b2"
+                  ><a href="tikz-scopes#pgf.back/tikz">\tikz</a></span
+                >&numsp;<span class="textcolor" style="color: #0000b2"
+                  ><a href="tikz-graphs#pgf.back/graph">\graph</a></span
+                >&numsp;[<span class="textcolor" style="color: #008000"
+                  ><a href="gd-trees#pgf.tree:layout">tree layout</a></span
+                >,&numsp;<span class="textcolor" style="color: #008000"
+                  ><a href="gd-trees#pgf.breadth:first:spanning:tree"
+                    >breadth first spanning tree</a
+                  ></span
+                >]<br />
+                {<br />
+                &numsp;&numsp;<span class="textcolor" style="color: #000000"
+                  >1</span
+                >
+                <span class="textcolor" style="color: #000000"
+                  ><a href="tikz-paths#pgf.--">--</a></span
+                >
+                {<span class="textcolor" style="color: #000000">2</span>,<span
+                  class="textcolor"
+                  style="color: #000000"
+                  >3</span
+                >,<span class="textcolor" style="color: #000000">4</span>,<span
+                  class="textcolor"
+                  style="color: #000000"
+                  >5</span
+                >}&numsp;<span class="textcolor" style="color: #000000"
+                  ><a href="tikz-paths#pgf.--">--</a></span
+                >
+                <span class="textcolor" style="color: #000000">6</span>;<br />
+                };<br />
+              </code>
+            </div>
+          </figure>
+
+          <figure class="example">
+            <div class="example-image">
+              <p>
+                <span class="lateximagesource" id="lateximage-pgfmanual-1982"
+                  ><!--
+    1
+
+    5
+
+    6
+
+2 3 4
+   -->
+                  <img
+                    alt="(-tikz-&nbsp;diagram)"
+                    class="lateximage"
+                    height="124.778"
+                    loading="lazy"
+                    src="pgfmanual-images/image-1982.png"
+                    style
+                    width="86.594"
+                /></span>
+              </p>
+            </div>
+
+            <div class="example-code">
+              <button class="clipboardButton" type="button">copy</button>
+
+              <code>
+                <span class="c- preamble"
+                  >\usetikzlibrary {graphs,graphdrawing} \usegdlibrary {trees} </span
+                ><br />
+                <span class="textcolor" style="color: #0000b2"
+                  ><a href="tikz-scopes#pgf.back/tikz">\tikz</a></span
+                >&numsp;<span class="textcolor" style="color: #0000b2"
+                  ><a href="tikz-graphs#pgf.back/graph">\graph</a></span
+                >&numsp;[<span class="textcolor" style="color: #008000"
+                  ><a href="gd-trees#pgf.tree:layout">tree layout</a></span
+                >,&numsp;<span class="textcolor" style="color: #008000"
+                  ><a href="gd-trees#pgf.depth:first:spanning:tree"
+                    >depth first spanning tree</a
+                  ></span
+                >]<br />
+                {<br />
+                &numsp;&numsp;<span class="textcolor" style="color: #000000"
+                  >1</span
+                >
+                <span class="textcolor" style="color: #000000"
+                  ><a href="tikz-paths#pgf.--">--</a></span
+                >[<span class="textcolor" style="color: #008000"
+                  ><a href="library-edges#pgf.bend:right">bend right</a></span
+                >]&numsp;{<span class="textcolor" style="color: #000000">2</span
+                >,<span class="textcolor" style="color: #000000">3</span>,<span
+                  class="textcolor"
+                  style="color: #000000"
+                  >4</span
+                >,<span class="textcolor" style="color: #000000">5</span> [<span
+                  class="textcolor"
+                  style="color: #008000"
+                  >&gt;bend left</span
+                >]}&numsp;<span class="textcolor" style="color: #000000"
+                  ><a href="tikz-paths#pgf.--">--</a></span
+                >
+                <span class="textcolor" style="color: #000000">6</span>;<br />
+                };<br />
+              </code>
+            </div>
+          </figure>
+
+          <div class="manualentry">
+            <div class="entryheadline">
+              <p>
+                <a id="pgf.breadth:first:spanning:tree"></a>
+                <span class="hl-def"
+                  ><kbd
+                    >/graph drawing/<span
+                      class="textcolor"
+                      style="color: #bf0000"
+                      >breadth first spanning tree</span
+                    ><span class="textcolor" style="color: #008000"
+                      >=</span
+                    ></kbd
+                  ><span class="textcolor" style="color: #008000"
+                    ><span class="angle">&langle;</span><i>string</i
+                    ><span class="angle">&rangle;</span></span
+                  ></span
+                >&emsp;&emsp;
+                <a class="anchor-link" href="#pgf.breadth:first:spanning:tree"
+                  >&para;</a
+                >
+              </p>
+            </div>
+            <p>
+              This key selects &ldquo;breadth first&rdquo; as the (sub)algorithm
+              for computing spanning trees. Note that this key does not cause a
+              graph drawing scope to start; the key only has an effect in
+              conjunction with keys like
+              <span class="texttt">tree layout</span>. The algorithm will be
+              called whenever a graph drawing algorithm needs a spanning tree on
+              which to operate. It works as follows:
+            </p>
+
+            <p>
+              1. It looks for a node for which the
+              <span class="texttt">root</span> parameter is set. If there are
+              several such nodes, the first one is used. If there are no such
+              nodes, the first node is used.
+            </p>
+            <p>
+              Let call the node determined in this way the <em>root node</em>.
+            </p>
+
+            <p>
+              2. For every edge, a <em>priority</em> is determined, which is a
+              number between 1 and 10. How this happens, exactly, will be
+              explained in a moment. Priority 1 means &ldquo;most
+              important&rdquo; while priority 10 means &ldquo;least
+              important&rdquo;.
+            </p>
+
+            <p>
+              3. Starting from the root node, we now perform a breadth first
+              search through the tree, thereby implicitly building a spanning
+              tree: Suppose for a moment that all edges have priority&nbsp;1.
+              Then, the algorithm works just the way that a normal breadth first
+              search is performed: We keep a queue of to-be-visited nodes and
+              while this queue is not empty, we remove its first node. If this
+              node has not yet been visited, we add all its neighbors at the end
+              of the queue. When a node is taken out of the queue, we make it
+              the child of the node whose neighbor it was when it was added.
+              Since the queue follows the &ldquo;first in, first out&rdquo;
+              principle (it is a fifo queue), the children of the root will be
+              all nodes at distance \(1\) form the root, their children will be
+              all nodes at distance \(2\), and so on.
+            </p>
+
+            <p>
+              4. Now suppose that some edges have a priority different
+              from&nbsp;1, in which case things get more complicated. We now
+              keep track of one fifo queue for each of the ten possible
+              priorities. When we consider the neighbors of a node, we actually
+              consider all its incident edges. Each of these edges has a certain
+              priority and the neighbor is put into the queue of the
+              edge&rsquo;s priority. Now, we still remove nodes normally from
+              the queue for priority&nbsp;1; only if this queue is empty and
+              there is still a node in the queue for priority&nbsp;2 we remove
+              the first element from this queue (and proceed as before). If the
+              second queue is also empty, we try the third, and so on up to the
+              tenth queue. If all queues are empty, the algorithm stops.
+            </p>
+
+            <p>
+              The effect of the ten queues is the following: If the edges of
+              priority \(1\) span the whole graph, a spanning tree consisting
+              solely of these edges will be computed. However, if they do not,
+              once we have visited reachable using only priority 1 edges, we
+              will extend the spanning tree using a priority 2 edge; but then we
+              once switch back to using only priority 1 edges. If neither
+              priority&nbsp;1 nor priority&nbsp;2 edges suffice to cover the
+              whole graph, priority&nbsp;3 edges are used, and so on.
+            </p>
+          </div>
+
+          <div class="manualentry">
+            <div class="entryheadline">
+              <p>
+                <a id="pgf.depth:first:spanning:tree"></a>
+                <span class="hl-def"
+                  ><kbd
+                    >/graph drawing/<span
+                      class="textcolor"
+                      style="color: #bf0000"
+                      >depth first spanning tree</span
+                    ><span class="textcolor" style="color: #008000"
+                      >=</span
+                    ></kbd
+                  ><span class="textcolor" style="color: #008000"
+                    ><span class="angle">&langle;</span><i>string</i
+                    ><span class="angle">&rangle;</span></span
+                  ></span
+                >&emsp;&emsp;
+                <a class="anchor-link" href="#pgf.depth:first:spanning:tree"
+                  >&para;</a
+                >
+              </p>
+            </div>
+            <p>
+              Works exactly like
+              <span class="texttt">breadth first spanning tree</span> (same
+              handling of priorities), only the queues are now lifo instead of
+              fifo.
+            </p>
+          </div>
+
+          <div class="manualentry">
+            <div class="entryheadline">
+              <p>
+                <a id="pgf.root"></a>
+                <span class="hl-def"
+                  ><kbd
+                    >/graph drawing/<span
+                      class="textcolor"
+                      style="color: #bf0000"
+                      >root</span
+                    ><span class="textcolor" style="color: #008000"
+                      >=</span
+                    ></kbd
+                  ><span class="textcolor" style="color: #008000"
+                    ><span class="angle">&langle;</span><i>boolean</i
+                    ><span class="angle">&rangle;</span></span
+                  ></span
+                >&emsp;&emsp;(default <kbd>true</kbd>)
+                <a class="anchor-link" href="#pgf.root">&para;</a>
+              </p>
+            </div>
+            <p>
+              This Boolean parameter is used in the computation of spanning
+              trees. When can be set for a node, this node will be used as the
+              root for the spanning tree computation. If several nodes have this
+              option set, the first node will be used.
+            </p>
+          </div>
+
+          <div class="manualentry">
+            <div class="entryheadline">
+              <p>
+                <a id="pgf.span:priority"></a>
+                <span class="hl-def"
+                  ><kbd
+                    >/graph drawing/<span
+                      class="textcolor"
+                      style="color: #bf0000"
+                      >span priority</span
+                    ><span class="textcolor" style="color: #008000"
+                      >=</span
+                    ></kbd
+                  ><span class="textcolor" style="color: #008000"
+                    ><span class="angle">&langle;</span><i>number</i
+                    ><span class="angle">&rangle;</span></span
+                  ></span
+                >&emsp;&emsp;
+                <a class="anchor-link" href="#pgf.span:priority">&para;</a>
+              </p>
+            </div>
+            <p>
+              Explicitly sets the &ldquo;span priority&rdquo; of an edge to
+              <span class="angle">&langle;</span><i>number</i
+              ><span class="angle">&rangle;</span>, which must be a number
+              between <span class="texttt">1</span> and
+              <span class="texttt">10</span>. The priority of edges is used by
+              spanning tree computations, see
+              <span class="texttt">breadth first spanning tree</span>.
+            </p>
+          </div>
+
+          <div class="manualentry">
+            <div class="entryheadline">
+              <p>
+                <a id="pgf.span:edge"></a>
+                <span class="hl-def"
+                  ><kbd
+                    >/graph drawing/<span
+                      class="textcolor"
+                      style="color: #bf0000"
+                      >span edge</span
+                    ><span class="textcolor" style="color: #008000"
+                      >=</span
+                    ></kbd
+                  ><span class="textcolor" style="color: #008000"
+                    ><span class="angle">&langle;</span><i>string</i
+                    ><span class="angle">&rangle;</span></span
+                  ></span
+                >&emsp;&emsp;
+                <a class="anchor-link" href="#pgf.span:edge">&para;</a>
+              </p>
+            </div>
+            <p>
+              An easy-to-remember shorthand for
+              <span class="texttt">span priority=1</span>. When this key is used
+              with an edge, it will always be preferred over other edges
+            </p>
+          </div>
+
+          <div class="manualentry">
+            <div class="entryheadline">
+              <p>
+                <a id="pgf.no:span:edge"></a>
+                <span class="hl-def"
+                  ><kbd
+                    >/graph drawing/<span
+                      class="textcolor"
+                      style="color: #bf0000"
+                      >no span edge</span
+                    ><span class="textcolor" style="color: #008000"
+                      >=</span
+                    ></kbd
+                  ><span class="textcolor" style="color: #008000"
+                    ><span class="angle">&langle;</span><i>string</i
+                    ><span class="angle">&rangle;</span></span
+                  ></span
+                >&emsp;&emsp;
+                <a class="anchor-link" href="#pgf.no:span:edge">&para;</a>
+              </p>
+            </div>
+            <p>
+              An easy-to-remember shorthand for
+              <span class="texttt">span priority=10</span>. This causes the edge
+              to be used only as a last resort as part of a spanning tree. In
+              the example, we add lots of edges that would normally be preferred
+              in the computation of the spanning tree, but use
+              <span class="texttt">no span edge</span> to cause the algorithm to
+              ignore these edges.
+            </p>
+            <p>
+              <em>Example</em>
+            </p>
+
+            <figure class="example">
+              <div class="example-image">
+                <p>
+                  <span class="lateximagesource" id="lateximage-pgfmanual-1983"
+                    ><!--
+          5
+
+    1,3 11
+
+0 2 4 7,9
+
+          6 8 10
+   -->
+                    <img
+                      alt="(-tikz-&nbsp;diagram)"
+                      class="lateximage"
+                      height="134.286"
+                      loading="lazy"
+                      src="pgfmanual-images/image-1983.png"
+                      style
+                      width="134.840"
+                  /></span>
+                </p>
+              </div>
+
+              <div class="example-code">
+                <button class="clipboardButton" type="button">copy</button>
+                <code>
+                  <br />
+                  <span class="textcolor" style="color: #0000b2"
+                    ><a href="tikz-scopes#pgf.back/tikz">\tikz</a></span
+                  >&numsp;<span class="textcolor" style="color: #0000b2"
+                    ><a href="tikz-graphs#pgf.back/graph">\graph</a></span
+                  >&numsp;[<span class="textcolor" style="color: #008000"
+                    ><a href="gd-trees#pgf.tree:layout">tree layout</a></span
+                  >,&numsp;<span class="textcolor" style="color: #008000"
+                    ><a href="tikz-graphs#pgf.nodes">nodes</a></span
+                  >=<span class="textcolor" style="color: #008000"
+                    >{<a href="tikz-actions#pgf.draw">draw</a>}</span
+                  >,&numsp;<span class="textcolor" style="color: #008000"
+                    ><a href="tikz-trees#pgf.sibling:distance"
+                      >sibling distance</a
+                    ></span
+                  >=<span class="textcolor" style="color: #008000">0pt</span
+                  >,<br />
+                  &numsp;&numsp;&numsp;&numsp;&numsp;&numsp;&numsp;&numsp;&numsp;&numsp;&numsp;&numsp;&numsp;&numsp;<span
+                    class="textcolor"
+                    style="color: #008000"
+                    >every group</span
+                  >/<span class="textcolor" style="color: #0000b2"
+                    ><a href="pgfkeys#pgf./handlers/.style">.style</a></span
+                  >={<br />
+                  &numsp;&numsp;&numsp;&numsp;&numsp;&numsp;&numsp;&numsp;&numsp;&numsp;&numsp;&numsp;&numsp;&numsp;&numsp;&numsp;<span
+                    class="textcolor"
+                    style="color: #008000"
+                    ><a href="tikz-graphs#pgf.default:edge:kind"
+                      >default edge kind</a
+                    ></span
+                  >=<span class="textcolor" style="color: #008000"
+                    ><a href="tikz-graphs#pgf.-&gt;">-&gt;</a></span
+                  >,&numsp;<span class="textcolor" style="color: #008000"
+                    ><a href="gd-trees#pgf.no:span:edge">no span edge</a></span
+                  >,<br />
+                  &numsp;&numsp;&numsp;&numsp;&numsp;&numsp;&numsp;&numsp;&numsp;&numsp;&numsp;&numsp;&numsp;&numsp;&numsp;&numsp;<span
+                    class="textcolor"
+                    style="color: #008000"
+                    ><a href="tikz-graphs#pgf.path">path</a></span
+                  >=<span class="textcolor" style="color: #008000">source}</span
+                  >]<br />
+                  {<br />
+                  &numsp;&numsp;<span class="textcolor" style="color: #000000"
+                    >5</span
+                  >
+                  <span class="textcolor" style="color: #000000"
+                    ><a href="tikz-graphs#pgf.-&gt;">-&gt;</a></span
+                  >
+                  {<br />
+                  &numsp;&numsp;&numsp;&numsp;<span
+                    class="textcolor"
+                    style="color: #000000"
+                    >"1</span
+                  >,<span class="textcolor" style="color: #000000">3"</span>
+                  <span class="textcolor" style="color: #000000"
+                    ><a href="tikz-graphs#pgf.-&gt;">-&gt;</a></span
+                  >
+                  {<span class="textcolor" style="color: #000000">0</span>,<span
+                    class="textcolor"
+                    style="color: #000000"
+                    >2</span
+                  >,<span class="textcolor" style="color: #000000">4</span
+                  >},<br />
+                  &numsp;&numsp;&numsp;&numsp;<span
+                    class="textcolor"
+                    style="color: #000000"
+                    >11</span
+                  >
+                  &numsp;&numsp;&numsp;<span
+                    class="textcolor"
+                    style="color: #000000"
+                    ><a href="tikz-graphs#pgf.-&gt;">-&gt;</a></span
+                  >
+                  {<br />
+                  &numsp;&numsp;&numsp;&numsp;&numsp;&numsp;<span
+                    class="textcolor"
+                    style="color: #000000"
+                    >"7</span
+                  >,<span class="textcolor" style="color: #000000">9"</span>
+                  <span class="textcolor" style="color: #000000"
+                    ><a href="tikz-graphs#pgf.-&gt;">-&gt;</a></span
+                  >
+                  {&numsp;<span class="textcolor" style="color: #000000">6</span
+                  >,&numsp;<span class="textcolor" style="color: #000000"
+                    >8</span
+                  >,&numsp;<span class="textcolor" style="color: #000000"
+                    >10</span
+                  >
+                  }<br />
+                  &numsp;&numsp;&numsp;&numsp;}<br />
+                  &numsp;&numsp;}<br />
+                  };<br />
+                </code>
+              </div>
+            </figure>
+          </div>
+
+          <div class="manualentry">
+            <div class="entryheadline">
+              <p>
+                <a id="pgf.span:priority:-&gt;"></a>
+                <span class="hl-def"
+                  ><kbd
+                    >/graph drawing/<span
+                      class="textcolor"
+                      style="color: #bf0000"
+                      >span priority -&gt;</span
+                    ><span class="textcolor" style="color: #008000"
+                      >=</span
+                    ></kbd
+                  ><span class="textcolor" style="color: #008000"
+                    ><span class="angle">&langle;</span><i>number</i
+                    ><span class="angle">&rangle;</span></span
+                  ></span
+                >&emsp;&emsp;(initially <kbd>3</kbd>)
+                <a class="anchor-link" href="#pgf.span:priority:-&gt;"
+                  >&para;</a
+                >
+              </p>
+            </div>
+            <p>
+              This key stores the span priority of all edges whose direction is
+              <span class="texttt">-&gt;</span>. There are similar keys for all
+              other directions, such as
+              <span class="texttt">span priority &lt;-</span> and so on. When
+              you write
+            </p>
+
+            <figure class="example">
+              <div class="example-code">
+                <button class="clipboardButton" type="button">copy</button>
+                <code>
+                  <br />
+                  <span class="textcolor" style="color: #000000"
+                    ><a href="tikz-graphs#pgf.graph">graph</a></span
+                  >
+                  {&numsp;<span class="textcolor" style="color: #000000"
+                    >a</span
+                  >
+                  <span class="textcolor" style="color: #000000"
+                    ><a href="tikz-graphs#pgf.-&gt;">-&gt;</a></span
+                  >
+                  <span class="textcolor" style="color: #000000">b</span>
+                  <span class="textcolor" style="color: #000000"
+                    ><a href="tikz-paths#pgf.--">--</a></span
+                  >
+                  <span class="textcolor" style="color: #000000">c</span>
+                  <span class="textcolor" style="color: #000000"
+                    ><a href="tikz-graphs#pgf.&lt;-">&lt;-</a></span
+                  >
+                  [<span class="textcolor" style="color: #008000"
+                    ><a href="gd-trees#pgf.span:priority"
+                      >span priority</a
+                    ></span
+                  >=<span class="textcolor" style="color: #008000">2</span
+                  >]&numsp;<span class="textcolor" style="color: #000000"
+                    >d</span
+                  >
+                  }<br />
+                </code>
+              </div>
+            </figure>
+            <p>
+              the priority of the edge from <span class="texttt">a</span> to
+              <span class="texttt">b</span> would be the current value of the
+              key <span class="texttt">span priority -&gt;</span>, the priority
+              of the edge from <span class="texttt">b</span> to
+              <span class="texttt">c</span> would be the current value of
+              <span class="texttt">span priority --</span>, and the priority of
+              the edge from <span class="texttt">c</span> to
+              <span class="texttt">d</span> would be
+              <span class="texttt">2</span>, regardless of the value of
+              <span class="texttt">span priority &lt;-</span>.
+            </p>
+            <p>The defaults for the priorities are:</p>
+
+            <p>
+              &bull; <span class="texttt">span priority -&gt; = 3</span>
+
+              &bull; <span class="texttt">span priority -- = 5</span>
+
+              &bull; <span class="texttt">span priority &lt;-&gt; = 5</span>
+
+              &bull; <span class="texttt">span priority &lt;- = 8</span>
+
+              &bull; <span class="texttt">span priority -!- = 10</span>
+            </p>
+          </div>
+
+          <div class="manualentry">
+            <div class="entryheadline">
+              <p>
+                <a id="pgf.span:priority:reversed:-&gt;"></a>
+                <span class="hl-def"
+                  ><kbd
+                    >/graph drawing/<span
+                      class="textcolor"
+                      style="color: #bf0000"
+                      >span priority reversed -&gt;</span
+                    ><span class="textcolor" style="color: #008000"
+                      >=</span
+                    ></kbd
+                  ><span class="textcolor" style="color: #008000"
+                    ><span class="angle">&langle;</span><i>number</i
+                    ><span class="angle">&rangle;</span></span
+                  ></span
+                >&emsp;&emsp;(initially <kbd>9</kbd>)
+                <a class="anchor-link" href="#pgf.span:priority:reversed:-&gt;"
+                  >&para;</a
+                >
+              </p>
+            </div>
+            <p>When you write</p>
+
+            <figure class="example">
+              <div class="example-code">
+                <button class="clipboardButton" type="button">copy</button>
+                <code>
+                  <br />
+                  <span class="textcolor" style="color: #000000"
+                    ><a href="tikz-graphs#pgf.graph">graph</a></span
+                  >
+                  {&numsp;<span class="textcolor" style="color: #000000"
+                    >a</span
+                  >
+                  <span class="textcolor" style="color: #000000"
+                    ><a href="tikz-graphs#pgf.-&gt;">-&gt;</a></span
+                  >
+                  <span class="textcolor" style="color: #000000">b</span>
+                  <span class="textcolor" style="color: #000000"
+                    ><a href="tikz-paths#pgf.--">--</a></span
+                  >
+                  <span class="textcolor" style="color: #000000">c</span>
+                  <span class="textcolor" style="color: #000000"
+                    ><a href="tikz-graphs#pgf.&lt;-">&lt;-</a></span
+                  >
+                  [<span class="textcolor" style="color: #008000"
+                    ><a href="gd-trees#pgf.span:priority"
+                      >span priority</a
+                    ></span
+                  >=<span class="textcolor" style="color: #008000">2</span
+                  >]&numsp;<span class="textcolor" style="color: #000000"
+                    >d</span
+                  >
+                  }<br />
+                </code>
+              </div>
+            </figure>
+            <p>
+              there are, in addition to the priorities indicated above, also
+              further edge priorities: The priority of the (reversed) edge
+              <span class="texttt">b</span> to <span class="texttt">a</span> is
+              <span class="texttt">span priority reversed -&gt;</span>, the
+              priority of the (reversed) edge <span class="texttt">c</span> to
+              <span class="texttt">b</span> is
+              <span class="texttt">span priority reversed --</span>, and the
+              span priority of the reversed edge
+              <span class="texttt">d</span> to <span class="texttt">c</span> is
+              <span class="texttt">2</span>, regardless of the value of
+              <span class="texttt">span priority reversed &lt;-</span>.
+            </p>
+            <p>The defaults for the priorities are:</p>
+
+            <p>
+              &bull;
+              <span class="texttt">span priority reversed -&gt; = 9</span>
+
+              &bull; <span class="texttt">span priority reversed -- = 5</span>
+
+              &bull;
+              <span class="texttt">span priority reversed &lt;-&gt; = 5</span>
+
+              &bull;
+              <span class="texttt">span priority reversed &lt;- = 7</span>
+
+              &bull; <span class="texttt">span priority reversed -!- = 10</span>
+
+              The default priorities are set in such a way, that non-reversed
+              <span class="texttt">-&gt;</span> edges have top priorities,
+              <span class="texttt">--</span> and
+              <span class="texttt">&lt;-&gt;</span> edges have the same
+              priorities in either direction, and
+              <span class="texttt">&lt;-</span> edges have low priority in
+              either direction (but going
+              <span class="texttt">a &lt;- b</span> from
+              <span class="texttt">b</span> to <span class="texttt">a</span> is
+              given higher priority than going from
+              <span class="texttt">a</span> to <span class="texttt">b</span> via
+              this edge and also higher priority than going from
+              <span class="texttt">b</span> to <span class="texttt">a</span> in
+              <span class="texttt">a -&gt; b</span>).
+            </p>
+            <p>
+              Keys like <span class="texttt">span using directed</span> change
+              the priorities &ldquo;en bloc&rdquo;.
+            </p>
+          </div>
+
+          <div class="manualentry">
+            <div class="entryheadline">
+              <p>
+                <a id="pgf.span:using:directed"></a>
+                <span class="hl-def"
+                  ><kbd
+                    >/graph drawing/<span
+                      class="textcolor"
+                      style="color: #bf0000"
+                      >span using directed</span
+                    ><span class="textcolor" style="color: #008000"
+                      >=</span
+                    ></kbd
+                  ><span class="textcolor" style="color: #008000"
+                    ><span class="angle">&langle;</span><i>string</i
+                    ><span class="angle">&rangle;</span></span
+                  ></span
+                >&emsp;&emsp;
+                <a class="anchor-link" href="#pgf.span:using:directed"
+                  >&para;</a
+                >
+              </p>
+            </div>
+            <p>
+              This style sets a priority of <span class="texttt">3</span> for
+              all edges that are directed and &ldquo;go along the arrow
+              direction&rdquo;, that is, we go from
+              <span class="texttt">a</span> to
+              <span class="texttt">b</span> with a priority of
+              <span class="texttt">3</span> for the cases
+              <span class="texttt">a -&gt; b</span>,
+              <span class="texttt">b &lt;- a</span>,
+              <span class="texttt">a &lt;-&gt; b</span>, and
+              <span class="texttt">b &lt;-&gt; a</span>. This strategy is nice
+              with trees specified with both forward and backward edges.
+            </p>
+            <p>
+              <em>Example</em>
+            </p>
+
+            <figure class="example">
+              <div class="example-image">
+                <p>
+                  <span class="lateximagesource" id="lateximage-pgfmanual-1984"
+                    ><!--
+            5
+
+    3 8
+
+1 4 7 9
+   -->
+                    <img
+                      alt="(-tikz-&nbsp;diagram)"
+                      class="lateximage"
+                      height="96.628"
+                      loading="lazy"
+                      src="pgfmanual-images/image-1984.png"
+                      style
+                      width="97.304"
+                  /></span>
+                </p>
+              </div>
+
+              <div class="example-code">
+                <button class="clipboardButton" type="button">copy</button>
+                <code>
+                  <br />
+                  <span class="textcolor" style="color: #0000b2"
+                    ><a href="tikz-scopes#pgf.back/tikz">\tikz</a></span
+                  >&numsp;<span class="textcolor" style="color: #0000b2"
+                    ><a href="tikz-graphs#pgf.back/graph">\graph</a></span
+                  >&numsp;[<span class="textcolor" style="color: #008000"
+                    ><a href="gd-trees#pgf.tree:layout">tree layout</a></span
+                  >,&numsp;<span class="textcolor" style="color: #008000"
+                    ><a href="tikz-graphs#pgf.nodes">nodes</a></span
+                  >=<span class="textcolor" style="color: #008000"
+                    >{<a href="tikz-actions#pgf.draw">draw</a>}</span
+                  >,&numsp;<span class="textcolor" style="color: #008000"
+                    ><a href="tikz-trees#pgf.sibling:distance"
+                      >sibling distance</a
+                    ></span
+                  >=<span class="textcolor" style="color: #008000">0pt</span
+                  >,<br />
+                  &numsp;&numsp;&numsp;&numsp;&numsp;&numsp;&numsp;&numsp;&numsp;&numsp;&numsp;&numsp;&numsp;&numsp;<span
+                    class="textcolor"
+                    style="color: #008000"
+                    ><a href="gd-trees#pgf.span:using:directed"
+                      >span using directed</a
+                    ></span
+                  >]<br />
+                  {<br />
+                  &numsp;&numsp;<span class="textcolor" style="color: #000000"
+                    >3</span
+                  >
+                  <span class="textcolor" style="color: #000000"
+                    ><a href="tikz-graphs#pgf.&lt;-">&lt;-</a></span
+                  >
+                  <span class="textcolor" style="color: #000000">5</span>[<span
+                    class="textcolor"
+                    style="color: #008000"
+                    ><a href="gd-trees#pgf.root">root</a></span
+                  >]&numsp;<span class="textcolor" style="color: #000000"
+                    ><a href="tikz-graphs#pgf.-&gt;">-&gt;</a></span
+                  >
+                  <span class="textcolor" style="color: #000000">8</span>,<br />
+                  &numsp;&numsp;<span class="textcolor" style="color: #000000"
+                    >1</span
+                  >
+                  <span class="textcolor" style="color: #000000"
+                    ><a href="tikz-graphs#pgf.&lt;-">&lt;-</a></span
+                  >
+                  <span class="textcolor" style="color: #000000">3</span>
+                  <span class="textcolor" style="color: #000000"
+                    ><a href="tikz-graphs#pgf.-&gt;">-&gt;</a></span
+                  >
+                  <span class="textcolor" style="color: #000000">4</span>,<br />
+                  &numsp;&numsp;<span class="textcolor" style="color: #000000"
+                    >7</span
+                  >
+                  <span class="textcolor" style="color: #000000"
+                    ><a href="tikz-graphs#pgf.&lt;-">&lt;-</a></span
+                  >
+                  <span class="textcolor" style="color: #000000">8</span>
+                  <span class="textcolor" style="color: #000000"
+                    ><a href="tikz-graphs#pgf.-&gt;">-&gt;</a></span
+                  >
+                  <span class="textcolor" style="color: #000000">9</span>,<br />
+                  &numsp;&numsp;<span class="textcolor" style="color: #000000"
+                    >1</span
+                  >
+                  <span class="textcolor" style="color: #000000"
+                    ><a href="tikz-paths#pgf.--">--</a></span
+                  >
+                  <span class="textcolor" style="color: #000000">4</span>
+                  <span class="textcolor" style="color: #000000"
+                    ><a href="tikz-paths#pgf.--">--</a></span
+                  >
+                  <span class="textcolor" style="color: #000000">7</span>
+                  <span class="textcolor" style="color: #000000"
+                    ><a href="tikz-paths#pgf.--">--</a></span
+                  >
+                  <span class="textcolor" style="color: #000000">9</span><br />
+                  };<br />
+                </code>
+              </div>
+            </figure>
+          </div>
+
+          <div class="manualentry">
+            <div class="entryheadline">
+              <p>
+                <a id="pgf.span:using:all"></a>
+                <span class="hl-def"
+                  ><kbd
+                    >/graph drawing/<span
+                      class="textcolor"
+                      style="color: #bf0000"
+                      >span using all</span
+                    ><span class="textcolor" style="color: #008000"
+                      >=</span
+                    ></kbd
+                  ><span class="textcolor" style="color: #008000"
+                    ><span class="angle">&langle;</span><i>string</i
+                    ><span class="angle">&rangle;</span></span
+                  ></span
+                >&emsp;&emsp;
+                <a class="anchor-link" href="#pgf.span:using:all">&para;</a>
+              </p>
+            </div>
+            <p>Assings a uniform priority of 5 to all edges.</p>
+          </div>
+        </section>
+      </main>
+
+      <footer>
+        <div class_="footer-left">
+          <a href="https://github.com/pgf-tikz/pgf">Github</a> &middot;
+          <a href="/license">License</a> &middot;
+          <a href="https://ctan.org/pkg/pgf">CTAN</a> &middot;
+          <a href="https://pgf-tikz.github.io/pgf/pgfmanual.pdf">PDF version</a>
+          &middot;
+          <a href="https://github.com/DominikPeters/pgf-tikz-html-manual"
+            >About this HTML version</a
+          >
+        </div>
+        <div class_="footer-right">
+          <em>Manual last updated: 2022-04-23</em>
+        </div>
+      </footer>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/@docsearch/js@alpha"></script>
+    <script>
+      docsearch({
+        apiKey: "ae66ec3fc9df4b52b4d6f24fc8508fd3",
+        indexName: "tikz.dev",
+        appId: "Q70NNMA9GC",
+        container: "#search",
+      });
+    </script>
+  </body>
+</html>

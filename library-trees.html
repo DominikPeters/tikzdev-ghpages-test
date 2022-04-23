@@ -1,0 +1,1821 @@
+<!DOCTYPE html>
+<html lang="en-US">
+  <head>
+    <meta charset="utf-8" />
+    <meta content="LaTeX Lwarp package" name="generator" />
+    <meta content="width=device-width, initial-scale=1.0" name="viewport" />
+    <!--[if lt IE 9]>
+      <script src="http://html5shiv.googlecode.com/svn/trunk/html5.js"></script>
+    <![endif]-->
+    <title>Tree Library - PGF/TikZ Manual</title>
+    <link href="style.css" rel="stylesheet" type="text/css" />
+
+    <script>
+      // Lwarp MathJax emulation code
+      //
+      // Based on code by Davide P. Cervone.
+      // Equation numbering: https://github.com/mathjax/MathJax/issues/2427
+      // Starred and ifnextchar macros: https://github.com/mathjax/MathJax/issues/2428
+      // \left, \right delimiters: https://github.com/mathjax/MathJax/issues/2535
+      //
+      // Modified by Brian Dunn to adjust equation numbering and add subequations.
+      //
+      // LaTeX can use \seteqnumber{subequations?}{section}{number} before each equation.
+      // subequations? is 0 usually, 1 if inside subequations.
+      // section is a string printed as-is, or empty.
+      // number is auto-incremented by MathJax between equations.
+      //
+      MathJax = {
+        subequations: "0",
+        section: "",
+        loader: {
+          load: ["[tex]/tagformat", "[tex]/textmacros"],
+        },
+        startup: {
+          ready() {
+            // These would be replaced by import commands if you wanted to make
+            // a proper extension.
+            const Configuration =
+              MathJax._.input.tex.Configuration.Configuration;
+            const CommandMap = MathJax._.input.tex.SymbolMap.CommandMap;
+            const Macro = MathJax._.input.tex.Symbol.Macro;
+            const TexError = MathJax._.input.tex.TexError.default;
+            const ParseUtil = MathJax._.input.tex.ParseUtil.default;
+            const expandable = MathJax._.util.Options.expandable;
+
+            // Insert the replacement string into the TeX string, and check
+            // that there haven't been too many maxro substitutions (prevents
+            // infinite loops).
+            const useArgument = (parser, text) => {
+              parser.string = ParseUtil.addArgs(
+                parser,
+                text,
+                parser.string.slice(parser.i)
+              );
+              parser.i = 0;
+              if (
+                ++parser.macroCount > parser.configuration.options.maxMacros
+              ) {
+                throw new TexError(
+                  "MaxMacroSub1",
+                  "MathJax maximum macro substitution count exceeded; " +
+                    "is there a recursive macro call?"
+                );
+              }
+            };
+
+            // Create the command map for:
+            // \ifstar, \ifnextchar, \ifblank, \ifstrequal, \seteqnumber
+            new CommandMap(
+              "Lwarp-macros",
+              {
+                ifstar: "IfstarFunction",
+                ifnextchar: "IfnextcharFunction",
+                ifblank: "IfblankFunction",
+                ifstrequal: "IfstrequalFunction",
+                seteqnumber: "SeteqnumberFunction",
+              },
+              {
+                // This function implements an ifstar macro.
+                IfstarFunction(parser, name) {
+                  const resultstar = parser.GetArgument(name);
+                  const resultnostar = parser.GetArgument(name);
+                  const star = parser.GetStar(); // true if there is a *
+                  useArgument(parser, star ? resultstar : resultnostar);
+                },
+
+                // This function implements an ifnextchar macro.
+                IfnextcharFunction(parser, name) {
+                  let whichchar = parser.GetArgument(name);
+                  if (whichchar.match(/^(?:0x[0-9A-F]+|[0-9]+)$/i)) {
+                    // $ syntax highlighting
+                    whichchar = String.fromCodePoint(parseInt(whichchar));
+                  }
+                  const resultnextchar = parser.GetArgument(name);
+                  const resultnotnextchar = parser.GetArgument(name);
+                  const gotchar = parser.GetNext() === whichchar;
+                  useArgument(
+                    parser,
+                    gotchar ? resultnextchar : resultnotnextchar
+                  );
+                },
+
+                // This function implements an ifblank macro.
+                IfblankFunction(parser, name) {
+                  const blankarg = parser.GetArgument(name);
+                  const resultblank = parser.GetArgument(name);
+                  const resultnotblank = parser.GetArgument(name);
+                  const isblank = blankarg.trim() == "";
+                  useArgument(parser, isblank ? resultblank : resultnotblank);
+                },
+
+                // This function implements an ifstrequal macro.
+                IfstrequalFunction(parser, name) {
+                  const strequalfirst = parser.GetArgument(name);
+                  const strequalsecond = parser.GetArgument(name);
+                  const resultequal = parser.GetArgument(name);
+                  const resultnotequal = parser.GetArgument(name);
+                  const isequal = strequalfirst == strequalsecond;
+                  useArgument(parser, isequal ? resultequal : resultnotequal);
+                },
+
+                // This function modifies the equation numbers.
+                SeteqnumberFunction(parser, name) {
+                  // Get the macro parameters
+                  const star = parser.GetStar(); // true if there is a *
+                  const optBrackets = parser.GetBrackets(name); // contents of optional brackets
+                  const newsubequations = parser.GetArgument(name); // the subequations argument
+                  const neweqsection = parser.GetArgument(name); // the eq section argument
+                  const neweqnumber = parser.GetArgument(name); // the eq number argument
+                  MathJax.config.subequations = newsubequations; // a string with boolean meaning
+                  MathJax.config.section = neweqsection; // a string with numeric meaning
+                  parser.tags.counter = parser.tags.allCounter = neweqnumber;
+                },
+              }
+            );
+
+            // Create the Lwarp-macros package
+            Configuration.create("Lwarp-macros", {
+              handler: { macro: ["Lwarp-macros"] },
+            });
+
+            MathJax.startup.defaultReady();
+
+            // For forward references:
+            MathJax.startup.input[0].preFilters.add(({ math }) => {
+              if (math.inputData.recompile) {
+                MathJax.config.subequations =
+                  math.inputData.recompile.subequations;
+                MathJax.config.section = math.inputData.recompile.section;
+              }
+            });
+            MathJax.startup.input[0].postFilters.add(({ math }) => {
+              if (math.inputData.recompile) {
+                math.inputData.recompile.subequations =
+                  MathJax.config.subequations;
+                math.inputData.recompile.section = MathJax.config.section;
+              }
+            });
+
+            // For \left, \right with unicode-math:
+            const { DelimiterMap } = MathJax._.input.tex.SymbolMap;
+            const { Symbol } = MathJax._.input.tex.Symbol;
+            const { MapHandler } = MathJax._.input.tex.MapHandler;
+            const delimiter = MapHandler.getMap("delimiter");
+            delimiter.add("\\lBrack", new Symbol("\\lBrack", "\u27E6"));
+            delimiter.add("\\rBrack", new Symbol("\\rBrack", "\u27E7"));
+            delimiter.add("\\lAngle", new Symbol("\\lAngle", "\u27EA"));
+            delimiter.add("\\rAngle", new Symbol("\\rAngle", "\u27EB"));
+            delimiter.add("\\lbrbrak", new Symbol("\\lbrbrak", "\u2772"));
+            delimiter.add("\\rbrbrak", new Symbol("\\rbrbrak", "\u2773"));
+            delimiter.add("\\lbag", new Symbol("\\lbag", "\u27C5"));
+            delimiter.add("\\rbag", new Symbol("\\rbag", "\u27C6"));
+            delimiter.add(
+              "\\llparenthesis",
+              new Symbol("\\llparenthesis", "\u2987")
+            );
+            delimiter.add(
+              "\\rrparenthesis",
+              new Symbol("\\rrparenthesis", "\u2988")
+            );
+            delimiter.add("\\llangle", new Symbol("\\llangle", "\u2989"));
+            delimiter.add("\\rrangle", new Symbol("\\rrangle", "\u298A"));
+            delimiter.add("\\Lbrbrak", new Symbol("\\Lbrbrak", "\u27EC"));
+            delimiter.add("\\Rbrbrak", new Symbol("\\Rbrbrak", "\u27ED"));
+            delimiter.add("\\lBrace", new Symbol("\\lBrace", "\u2983"));
+            delimiter.add("\\rBrace", new Symbol("\\rBrace", "\u2984"));
+            delimiter.add("\\lParen", new Symbol("\\lParen", "\u2985"));
+            delimiter.add("\\rParen", new Symbol("\\rParen", "\u2986"));
+            delimiter.add("\\lbrackubar", new Symbol("\\lbrackubar", "\u298B"));
+            delimiter.add("\\rbrackubar", new Symbol("\\rbrackubar", "\u298C"));
+            delimiter.add(
+              "\\lbrackultick",
+              new Symbol("\\lbrackultick", "\u298D")
+            );
+            delimiter.add(
+              "\\rbracklrtick",
+              new Symbol("\\rbracklrtick", "\u298E")
+            );
+            delimiter.add(
+              "\\lbracklltick",
+              new Symbol("\\lbracklltick", "\u298F")
+            );
+            delimiter.add(
+              "\\rbrackurtick",
+              new Symbol("\\rbrackurtick", "\u2990")
+            );
+            delimiter.add("\\langledot", new Symbol("\\langledot", "\u2991"));
+            delimiter.add("\\rangledot", new Symbol("\\rangledot", "\u2992"));
+            delimiter.add("\\lparenless", new Symbol("\\lparenless", "\u2993"));
+            delimiter.add("\\rparengtr", new Symbol("\\rparengtr", "\u2994"));
+            delimiter.add("\\Lparengtr", new Symbol("\\Lparengtr", "\u2995"));
+            delimiter.add("\\Rparenless", new Symbol("\\Rparenless", "\u2996"));
+            delimiter.add("\\lblkbrbrak", new Symbol("\\lblkbrbrak", "\u2997"));
+            delimiter.add("\\rblkbrbrak", new Symbol("\\rblkbrbrak", "\u2998"));
+            delimiter.add("\\lvzigzag", new Symbol("\\lvzigzag", "\u29D8"));
+            delimiter.add("\\rvzigzag", new Symbol("\\rvzigzag", "\u29D9"));
+            delimiter.add("\\Lvzigzag", new Symbol("\\Lvzigzag", "\u29DA"));
+            delimiter.add("\\Rvzigzag", new Symbol("\\Rvzigzag", "\u29DB"));
+            delimiter.add(
+              "\\lcurvyangle",
+              new Symbol("\\lcurvyangle", "\u29FC")
+            );
+            delimiter.add(
+              "\\rcurvyangle",
+              new Symbol("\\rcurvyangle", "\u29FD")
+            );
+            delimiter.add("\\Vvert", new Symbol("\\Vvert", "\u2980"));
+          }, // ready
+        }, // startup
+
+        tex: {
+          packages: { "[+]": ["tagformat", "Lwarp-macros", "textmacros"] },
+          tags: "ams",
+          tagformat: {
+            number: function (n) {
+              if (MathJax.config.subequations == 0)
+                return MathJax.config.section + n;
+              else return MathJax.config.section + String.fromCharCode(96 + n);
+            },
+          },
+        },
+      };
+    </script>
+
+    <script
+      async
+      id="MathJax-script"
+      src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-chtml.js"
+    ></script>
+
+    <script src="pgfmanual.js"></script>
+
+    <link href="https://unpkg.com/@docsearch/css@alpha" rel="stylesheet" />
+    <link href="/favicon-16x16.png" rel="icon" sizes="16x16" type="image/png" />
+    <link href="/favicon-32x32.png" rel="icon" sizes="32x32" type="image/png" />
+    <link
+      href="/apple-touch-icon.png"
+      rel="apple-touch-icon"
+      sizes="180x180"
+      type="image/png"
+    />
+    <link href="/site.webmanifest" rel="manifest" />
+  </head>
+  <body>
+    <a id="pgfmanual-autopage-6567"></a>
+
+    <div class="bodyandsidetoc grid-container">
+      <header>
+        <strong><a href="/">PGF/Ti<i>k</i>Z Manual</a></strong>
+        <div id="search"></div>
+      </header>
+      <div class="sidetoccontainer" id="local-toc-container">
+        <nav class="sidetoc">
+          <div class="sidetoctitle"><p>On this page</p></div>
+          <div class="sidetoccontents">
+            <p>
+              <a class="tocsubsection" href="#sec-75.1">Growth Functions</a>
+            </p>
+            <p>
+              <a class="tocsubsection" href="#sec-75.2">Edges From Parent</a>
+            </p>
+          </div>
+        </nav>
+      </div>
+      <div class="sidetoccontainer" id="chapter-toc-container">
+        <nav class="sidetoc">
+          <div class="sidetoctitle">
+            <p>
+              <span class="sidetocthetitle"
+                >The <span class="tikzname">TikZ</span> and PGF Packages<br />
+                Manual for version 3.1.9a</span
+              >
+            </p>
+
+            <p>Contents</p>
+          </div>
+
+          <div class="sidetoccontents">
+            <p></p>
+
+            <p>
+              <a class="linkintro" href="/">Introduction</a>
+            </p>
+
+            <p>
+              <a class="tocpart" href="tutorials-guidelines"
+                >Tutorials and Guidelines</a
+              >
+            </p>
+
+            <p>
+              <a class="tocpart" href="install"
+                >Installation and Configuration</a
+              >
+            </p>
+
+            <p>
+              <a class="tocpart" href="tikz">Ti<em>k</em>Z</a>
+            </p>
+
+            <p>
+              <a class="tocpart" href="gd">Graph Drawing</a>
+            </p>
+
+            <p class="current-part">
+              <a class="tocpart" href="libraries">Libraries</a>
+            </p>
+
+            <p class="current-part">
+              <a class="tocsection" href="library-3d"
+                >Three Dimensional Drawing Library</a
+              >
+            </p>
+
+            <p class="current-part">
+              <a class="tocsection" href="library-angle">Angle Library</a>
+            </p>
+
+            <p class="current-part">
+              <a class="tocsection" href="library-arrows">Arrow Tip Library</a>
+            </p>
+
+            <p class="current-part">
+              <a class="tocsection" href="library-automata"
+                >Automata Drawing Library</a
+              >
+            </p>
+
+            <p class="current-part">
+              <a class="tocsection" href="library-babel">Babel Library</a>
+            </p>
+
+            <p class="current-part">
+              <a class="tocsection" href="library-backgrounds"
+                >Background Library</a
+              >
+            </p>
+
+            <p class="current-part">
+              <a class="tocsection" href="library-calc">Calc Library</a>
+            </p>
+
+            <p class="current-part">
+              <a class="tocsection" href="library-calender">Calendar Library</a>
+            </p>
+
+            <p class="current-part">
+              <a class="tocsection" href="library-chains">Chains</a>
+            </p>
+
+            <p class="current-part">
+              <a class="tocsection" href="library-circuits"
+                >Circuit Libraries</a
+              >
+            </p>
+
+            <p class="current-part">
+              <a class="tocsection" href="library-decorations"
+                >Decoration Library</a
+              >
+            </p>
+
+            <p class="current-part">
+              <a class="tocsection" href="library-er"
+                >Entity-Relationship Diagram Drawing Library</a
+              >
+            </p>
+
+            <p class="current-part">
+              <a class="tocsection" href="library-external"
+                >Externalization Library</a
+              >
+            </p>
+
+            <p class="current-part">
+              <a class="tocsection" href="library-fadings">Fading Library</a>
+            </p>
+
+            <p class="current-part">
+              <a class="tocsection" href="library-fit">Fitting Library</a>
+            </p>
+
+            <p class="current-part">
+              <a class="tocsection" href="library-fixedpoint"
+                >Fixed Point Arithmetic Library</a
+              >
+            </p>
+
+            <p class="current-part">
+              <a class="tocsection" href="library-fpu"
+                >Floating Point Unit Library</a
+              >
+            </p>
+
+            <p class="current-part">
+              <a class="tocsection" href="library-lsystems"
+                >Lindenmayer System Drawing Library</a
+              >
+            </p>
+
+            <p class="current-part">
+              <a class="tocsection" href="library-math">Math Library</a>
+            </p>
+
+            <p class="current-part">
+              <a class="tocsection" href="library-matrix">Matrix Library</a>
+            </p>
+
+            <p class="current-part">
+              <a class="tocsection" href="library-mindmaps"
+                >Mindmap Drawing Library</a
+              >
+            </p>
+
+            <p class="current-part">
+              <a class="tocsection" href="library-folding"
+                >Paper-Folding Diagrams Library</a
+              >
+            </p>
+
+            <p class="current-part">
+              <a class="tocsection" href="library-patterns">Pattern Library</a>
+            </p>
+
+            <p class="current-part">
+              <a class="tocsection" href="library-perspective"
+                >Three Point Perspective Drawing Library</a
+              >
+            </p>
+
+            <p class="current-part">
+              <a class="tocsection" href="library-petri"
+                >Petri-Net Drawing Library</a
+              >
+            </p>
+
+            <p class="current-part">
+              <a class="tocsection" href="library-plot-handlers"
+                >Plot Handler Library</a
+              >
+            </p>
+
+            <p class="current-part">
+              <a class="tocsection" href="library-plot-marks"
+                >Plot Mark Library</a
+              >
+            </p>
+
+            <p class="current-part">
+              <a class="tocsection" href="library-profiler">Profiler Library</a>
+            </p>
+
+            <p class="current-part">
+              <a class="tocsection" href="library-shadings">Shadings Library</a>
+            </p>
+
+            <p class="current-part">
+              <a class="tocsection" href="library-shadows">Shadows Library</a>
+            </p>
+
+            <p class="current-part">
+              <a class="tocsection" href="library-shapes">Shape Library</a>
+            </p>
+
+            <p class="current-part">
+              <a class="tocsection" href="library-spy"
+                >Spy Library: Magnifying Parts of Pictures</a
+              >
+            </p>
+
+            <p class="current-part">
+              <a class="tocsection" href="library-svg-path">SVG-Path Library</a>
+            </p>
+
+            <p class="current-part">
+              <a class="tocsection" href="library-edges">To Path Library</a>
+            </p>
+
+            <p class="current-part">
+              <a class="tocsection" href="library-through">Through Library</a>
+            </p>
+
+            <p class="current current-part">
+              <a class="tocsection" href="library-trees">Tree Library</a>
+            </p>
+
+            <p class="current-part">
+              <a class="tocsection" href="library-turtle"
+                >Turtle Graphics Library</a
+              >
+            </p>
+
+            <p class="current-part">
+              <a class="tocsection" href="library-views">Views Library</a>
+            </p>
+
+            <p>
+              <a class="tocpart" href="dv">Data Visualization</a>
+            </p>
+
+            <p>
+              <a class="tocpart" href="utilities">Utilities</a>
+            </p>
+
+            <p>
+              <a class="tocpart" href="math"
+                >Mathematical and Object-Oriented Engines</a
+              >
+            </p>
+
+            <p>
+              <a class="tocpart" href="base">The Basic Layer</a>
+            </p>
+
+            <p>
+              <a class="tocpart" href="pgfsys">The System Layer</a>
+            </p>
+          </div>
+        </nav>
+      </div>
+
+      <main class="bodycontainer">
+        <section class="textbody">
+          <h1>
+            The <span class="tikzname">TikZ</span> and PGF Packages<br />
+            Manual for version 3.1.9a
+          </h1>
+          <h2 class="inserted">Libraries</h2>
+
+          <!--MathJax customizations:-->
+
+          <div class="hidden">
+            \(\newcommand{\footnotename}{footnote}\) \(\def \LWRfootnote {1}\)
+            \(\newcommand {\footnote }[2][\LWRfootnote ]{{}^{\mathrm {#1}}}\)
+            \(\newcommand {\footnotemark }[1][\LWRfootnote ]{{}^{\mathrm
+            {#1}}}\) \(\let \LWRorighspace \hspace \) \(\renewcommand {\hspace
+            }{\ifstar \LWRorighspace \LWRorighspace }\) \(\newcommand
+            {\mathnormal }[1]{{#1}}\) \(\newcommand \ensuremath [1]{#1}\)
+            \(\newcommand {\LWRframebox }[2][]{\fbox {#2}} \newcommand
+            {\framebox }[1][]{\LWRframebox } \) \(\newcommand {\setlength
+            }[2]{}\) \(\newcommand {\addtolength }[2]{}\) \(\newcommand
+            {\setcounter }[2]{}\) \(\newcommand {\addtocounter }[2]{}\)
+            \(\newcommand {\arabic }[1]{}\) \(\newcommand {\number }[1]{}\)
+            \(\newcommand {\noalign }[1]{\text {#1}\notag \\}\) \(\newcommand
+            {\cline }[1]{}\) \(\newcommand {\directlua }[1]{\text
+            {(directlua)}}\) \(\newcommand {\luatexdirectlua }[1]{\text
+            {(directlua)}}\) \(\newcommand {\protect }{}\) \(\def
+            \LWRabsorbnumber #1 {}\) \(\def \LWRabsorbquotenumber "#1 {}\)
+            \(\newcommand {\LWRabsorboption }[1][]{}\) \(\newcommand
+            {\LWRabsorbtwooptions }[1][]{\LWRabsorboption }\) \(\def \mathchar
+            {\ifnextchar "\LWRabsorbquotenumber \LWRabsorbnumber }\) \(\def
+            \mathcode #1={\mathchar }\) \(\let \delcode \mathcode \) \(\let
+            \delimiter \mathchar \) \(\def \oe {\unicode {x0153}}\) \(\def \OE
+            {\unicode {x0152}}\) \(\def \ae {\unicode {x00E6}}\) \(\def \AE
+            {\unicode {x00C6}}\) \(\def \aa {\unicode {x00E5}}\) \(\def \AA
+            {\unicode {x00C5}}\) \(\def \o {\unicode {x00F8}}\) \(\def \O
+            {\unicode {x00D8}}\) \(\def \l {\unicode {x0142}}\) \(\def \L
+            {\unicode {x0141}}\) \(\def \ss {\unicode {x00DF}}\) \(\def \SS
+            {\unicode {x1E9E}}\) \(\def \dag {\unicode {x2020}}\) \(\def \ddag
+            {\unicode {x2021}}\) \(\def \P {\unicode {x00B6}}\) \(\def
+            \copyright {\unicode {x00A9}}\) \(\def \pounds {\unicode {x00A3}}\)
+            \(\let \LWRref \ref \) \(\renewcommand {\ref }{\ifstar \LWRref
+            \LWRref }\) \( \newcommand {\multicolumn }[3]{#3}\) \(\require
+            {textcomp}\) \( \newcommand {\meta }[1]{\langle \textit {#1}\rangle
+            } \) \(\newcommand {\intertext }[1]{\text {#1}\notag \\}\) \(\let
+            \Hat \hat \) \(\let \Check \check \) \(\let \Tilde \tilde \) \(\let
+            \Acute \acute \) \(\let \Grave \grave \) \(\let \Dot \dot \) \(\let
+            \Ddot \ddot \) \(\let \Breve \breve \) \(\let \Bar \bar \) \(\let
+            \Vec \vec \)
+          </div>
+
+          <p></p>
+          <h4 id="autosec-6568">
+            <a id="section-tree-library"></a
+            ><span class="sectionnumber">75&emsp;</span>Tree Library
+          </h4>
+          <a id="pgfmanual-autopage-6568"></a>
+          <a id="pgfmanual-autofile-80"></a>
+
+          <div class="manualentry">
+            <div class="entryheadline">
+              <p>
+                <span class="hl-def"
+                  ><b><span class="tikzname">TikZ</span> Library</b>
+                  <kbd
+                    ><span class="textcolor" style="color: #bf0000"
+                      >trees</span
+                    ></kbd
+                  ></span
+                >
+              </p>
+            </div>
+            <p>
+              <kbd
+                >\usetikzlibrary{<span class="textcolor" style="color: #bf0000"
+                  >trees</span
+                >} %
+                <span class="latexlogofont"
+                  ><span class="latexlogo"
+                    >L<span class="latexlogosup">a</span>T<span
+                      class="latexlogosub"
+                      >e</span
+                    >X</span
+                  ></span
+                >
+                and plain
+                <span class="latexlogofont"
+                  ><span class="latexlogo"
+                    >T<span class="latexlogosub">e</span>X</span
+                  ></span
+                ></kbd
+              ><br />
+              <kbd
+                >\usetikzlibrary[<span class="textcolor" style="color: #bf0000"
+                  >trees</span
+                >] % Con<span class="latexlogofont"
+                  ><span class="latexlogo"
+                    >T<span class="latexlogosub">e</span>X</span
+                  ></span
+                >t</kbd
+              ><br />
+              <br />
+              This packages defines styles to be used when drawing trees.
+            </p>
+          </div>
+          <h5 id="autosec-6570">
+            <span class="sectionnumber" id="sec-75.1">75.1&emsp;</span>Growth
+            Functions<a class="anchor-link" href="#sec-75.1">&para;</a>
+          </h5>
+          <a id="pgfmanual-autopage-6570"></a>
+
+          <p>
+            The package <span class="texttt">trees</span> defines two new growth
+            functions. They are installed using the following options:
+          </p>
+
+          <div class="manualentry">
+            <div class="entryheadline">
+              <p>
+                <a id="pgf./tikz/grow:via:three:points"></a
+                ><a id="pgf.grow:via:three:points"></a>
+                <span class="hl-def"
+                  ><kbd
+                    ><span class="keyname"
+                      ><span class="textcolor" style="color: #bf0000"
+                        >/tikz/grow via three points</span
+                      ></span
+                    >=</kbd
+                  ><kbd>one child at (</kbd><span class="angle">&langle;</span
+                  ><i>x</i><span class="angle">&rangle;</span>
+                  <kbd>) and two children at (</kbd
+                  ><span class="angle">&langle;</span><i>y</i
+                  ><span class="angle">&rangle;</span><kbd>) and (</kbd
+                  ><span class="angle">&langle;</span><i>z</i
+                  ><span class="angle">&rangle;</span
+                  ><span class="texttt">)</span></span
+                ><span class="hl-default">(no default)</span>
+                <a class="anchor-link" href="#pgf./tikz/grow:via:three:points"
+                  >&para;</a
+                >
+              </p>
+            </div>
+            <p>
+              This option installs a growth function that works as follows: If a
+              parent node has just one child, this child is placed at
+              <span class="angle">&langle;</span><i>x</i
+              ><span class="angle">&rangle;</span>. If the parent node has two
+              children, these are placed at <span class="angle">&langle;</span
+              ><i>y</i><span class="angle">&rangle;</span> and
+              <span class="angle">&langle;</span><i>z</i
+              ><span class="angle">&rangle;</span>. If the parent node has more
+              than two children, the children are placed at points that are
+              linearly extrapolated from the three points
+              <span class="angle">&langle;</span><i>x</i
+              ><span class="angle">&rangle;</span>,
+              <span class="angle">&langle;</span><i>y</i
+              ><span class="angle">&rangle;</span>, and
+              <span class="angle">&langle;</span><i>z</i
+              ><span class="angle">&rangle;</span>. In detail, the position is
+              \(x + \frac {n-1}{2}(y-x) + (c-1)(z-y)\), where \(n\) is the
+              number of children and \(c\) is the number of the current child
+              (starting with&nbsp;\(1\)).
+            </p>
+            <p>
+              The net effect of all this is that if you have a certain
+              &ldquo;linear arrangement&rdquo; in mind and use this option to
+              specify the placement of a single child and of two children, then
+              any number of children will be placed correctly.
+            </p>
+            <p>
+              Here are some arrangements based on this growth function. We start
+              with a simple &ldquo;above&rdquo; arrangement:
+            </p>
+
+            <figure class="example">
+              <div class="example-image">
+                <p>
+                  <span class="lateximagesource" id="lateximage-pgfmanual-2703"
+                    ><!--
+one
+
+
+
+two
+
+
+
+three
+
+
+
+four
+-->
+                    <img
+                      alt="(-tikz-&nbsp;diagram)"
+                      class="lateximage"
+                      height="215.234"
+                      loading="lazy"
+                      src="pgfmanual-images/image-2703.png"
+                      style
+                      width="116.380"
+                  /></span>
+                </p>
+              </div>
+
+              <div class="example-code">
+                <button class="clipboardButton" type="button">copy</button>
+                <code>
+                  <span class="c- preamble">\usetikzlibrary {trees} </span
+                  ><br />
+                  <span class="textcolor" style="color: #000000">\begin</span
+                  >{<span class="textcolor" style="color: #0000b2"
+                    ><a href="tikz-scopes#pgf.tikzpicture">tikzpicture</a></span
+                  >}[<span class="textcolor" style="color: #008000"
+                    ><a href="library-trees#pgf.grow:via:three:points"
+                      >grow via three points</a
+                    ></span
+                  >=<span class="textcolor" style="color: #008000"
+                    >{<span class="example-code-comment">%</span><br />
+                    &numsp;&numsp;&numsp;&numsp;one
+                    <a href="tikz-trees#pgf.child">child</a>
+                    <a href="tikz-paths#pgf.at">at</a>
+                    <span class="textcolor" style="color: #800080">(0,1)</span
+                    >&numsp;<a href="pgfkeys#pgf.and">and</a> two children
+                    <a href="tikz-paths#pgf.at">at</a>
+                    <span class="textcolor" style="color: #800080">(-.5,1)</span
+                    >&numsp;<a href="pgfkeys#pgf.and">and</a>
+                    <span class="textcolor" style="color: #800080">(.5,1)</span
+                    >}</span
+                  >]<br />
+                  &numsp;&numsp;<span class="textcolor" style="color: #0000b2"
+                    ><a href="tikz-shapes#pgf.back/node">\node</a></span
+                  >&numsp;<span class="textcolor" style="color: #000000"
+                    ><a href="tikz-paths#pgf.at">at</a></span
+                  >
+                  <span class="textcolor" style="color: #800080">(0,0)</span
+                  >&numsp;{<span class="textcolor" style="color: #000000"
+                    >one</span
+                  >}&numsp;<span class="textcolor" style="color: #000000"
+                    ><a href="tikz-trees#pgf.child">child</a></span
+                  >;<br />
+                  &numsp;&numsp;<span class="textcolor" style="color: #0000b2"
+                    ><a href="tikz-shapes#pgf.back/node">\node</a></span
+                  >&numsp;<span class="textcolor" style="color: #000000"
+                    ><a href="tikz-paths#pgf.at">at</a></span
+                  >
+                  <span class="textcolor" style="color: #800080">(0,-1.5)</span
+                  >&numsp;{<span class="textcolor" style="color: #000000"
+                    >two</span
+                  >}&numsp;<span class="textcolor" style="color: #000000"
+                    ><a href="tikz-trees#pgf.child">child</a></span
+                  >
+                  <span class="textcolor" style="color: #000000"
+                    ><a href="tikz-trees#pgf.child">child</a></span
+                  >;<br />
+                  &numsp;&numsp;<span class="textcolor" style="color: #0000b2"
+                    ><a href="tikz-shapes#pgf.back/node">\node</a></span
+                  >&numsp;<span class="textcolor" style="color: #000000"
+                    ><a href="tikz-paths#pgf.at">at</a></span
+                  >
+                  <span class="textcolor" style="color: #800080">(0,-3)</span
+                  >&numsp;{<span class="textcolor" style="color: #000000"
+                    >three</span
+                  >}&numsp;<span class="textcolor" style="color: #000000"
+                    ><a href="tikz-trees#pgf.child">child</a></span
+                  >
+                  <span class="textcolor" style="color: #000000"
+                    ><a href="tikz-trees#pgf.child">child</a></span
+                  >
+                  <span class="textcolor" style="color: #000000"
+                    ><a href="tikz-trees#pgf.child">child</a></span
+                  >;<br />
+                  &numsp;&numsp;<span class="textcolor" style="color: #0000b2"
+                    ><a href="tikz-shapes#pgf.back/node">\node</a></span
+                  >&numsp;<span class="textcolor" style="color: #000000"
+                    ><a href="tikz-paths#pgf.at">at</a></span
+                  >
+                  <span class="textcolor" style="color: #800080">(0,-4.5)</span
+                  >&numsp;{<span class="textcolor" style="color: #000000"
+                    >four</span
+                  >}&numsp;<span class="textcolor" style="color: #000000"
+                    ><a href="tikz-trees#pgf.child">child</a></span
+                  >
+                  <span class="textcolor" style="color: #000000"
+                    ><a href="tikz-trees#pgf.child">child</a></span
+                  >
+                  <span class="textcolor" style="color: #000000"
+                    ><a href="tikz-trees#pgf.child">child</a></span
+                  >
+                  <span class="textcolor" style="color: #000000"
+                    ><a href="tikz-trees#pgf.child">child</a></span
+                  >;<br />
+                  <span class="textcolor" style="color: #000000">\end</span
+                  >{<span class="textcolor" style="color: #0000b2"
+                    ><a href="tikz-scopes#pgf.tikzpicture">tikzpicture</a></span
+                  >}<br />
+                </code>
+              </div>
+            </figure>
+            <p>
+              The next arrangement places children above, but &ldquo;grows only
+              to the right&rdquo;.
+            </p>
+
+            <figure class="example">
+              <div class="example-image">
+                <p>
+                  <span class="lateximagesource" id="lateximage-pgfmanual-2704"
+                    ><!--
+one
+
+
+
+two
+
+
+
+three
+
+
+
+four
+-->
+                    <img
+                      alt="(-tikz-&nbsp;diagram)"
+                      class="lateximage"
+                      height="215.234"
+                      loading="lazy"
+                      src="pgfmanual-images/image-2704.png"
+                      style
+                      width="133.250"
+                  /></span>
+                </p>
+              </div>
+
+              <div class="example-code">
+                <button class="clipboardButton" type="button">copy</button>
+                <code>
+                  <span class="c- preamble">\usetikzlibrary {trees} </span
+                  ><br />
+                  <span class="textcolor" style="color: #000000">\begin</span
+                  >{<span class="textcolor" style="color: #0000b2"
+                    ><a href="tikz-scopes#pgf.tikzpicture">tikzpicture</a></span
+                  >}[<span class="textcolor" style="color: #008000"
+                    ><a href="library-trees#pgf.grow:via:three:points"
+                      >grow via three points</a
+                    ></span
+                  >=<span class="textcolor" style="color: #008000"
+                    >{<span class="example-code-comment">%</span><br />
+                    &numsp;&numsp;&numsp;&numsp;one
+                    <a href="tikz-trees#pgf.child">child</a>
+                    <a href="tikz-paths#pgf.at">at</a>
+                    <span class="textcolor" style="color: #800080">(0,1)</span
+                    >&numsp;<a href="pgfkeys#pgf.and">and</a> two children
+                    <a href="tikz-paths#pgf.at">at</a>
+                    <span class="textcolor" style="color: #800080">(0,1)</span
+                    >&numsp;<a href="pgfkeys#pgf.and">and</a>
+                    <span class="textcolor" style="color: #800080">(1,1)</span
+                    >}</span
+                  >]<br />
+                  &numsp;&numsp;<span class="textcolor" style="color: #0000b2"
+                    ><a href="tikz-shapes#pgf.back/node">\node</a></span
+                  >&numsp;<span class="textcolor" style="color: #000000"
+                    ><a href="tikz-paths#pgf.at">at</a></span
+                  >
+                  <span class="textcolor" style="color: #800080">(0,0)</span
+                  >&numsp;{<span class="textcolor" style="color: #000000"
+                    >one</span
+                  >}&numsp;<span class="textcolor" style="color: #000000"
+                    ><a href="tikz-trees#pgf.child">child</a></span
+                  >;<br />
+                  &numsp;&numsp;<span class="textcolor" style="color: #0000b2"
+                    ><a href="tikz-shapes#pgf.back/node">\node</a></span
+                  >&numsp;<span class="textcolor" style="color: #000000"
+                    ><a href="tikz-paths#pgf.at">at</a></span
+                  >
+                  <span class="textcolor" style="color: #800080">(0,-1.5)</span
+                  >&numsp;{<span class="textcolor" style="color: #000000"
+                    >two</span
+                  >}&numsp;<span class="textcolor" style="color: #000000"
+                    ><a href="tikz-trees#pgf.child">child</a></span
+                  >
+                  <span class="textcolor" style="color: #000000"
+                    ><a href="tikz-trees#pgf.child">child</a></span
+                  >;<br />
+                  &numsp;&numsp;<span class="textcolor" style="color: #0000b2"
+                    ><a href="tikz-shapes#pgf.back/node">\node</a></span
+                  >&numsp;<span class="textcolor" style="color: #000000"
+                    ><a href="tikz-paths#pgf.at">at</a></span
+                  >
+                  <span class="textcolor" style="color: #800080">(0,-3)</span
+                  >&numsp;{<span class="textcolor" style="color: #000000"
+                    >three</span
+                  >}&numsp;<span class="textcolor" style="color: #000000"
+                    ><a href="tikz-trees#pgf.child">child</a></span
+                  >
+                  <span class="textcolor" style="color: #000000"
+                    ><a href="tikz-trees#pgf.child">child</a></span
+                  >
+                  <span class="textcolor" style="color: #000000"
+                    ><a href="tikz-trees#pgf.child">child</a></span
+                  >;<br />
+                  &numsp;&numsp;<span class="textcolor" style="color: #0000b2"
+                    ><a href="tikz-shapes#pgf.back/node">\node</a></span
+                  >&numsp;<span class="textcolor" style="color: #000000"
+                    ><a href="tikz-paths#pgf.at">at</a></span
+                  >
+                  <span class="textcolor" style="color: #800080">(0,-4.5)</span
+                  >&numsp;{<span class="textcolor" style="color: #000000"
+                    >four</span
+                  >}&numsp;<span class="textcolor" style="color: #000000"
+                    ><a href="tikz-trees#pgf.child">child</a></span
+                  >
+                  <span class="textcolor" style="color: #000000"
+                    ><a href="tikz-trees#pgf.child">child</a></span
+                  >
+                  <span class="textcolor" style="color: #000000"
+                    ><a href="tikz-trees#pgf.child">child</a></span
+                  >
+                  <span class="textcolor" style="color: #000000"
+                    ><a href="tikz-trees#pgf.child">child</a></span
+                  >;<br />
+                  <span class="textcolor" style="color: #000000">\end</span
+                  >{<span class="textcolor" style="color: #0000b2"
+                    ><a href="tikz-scopes#pgf.tikzpicture">tikzpicture</a></span
+                  >}<br />
+                </code>
+              </div>
+            </figure>
+            <p>
+              In the final arrangement, the children are placed along a line
+              going down and right.
+            </p>
+
+            <figure class="example">
+              <div class="example-image">
+                <p>
+                  <span class="lateximagesource" id="lateximage-pgfmanual-2705"
+                    ><!--
+one
+
+
+
+two
+
+
+
+three
+
+
+
+four
+   -->
+                    <img
+                      alt="(-tikz-&nbsp;diagram)"
+                      class="lateximage"
+                      height="223.274"
+                      loading="lazy"
+                      src="pgfmanual-images/image-2705.png"
+                      style
+                      width="116.337"
+                  /></span>
+                </p>
+              </div>
+
+              <div class="example-code">
+                <button class="clipboardButton" type="button">copy</button>
+                <code>
+                  <span class="c- preamble">\usetikzlibrary {trees} </span
+                  ><br />
+                  <span class="textcolor" style="color: #000000">\begin</span
+                  >{<span class="textcolor" style="color: #0000b2"
+                    ><a href="tikz-scopes#pgf.tikzpicture">tikzpicture</a></span
+                  >}[<span class="textcolor" style="color: #008000"
+                    ><a href="library-trees#pgf.grow:via:three:points"
+                      >grow via three points</a
+                    ></span
+                  >=<span class="textcolor" style="color: #008000"
+                    >{<span class="example-code-comment">%</span><br />
+                    &numsp;&numsp;&numsp;&numsp;one
+                    <a href="tikz-trees#pgf.child">child</a>
+                    <a href="tikz-paths#pgf.at">at</a>
+                    <span class="textcolor" style="color: #800080"
+                      >(-1,-.5)</span
+                    >&numsp;<a href="pgfkeys#pgf.and">and</a> two children
+                    <a href="tikz-paths#pgf.at">at</a>
+                    <span class="textcolor" style="color: #800080"
+                      >(-1,-.5)</span
+                    >&numsp;<a href="pgfkeys#pgf.and">and</a>
+                    <span class="textcolor" style="color: #800080"
+                      >(0,-.75)</span
+                    >}</span
+                  >]<br />
+                  &numsp;&numsp;<span class="textcolor" style="color: #0000b2"
+                    ><a href="tikz-shapes#pgf.back/node">\node</a></span
+                  >&numsp;<span class="textcolor" style="color: #000000"
+                    ><a href="tikz-paths#pgf.at">at</a></span
+                  >
+                  <span class="textcolor" style="color: #800080">(0,0)</span
+                  >&numsp;{<span class="textcolor" style="color: #000000"
+                    >one</span
+                  >}&numsp;<span class="textcolor" style="color: #000000"
+                    ><a href="tikz-trees#pgf.child">child</a></span
+                  >;<br />
+                  &numsp;&numsp;<span class="textcolor" style="color: #0000b2"
+                    ><a href="tikz-shapes#pgf.back/node">\node</a></span
+                  >&numsp;<span class="textcolor" style="color: #000000"
+                    ><a href="tikz-paths#pgf.at">at</a></span
+                  >
+                  <span class="textcolor" style="color: #800080">(0,-1.5)</span
+                  >&numsp;{<span class="textcolor" style="color: #000000"
+                    >two</span
+                  >}&numsp;<span class="textcolor" style="color: #000000"
+                    ><a href="tikz-trees#pgf.child">child</a></span
+                  >
+                  <span class="textcolor" style="color: #000000"
+                    ><a href="tikz-trees#pgf.child">child</a></span
+                  >;<br />
+                  &numsp;&numsp;<span class="textcolor" style="color: #0000b2"
+                    ><a href="tikz-shapes#pgf.back/node">\node</a></span
+                  >&numsp;<span class="textcolor" style="color: #000000"
+                    ><a href="tikz-paths#pgf.at">at</a></span
+                  >
+                  <span class="textcolor" style="color: #800080">(0,-3)</span
+                  >&numsp;{<span class="textcolor" style="color: #000000"
+                    >three</span
+                  >}&numsp;<span class="textcolor" style="color: #000000"
+                    ><a href="tikz-trees#pgf.child">child</a></span
+                  >
+                  <span class="textcolor" style="color: #000000"
+                    ><a href="tikz-trees#pgf.child">child</a></span
+                  >
+                  <span class="textcolor" style="color: #000000"
+                    ><a href="tikz-trees#pgf.child">child</a></span
+                  >;<br />
+                  &numsp;&numsp;<span class="textcolor" style="color: #0000b2"
+                    ><a href="tikz-shapes#pgf.back/node">\node</a></span
+                  >&numsp;<span class="textcolor" style="color: #000000"
+                    ><a href="tikz-paths#pgf.at">at</a></span
+                  >
+                  <span class="textcolor" style="color: #800080">(0,-4.5)</span
+                  >&numsp;{<span class="textcolor" style="color: #000000"
+                    >four</span
+                  >}&numsp;<span class="textcolor" style="color: #000000"
+                    ><a href="tikz-trees#pgf.child">child</a></span
+                  >
+                  <span class="textcolor" style="color: #000000"
+                    ><a href="tikz-trees#pgf.child">child</a></span
+                  >
+                  <span class="textcolor" style="color: #000000"
+                    ><a href="tikz-trees#pgf.child">child</a></span
+                  >
+                  <span class="textcolor" style="color: #000000"
+                    ><a href="tikz-trees#pgf.child">child</a></span
+                  >;<br />
+                  <span class="textcolor" style="color: #000000">\end</span
+                  >{<span class="textcolor" style="color: #0000b2"
+                    ><a href="tikz-scopes#pgf.tikzpicture">tikzpicture</a></span
+                  >}<br />
+                </code>
+              </div>
+            </figure>
+            <p>
+              These examples should make it clear how you can create new styles
+              to arrange your children along a line.
+            </p>
+          </div>
+
+          <div class="manualentry">
+            <div class="entryheadline">
+              <p>
+                <a id="pgf./tikz/grow:cyclic"></a><a id="pgf.grow:cyclic"></a>
+                <span class="hl-def"
+                  ><kbd
+                    ><span class="keyname"
+                      ><span class="textcolor" style="color: #bf0000"
+                        >/tikz/grow cyclic</span
+                      ></span
+                    ></kbd
+                  ></span
+                ><span class="hl-default">(no value)</span>
+                <a class="anchor-link" href="#pgf./tikz/grow:cyclic">&para;</a>
+              </p>
+            </div>
+            <p>
+              This style causes the children to be arranged &ldquo;on a
+              circle&rdquo;. For this, the children are placed at distance
+              <span class="texttt">\tikzleveldistance</span> from the parent
+              node, but not on a straight line, but on points on a circle.
+              Instead of a sibling distance, there is a
+              <span class="texttt">sibling angle</span> that denotes the angle
+              between two given children.
+            </p>
+
+            <div class="manualentry">
+              <div class="entryheadline">
+                <p>
+                  <a id="pgf./tikz/sibling:angle"></a
+                  ><a id="pgf.sibling:angle"></a>
+                  <span class="hl-def"
+                    ><kbd
+                      ><span class="keyname"
+                        ><span class="textcolor" style="color: #bf0000"
+                          >/tikz/sibling angle</span
+                        ></span
+                      >=</kbd
+                    ><span class="angle">&langle;</span><i>angle</i
+                    ><span class="angle">&rangle;</span></span
+                  ><span class="hl-default">(no default)</span>
+                  <a class="anchor-link" href="#pgf./tikz/sibling:angle"
+                    >&para;</a
+                  >
+                </p>
+              </div>
+              <p>
+                Sets the angle between siblings in the
+                <span class="texttt">grow cyclic</span> style.
+              </p>
+            </div>
+            <p>
+              Note that this function will rotate the coordinate system of the
+              children to ensure that the grandchildren will grow in the right
+              direction.
+            </p>
+
+            <figure class="example">
+              <div class="example-image">
+                <p>
+                  <span class="lateximagesource" id="lateximage-pgfmanual-2706"
+                    ><!--
+   -->
+                    <img
+                      alt="(-tikz-&nbsp;diagram)"
+                      class="lateximage"
+                      height="99.002"
+                      loading="lazy"
+                      src="pgfmanual-images/image-2706.png"
+                      style
+                      width="55.835"
+                  /></span>
+                </p>
+              </div>
+
+              <div class="example-code">
+                <button class="clipboardButton" type="button">copy</button>
+                <code>
+                  <span class="c- preamble">\usetikzlibrary {trees} </span
+                  ><br />
+                  <span class="textcolor" style="color: #000000">\begin</span
+                  >{<span class="textcolor" style="color: #0000b2"
+                    ><a href="tikz-scopes#pgf.tikzpicture">tikzpicture</a></span
+                  >}<br />
+                  &numsp;&numsp;[<span class="textcolor" style="color: #008000"
+                    ><a href="library-trees#pgf.grow:cyclic"
+                      >grow cyclic</a
+                    ></span
+                  >,<br />
+                  &numsp;&numsp;&numsp;<span
+                    class="textcolor"
+                    style="color: #008000"
+                    >level 1</span
+                  >/<span class="textcolor" style="color: #0000b2"
+                    ><a href="pgfkeys#pgf./handlers/.style">.style</a></span
+                  >={<span class="textcolor" style="color: #008000"
+                    ><a href="tikz-trees#pgf.level:distance"
+                      >level distance</a
+                    ></span
+                  >=<span class="textcolor" style="color: #008000">8mm</span
+                  >,<span class="textcolor" style="color: #008000"
+                    ><a href="library-trees#pgf.sibling:angle"
+                      >sibling angle</a
+                    ></span
+                  >=<span class="textcolor" style="color: #008000">60}</span
+                  >,<br />
+                  &numsp;&numsp;&numsp;<span
+                    class="textcolor"
+                    style="color: #008000"
+                    >level 2</span
+                  >/<span class="textcolor" style="color: #0000b2"
+                    ><a href="pgfkeys#pgf./handlers/.style">.style</a></span
+                  >={<span class="textcolor" style="color: #008000"
+                    ><a href="tikz-trees#pgf.level:distance"
+                      >level distance</a
+                    ></span
+                  >=<span class="textcolor" style="color: #008000">4mm</span
+                  >,<span class="textcolor" style="color: #008000"
+                    ><a href="library-trees#pgf.sibling:angle"
+                      >sibling angle</a
+                    ></span
+                  >=<span class="textcolor" style="color: #008000">45}</span
+                  >,<br />
+                  &numsp;&numsp;&numsp;<span
+                    class="textcolor"
+                    style="color: #008000"
+                    >level 3</span
+                  >/<span class="textcolor" style="color: #0000b2"
+                    ><a href="pgfkeys#pgf./handlers/.style">.style</a></span
+                  >={<span class="textcolor" style="color: #008000"
+                    ><a href="tikz-trees#pgf.level:distance"
+                      >level distance</a
+                    ></span
+                  >=<span class="textcolor" style="color: #008000">2mm</span
+                  >,<span class="textcolor" style="color: #008000"
+                    ><a href="library-trees#pgf.sibling:angle"
+                      >sibling angle</a
+                    ></span
+                  >=<span class="textcolor" style="color: #008000">30}</span
+                  >]<br />
+                  &numsp;&numsp;<span class="textcolor" style="color: #0000b2"
+                    ><a href="tikz-shapes#pgf.back/coordinate"
+                      >\coordinate</a
+                    ></span
+                  >&numsp;[<span class="textcolor" style="color: #008000"
+                    ><a href="tikz-transformations#pgf.rotate">rotate</a></span
+                  >=<span class="textcolor" style="color: #008000">-90</span
+                  >]&numsp;<span class="example-code-comment">% going down</span
+                  ><br />
+                  &numsp;&numsp;&numsp;&numsp;<span
+                    class="textcolor"
+                    style="color: #000000"
+                    ><a href="tikz-trees#pgf.child">child</a></span
+                  >
+                  <span class="textcolor" style="color: #000000"
+                    ><a href="tikz-paths#pgf.foreach">foreach</a></span
+                  >
+                  <span class="textcolor" style="color: #0000b2"
+                    ><a href="tikz-paths#pgf.back/x">\x</a></span
+                  >&numsp;<span class="textcolor" style="color: #000000"
+                    ><a href="library-edges#pgf.in">in</a></span
+                  >
+                  {<span class="textcolor" style="color: #000000">1</span>,<span
+                    class="textcolor"
+                    style="color: #000000"
+                    >2</span
+                  >,<span class="textcolor" style="color: #000000">3</span
+                  >}<br />
+                  &numsp;&numsp;&numsp;&numsp;&numsp;&numsp;{<span
+                    class="textcolor"
+                    style="color: #000000"
+                    ><a href="tikz-trees#pgf.child">child</a></span
+                  >
+                  <span class="textcolor" style="color: #000000"
+                    ><a href="tikz-paths#pgf.foreach">foreach</a></span
+                  >
+                  <span class="textcolor" style="color: #0000b2"
+                    ><a href="tikz-paths#pgf.back/x">\x</a></span
+                  >&numsp;<span class="textcolor" style="color: #000000"
+                    ><a href="library-edges#pgf.in">in</a></span
+                  >
+                  {<span class="textcolor" style="color: #000000">1</span>,<span
+                    class="textcolor"
+                    style="color: #000000"
+                    >2</span
+                  >,<span class="textcolor" style="color: #000000">3</span
+                  >}<br />
+                  &numsp;&numsp;&numsp;&numsp;&numsp;&numsp;&numsp;&numsp;{<span
+                    class="textcolor"
+                    style="color: #000000"
+                    ><a href="tikz-trees#pgf.child">child</a></span
+                  >
+                  <span class="textcolor" style="color: #000000"
+                    ><a href="tikz-paths#pgf.foreach">foreach</a></span
+                  >
+                  <span class="textcolor" style="color: #0000b2"
+                    ><a href="tikz-paths#pgf.back/x">\x</a></span
+                  >&numsp;<span class="textcolor" style="color: #000000"
+                    ><a href="library-edges#pgf.in">in</a></span
+                  >
+                  {<span class="textcolor" style="color: #000000">1</span>,<span
+                    class="textcolor"
+                    style="color: #000000"
+                    >2</span
+                  >,<span class="textcolor" style="color: #000000">3</span
+                  >}}};<br />
+                  <span class="textcolor" style="color: #000000">\end</span
+                  >{<span class="textcolor" style="color: #0000b2"
+                    ><a href="tikz-scopes#pgf.tikzpicture">tikzpicture</a></span
+                  >}<br />
+                </code>
+              </div>
+            </figure>
+          </div>
+
+          <div class="manualentry">
+            <div class="entryheadline">
+              <p>
+                <a id="pgf./tikz/clockwise:from"></a
+                ><a id="pgf.clockwise:from"></a>
+                <span class="hl-def"
+                  ><kbd
+                    ><span class="keyname"
+                      ><span class="textcolor" style="color: #bf0000"
+                        >/tikz/clockwise from</span
+                      ></span
+                    >=</kbd
+                  ><span class="angle">&langle;</span><i>angle</i
+                  ><span class="angle">&rangle;</span></span
+                ><span class="hl-default">(no default)</span>
+                <a class="anchor-link" href="#pgf./tikz/clockwise:from"
+                  >&para;</a
+                >
+              </p>
+            </div>
+            <p>
+              This option also causes children to be arranged on a circle.
+              However, the rule for placing children is simpler than with the
+              <span class="texttt">grow cyclic</span> style: The first child is
+              placed at <span class="angle">&langle;</span><i>angle</i
+              ><span class="angle">&rangle;</span> at a distance of
+              <span class="texttt">\tikzleveldistance</span>. The second child
+              is placed at the same distance from the parent, but at angle
+              <span class="angle">&langle;</span><i>angle</i
+              ><span class="angle">&rangle;</span>\({}-{}\)<span class="texttt"
+                >\tikzsiblingangle</span
+              >. The third child is displaced by another
+              <span class="texttt">\tikzsiblingangle</span> in a clockwise
+              fashion, and so on.
+            </p>
+            <p>
+              Note that this function will not rotate the coordinate system.
+            </p>
+
+            <figure class="example">
+              <div class="example-image">
+                <p>
+                  <span class="lateximagesource" id="lateximage-pgfmanual-2707"
+                    ><!--
+      30
+root 0
+     −30
+   −60
+   -->
+                    <img
+                      alt="(-tikz-&nbsp;diagram)"
+                      class="lateximage"
+                      height="62.859"
+                      loading="lazy"
+                      src="pgfmanual-images/image-2707.png"
+                      style
+                      width="60.171"
+                  /></span>
+                </p>
+              </div>
+
+              <div class="example-code">
+                <button class="clipboardButton" type="button">copy</button>
+                <code>
+                  <span class="c- preamble">\usetikzlibrary {trees} </span
+                  ><br />
+                  <span class="textcolor" style="color: #000000">\begin</span
+                  >{<span class="textcolor" style="color: #0000b2"
+                    ><a href="tikz-scopes#pgf.tikzpicture">tikzpicture</a></span
+                  >}<br />
+                  &numsp;&numsp;<span class="textcolor" style="color: #0000b2"
+                    ><a href="tikz-shapes#pgf.back/node">\node</a></span
+                  >&numsp;{<span class="textcolor" style="color: #000000"
+                    ><a href="gd-trees#pgf.root">root</a></span
+                  >}<br />
+                  &numsp;&numsp;[<span class="textcolor" style="color: #008000"
+                    ><a href="library-trees#pgf.clockwise:from"
+                      >clockwise from</a
+                    ></span
+                  >=<span class="textcolor" style="color: #008000">30</span
+                  >,<span class="textcolor" style="color: #008000"
+                    ><a href="library-trees#pgf.sibling:angle"
+                      >sibling angle</a
+                    ></span
+                  >=<span class="textcolor" style="color: #008000">30</span
+                  >]<br />
+                  &numsp;&numsp;<span class="textcolor" style="color: #000000"
+                    ><a href="tikz-trees#pgf.child">child</a></span
+                  >
+                  {<span class="textcolor" style="color: #000000"
+                    ><a href="tikz-coordinates#pgf.node">node</a></span
+                  >
+                  {<span class="textcolor" style="color: #000000">$30$</span
+                  >}}<br />
+                  &numsp;&numsp;<span class="textcolor" style="color: #000000"
+                    ><a href="tikz-trees#pgf.child">child</a></span
+                  >
+                  {<span class="textcolor" style="color: #000000"
+                    ><a href="tikz-coordinates#pgf.node">node</a></span
+                  >
+                  {<span class="textcolor" style="color: #000000">$0$</span
+                  >}}<br />
+                  &numsp;&numsp;<span class="textcolor" style="color: #000000"
+                    ><a href="tikz-trees#pgf.child">child</a></span
+                  >
+                  {<span class="textcolor" style="color: #000000"
+                    ><a href="tikz-coordinates#pgf.node">node</a></span
+                  >
+                  {<span class="textcolor" style="color: #000000">$-30$</span
+                  >}}<br />
+                  &numsp;&numsp;<span class="textcolor" style="color: #000000"
+                    ><a href="tikz-trees#pgf.child">child</a></span
+                  >
+                  {<span class="textcolor" style="color: #000000"
+                    ><a href="tikz-coordinates#pgf.node">node</a></span
+                  >
+                  {<span class="textcolor" style="color: #000000">$-60$</span
+                  >}};<br />
+                  <span class="textcolor" style="color: #000000">\end</span
+                  >{<span class="textcolor" style="color: #0000b2"
+                    ><a href="tikz-scopes#pgf.tikzpicture">tikzpicture</a></span
+                  >}<br />
+                </code>
+              </div>
+            </figure>
+          </div>
+
+          <div class="manualentry">
+            <div class="entryheadline">
+              <p>
+                <a id="pgf./tikz/counterclockwise:from"></a
+                ><a id="pgf.counterclockwise:from"></a>
+                <span class="hl-def"
+                  ><kbd
+                    ><span class="keyname"
+                      ><span class="textcolor" style="color: #bf0000"
+                        >/tikz/counterclockwise from</span
+                      ></span
+                    >=</kbd
+                  ><span class="angle">&langle;</span><i>angle</i
+                  ><span class="angle">&rangle;</span></span
+                ><span class="hl-default">(no default)</span>
+                <a class="anchor-link" href="#pgf./tikz/counterclockwise:from"
+                  >&para;</a
+                >
+              </p>
+            </div>
+            <p>
+              Works the same way as <span class="texttt">clockwise from</span>,
+              but sibling angles are added instead of subtracted.
+            </p>
+          </div>
+          <h5 id="autosec-6581">
+            <span class="sectionnumber" id="sec-75.2">75.2&emsp;</span>Edges
+            From Parent<a class="anchor-link" href="#sec-75.2">&para;</a>
+          </h5>
+          <a id="pgfmanual-autopage-6581"></a>
+
+          <p>
+            The following styles can be used to modify how the edges from
+            parents are drawn:
+          </p>
+
+          <div class="manualentry">
+            <div class="entryheadline">
+              <p>
+                <a id="pgf./tikz/edge:from:parent:fork:down"></a
+                ><a id="pgf.edge:from:parent:fork:down"></a>
+                <span class="hl-def"
+                  ><kbd
+                    ><span class="keyname"
+                      ><span class="textcolor" style="color: #bf0000"
+                        >/tikz/edge from parent fork down</span
+                      ></span
+                    ></kbd
+                  ></span
+                ><span class="hl-default">(style, no value)</span>
+                <a
+                  class="anchor-link"
+                  href="#pgf./tikz/edge:from:parent:fork:down"
+                  >&para;</a
+                >
+              </p>
+            </div>
+            <p>
+              This style will draw a line from the parent downwards (for half
+              the level distance) and then on to the child using only horizontal
+              and vertical lines.
+            </p>
+
+            <figure class="example">
+              <div class="example-image">
+                <p>
+                  <span class="lateximagesource" id="lateximage-pgfmanual-2708"
+                    ><!--
+  root
+
+left right
+
+  child child
+   -->
+                    <img
+                      alt="(-tikz-&nbsp;diagram)"
+                      class="lateximage"
+                      height="87.122"
+                      loading="lazy"
+                      src="pgfmanual-images/image-2708.png"
+                      style
+                      width="85.058"
+                  /></span>
+                </p>
+              </div>
+
+              <div class="example-code">
+                <button class="clipboardButton" type="button">copy</button>
+                <code>
+                  <span class="c- preamble">\usetikzlibrary {trees} </span
+                  ><br />
+                  <span class="textcolor" style="color: #000000">\begin</span
+                  >{<span class="textcolor" style="color: #0000b2"
+                    ><a href="tikz-scopes#pgf.tikzpicture">tikzpicture</a></span
+                  >}<br />
+                  &numsp;&numsp;<span class="textcolor" style="color: #0000b2"
+                    ><a href="tikz-shapes#pgf.back/node">\node</a></span
+                  >&numsp;{<span class="textcolor" style="color: #000000"
+                    ><a href="gd-trees#pgf.root">root</a></span
+                  >}<br />
+                  &numsp;&numsp;&numsp;&numsp;[<span
+                    class="textcolor"
+                    style="color: #008000"
+                    ><a href="library-trees#pgf.edge:from:parent:fork:down"
+                      >edge from parent fork down</a
+                    ></span
+                  >]<br />
+                  &numsp;&numsp;&numsp;&numsp;<span
+                    class="textcolor"
+                    style="color: #000000"
+                    ><a href="tikz-trees#pgf.child">child</a></span
+                  >
+                  {<span class="textcolor" style="color: #000000"
+                    ><a href="tikz-coordinates#pgf.node">node</a></span
+                  >
+                  {<span class="textcolor" style="color: #000000"
+                    ><a href="tikz-arrows#pgf.left">left</a></span
+                  >}}<br />
+                  &numsp;&numsp;&numsp;&numsp;<span
+                    class="textcolor"
+                    style="color: #000000"
+                    ><a href="tikz-trees#pgf.child">child</a></span
+                  >
+                  {<span class="textcolor" style="color: #000000"
+                    ><a href="tikz-coordinates#pgf.node">node</a></span
+                  >
+                  {<span class="textcolor" style="color: #000000"
+                    ><a href="tikz-arrows#pgf.right">right</a></span
+                  >}<br />
+                  &numsp;&numsp;&numsp;&numsp;&numsp;&numsp;<span
+                    class="textcolor"
+                    style="color: #000000"
+                    ><a href="tikz-trees#pgf.child">child</a></span
+                  >[<span class="textcolor" style="color: #008000"
+                    ><a href="tikz-trees#pgf.child:anchor"
+                      >child anchor</a
+                    ></span
+                  >=<span class="textcolor" style="color: #008000"
+                    >north east</span
+                  >]&numsp;{<span class="textcolor" style="color: #000000"
+                    ><a href="tikz-coordinates#pgf.node">node</a></span
+                  >
+                  {<span class="textcolor" style="color: #000000"
+                    ><a href="tikz-trees#pgf.child">child</a></span
+                  >}}<br />
+                  &numsp;&numsp;&numsp;&numsp;&numsp;&numsp;<span
+                    class="textcolor"
+                    style="color: #000000"
+                    ><a href="tikz-trees#pgf.child">child</a></span
+                  >
+                  {<span class="textcolor" style="color: #000000"
+                    ><a href="tikz-coordinates#pgf.node">node</a></span
+                  >
+                  {<span class="textcolor" style="color: #000000"
+                    ><a href="tikz-trees#pgf.child">child</a></span
+                  >}}<br />
+                  &numsp;&numsp;&numsp;&numsp;};<br />
+                  <span class="textcolor" style="color: #000000">\end</span
+                  >{<span class="textcolor" style="color: #0000b2"
+                    ><a href="tikz-scopes#pgf.tikzpicture">tikzpicture</a></span
+                  >}<br />
+                </code>
+              </div>
+            </figure>
+          </div>
+
+          <div class="manualentry">
+            <div class="entryheadline">
+              <p>
+                <a id="pgf./tikz/edge:from:parent:fork:right"></a
+                ><a id="pgf.edge:from:parent:fork:right"></a>
+                <span class="hl-def"
+                  ><kbd
+                    ><span class="keyname"
+                      ><span class="textcolor" style="color: #bf0000"
+                        >/tikz/edge from parent fork right</span
+                      ></span
+                    ></kbd
+                  ></span
+                ><span class="hl-default">(style, no value)</span>
+                <a
+                  class="anchor-link"
+                  href="#pgf./tikz/edge:from:parent:fork:right"
+                  >&para;</a
+                >
+              </p>
+            </div>
+            <p>
+              This style behaves similarly, only it will first draw its edge to
+              the right.
+            </p>
+
+            <figure class="example">
+              <div class="example-image">
+                <p>
+                  <span class="lateximagesource" id="lateximage-pgfmanual-2709"
+                    ><!--
+               child
+       right
+root child
+       left
+   -->
+                    <img
+                      alt="(-tikz-&nbsp;diagram)"
+                      class="lateximage"
+                      height="68.642"
+                      loading="lazy"
+                      src="pgfmanual-images/image-2709.png"
+                      style
+                      width="107.138"
+                  /></span>
+                </p>
+              </div>
+
+              <div class="example-code">
+                <button class="clipboardButton" type="button">copy</button>
+                <code>
+                  <span class="c- preamble">\usetikzlibrary {trees} </span
+                  ><br />
+                  <span class="textcolor" style="color: #000000">\begin</span
+                  >{<span class="textcolor" style="color: #0000b2"
+                    ><a href="tikz-scopes#pgf.tikzpicture">tikzpicture</a></span
+                  >}<br />
+                  &numsp;&numsp;<span class="textcolor" style="color: #0000b2"
+                    ><a href="tikz-shapes#pgf.back/node">\node</a></span
+                  >&numsp;{<span class="textcolor" style="color: #000000"
+                    ><a href="gd-trees#pgf.root">root</a></span
+                  >}<br />
+                  &numsp;&numsp;&numsp;&numsp;[<span
+                    class="textcolor"
+                    style="color: #008000"
+                    ><a href="library-trees#pgf.edge:from:parent:fork:right"
+                      >edge from parent fork right</a
+                    ></span
+                  >,<span class="textcolor" style="color: #008000"
+                    ><a href="tikz-trees#pgf.grow">grow</a></span
+                  >=<span class="textcolor" style="color: #008000"
+                    ><a href="tikz-arrows#pgf.right">right</a></span
+                  >]<br />
+                  &numsp;&numsp;&numsp;&numsp;<span
+                    class="textcolor"
+                    style="color: #000000"
+                    ><a href="tikz-trees#pgf.child">child</a></span
+                  >
+                  {<span class="textcolor" style="color: #000000"
+                    ><a href="tikz-coordinates#pgf.node">node</a></span
+                  >
+                  {<span class="textcolor" style="color: #000000"
+                    ><a href="tikz-arrows#pgf.left">left</a></span
+                  >}}<br />
+                  &numsp;&numsp;&numsp;&numsp;<span
+                    class="textcolor"
+                    style="color: #000000"
+                    ><a href="tikz-trees#pgf.child">child</a></span
+                  >
+                  {<span class="textcolor" style="color: #000000"
+                    ><a href="tikz-coordinates#pgf.node">node</a></span
+                  >
+                  {<span class="textcolor" style="color: #000000"
+                    ><a href="tikz-arrows#pgf.right">right</a></span
+                  >}<br />
+                  &numsp;&numsp;&numsp;&numsp;&numsp;&numsp;<span
+                    class="textcolor"
+                    style="color: #000000"
+                    ><a href="tikz-trees#pgf.child">child</a></span
+                  >
+                  {<span class="textcolor" style="color: #000000"
+                    ><a href="tikz-coordinates#pgf.node">node</a></span
+                  >
+                  {<span class="textcolor" style="color: #000000"
+                    ><a href="tikz-trees#pgf.child">child</a></span
+                  >}}<br />
+                  &numsp;&numsp;&numsp;&numsp;&numsp;&numsp;<span
+                    class="textcolor"
+                    style="color: #000000"
+                    ><a href="tikz-trees#pgf.child">child</a></span
+                  >
+                  {<span class="textcolor" style="color: #000000"
+                    ><a href="tikz-coordinates#pgf.node">node</a></span
+                  >
+                  {<span class="textcolor" style="color: #000000"
+                    ><a href="tikz-trees#pgf.child">child</a></span
+                  >}}<br />
+                  &numsp;&numsp;&numsp;&numsp;};<br />
+                  <span class="textcolor" style="color: #000000">\end</span
+                  >{<span class="textcolor" style="color: #0000b2"
+                    ><a href="tikz-scopes#pgf.tikzpicture">tikzpicture</a></span
+                  >}<br />
+                </code>
+              </div>
+            </figure>
+          </div>
+
+          <div class="manualentry">
+            <div class="entryheadline">
+              <p>
+                <a id="pgf./tikz/edge:from:parent:fork:left"></a
+                ><a id="pgf.edge:from:parent:fork:left"></a>
+                <span class="hl-def"
+                  ><kbd
+                    ><span class="keyname"
+                      ><span class="textcolor" style="color: #bf0000"
+                        >/tikz/edge from parent fork left</span
+                      ></span
+                    ></kbd
+                  ></span
+                ><span class="hl-default">(style, no value)</span>
+                <a
+                  class="anchor-link"
+                  href="#pgf./tikz/edge:from:parent:fork:left"
+                  >&para;</a
+                >
+              </p>
+            </div>
+            <p>Behaves similarly to the previous styles.</p>
+          </div>
+
+          <div class="manualentry">
+            <div class="entryheadline">
+              <p>
+                <a id="pgf./tikz/edge:from:parent:fork:up"></a
+                ><a id="pgf.edge:from:parent:fork:up"></a>
+                <span class="hl-def"
+                  ><kbd
+                    ><span class="keyname"
+                      ><span class="textcolor" style="color: #bf0000"
+                        >/tikz/edge from parent fork up</span
+                      ></span
+                    ></kbd
+                  ></span
+                ><span class="hl-default">(style, no value)</span>
+                <a
+                  class="anchor-link"
+                  href="#pgf./tikz/edge:from:parent:fork:up"
+                  >&para;</a
+                >
+              </p>
+            </div>
+            <p>Behaves similarly to the previous styles.</p>
+          </div>
+        </section>
+      </main>
+
+      <footer>
+        <div class_="footer-left">
+          <a href="https://github.com/pgf-tikz/pgf">Github</a> &middot;
+          <a href="/license">License</a> &middot;
+          <a href="https://ctan.org/pkg/pgf">CTAN</a> &middot;
+          <a href="https://pgf-tikz.github.io/pgf/pgfmanual.pdf">PDF version</a>
+          &middot;
+          <a href="https://github.com/DominikPeters/pgf-tikz-html-manual"
+            >About this HTML version</a
+          >
+        </div>
+        <div class_="footer-right">
+          <em>Manual last updated: 2022-04-23</em>
+        </div>
+      </footer>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/@docsearch/js@alpha"></script>
+    <script>
+      docsearch({
+        apiKey: "ae66ec3fc9df4b52b4d6f24fc8508fd3",
+        indexName: "tikz.dev",
+        appId: "Q70NNMA9GC",
+        container: "#search",
+      });
+    </script>
+  </body>
+</html>

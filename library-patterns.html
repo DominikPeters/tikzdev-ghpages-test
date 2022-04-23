@@ -1,0 +1,4198 @@
+<!DOCTYPE html>
+<html lang="en-US">
+  <head>
+    <meta charset="utf-8" />
+    <meta content="LaTeX Lwarp package" name="generator" />
+    <meta content="width=device-width, initial-scale=1.0" name="viewport" />
+    <!--[if lt IE 9]>
+      <script src="http://html5shiv.googlecode.com/svn/trunk/html5.js"></script>
+    <![endif]-->
+    <title>Pattern Library - PGF/TikZ Manual</title>
+    <link href="style.css" rel="stylesheet" type="text/css" />
+
+    <script>
+      // Lwarp MathJax emulation code
+      //
+      // Based on code by Davide P. Cervone.
+      // Equation numbering: https://github.com/mathjax/MathJax/issues/2427
+      // Starred and ifnextchar macros: https://github.com/mathjax/MathJax/issues/2428
+      // \left, \right delimiters: https://github.com/mathjax/MathJax/issues/2535
+      //
+      // Modified by Brian Dunn to adjust equation numbering and add subequations.
+      //
+      // LaTeX can use \seteqnumber{subequations?}{section}{number} before each equation.
+      // subequations? is 0 usually, 1 if inside subequations.
+      // section is a string printed as-is, or empty.
+      // number is auto-incremented by MathJax between equations.
+      //
+      MathJax = {
+        subequations: "0",
+        section: "",
+        loader: {
+          load: ["[tex]/tagformat", "[tex]/textmacros"],
+        },
+        startup: {
+          ready() {
+            // These would be replaced by import commands if you wanted to make
+            // a proper extension.
+            const Configuration =
+              MathJax._.input.tex.Configuration.Configuration;
+            const CommandMap = MathJax._.input.tex.SymbolMap.CommandMap;
+            const Macro = MathJax._.input.tex.Symbol.Macro;
+            const TexError = MathJax._.input.tex.TexError.default;
+            const ParseUtil = MathJax._.input.tex.ParseUtil.default;
+            const expandable = MathJax._.util.Options.expandable;
+
+            // Insert the replacement string into the TeX string, and check
+            // that there haven't been too many maxro substitutions (prevents
+            // infinite loops).
+            const useArgument = (parser, text) => {
+              parser.string = ParseUtil.addArgs(
+                parser,
+                text,
+                parser.string.slice(parser.i)
+              );
+              parser.i = 0;
+              if (
+                ++parser.macroCount > parser.configuration.options.maxMacros
+              ) {
+                throw new TexError(
+                  "MaxMacroSub1",
+                  "MathJax maximum macro substitution count exceeded; " +
+                    "is there a recursive macro call?"
+                );
+              }
+            };
+
+            // Create the command map for:
+            // \ifstar, \ifnextchar, \ifblank, \ifstrequal, \seteqnumber
+            new CommandMap(
+              "Lwarp-macros",
+              {
+                ifstar: "IfstarFunction",
+                ifnextchar: "IfnextcharFunction",
+                ifblank: "IfblankFunction",
+                ifstrequal: "IfstrequalFunction",
+                seteqnumber: "SeteqnumberFunction",
+              },
+              {
+                // This function implements an ifstar macro.
+                IfstarFunction(parser, name) {
+                  const resultstar = parser.GetArgument(name);
+                  const resultnostar = parser.GetArgument(name);
+                  const star = parser.GetStar(); // true if there is a *
+                  useArgument(parser, star ? resultstar : resultnostar);
+                },
+
+                // This function implements an ifnextchar macro.
+                IfnextcharFunction(parser, name) {
+                  let whichchar = parser.GetArgument(name);
+                  if (whichchar.match(/^(?:0x[0-9A-F]+|[0-9]+)$/i)) {
+                    // $ syntax highlighting
+                    whichchar = String.fromCodePoint(parseInt(whichchar));
+                  }
+                  const resultnextchar = parser.GetArgument(name);
+                  const resultnotnextchar = parser.GetArgument(name);
+                  const gotchar = parser.GetNext() === whichchar;
+                  useArgument(
+                    parser,
+                    gotchar ? resultnextchar : resultnotnextchar
+                  );
+                },
+
+                // This function implements an ifblank macro.
+                IfblankFunction(parser, name) {
+                  const blankarg = parser.GetArgument(name);
+                  const resultblank = parser.GetArgument(name);
+                  const resultnotblank = parser.GetArgument(name);
+                  const isblank = blankarg.trim() == "";
+                  useArgument(parser, isblank ? resultblank : resultnotblank);
+                },
+
+                // This function implements an ifstrequal macro.
+                IfstrequalFunction(parser, name) {
+                  const strequalfirst = parser.GetArgument(name);
+                  const strequalsecond = parser.GetArgument(name);
+                  const resultequal = parser.GetArgument(name);
+                  const resultnotequal = parser.GetArgument(name);
+                  const isequal = strequalfirst == strequalsecond;
+                  useArgument(parser, isequal ? resultequal : resultnotequal);
+                },
+
+                // This function modifies the equation numbers.
+                SeteqnumberFunction(parser, name) {
+                  // Get the macro parameters
+                  const star = parser.GetStar(); // true if there is a *
+                  const optBrackets = parser.GetBrackets(name); // contents of optional brackets
+                  const newsubequations = parser.GetArgument(name); // the subequations argument
+                  const neweqsection = parser.GetArgument(name); // the eq section argument
+                  const neweqnumber = parser.GetArgument(name); // the eq number argument
+                  MathJax.config.subequations = newsubequations; // a string with boolean meaning
+                  MathJax.config.section = neweqsection; // a string with numeric meaning
+                  parser.tags.counter = parser.tags.allCounter = neweqnumber;
+                },
+              }
+            );
+
+            // Create the Lwarp-macros package
+            Configuration.create("Lwarp-macros", {
+              handler: { macro: ["Lwarp-macros"] },
+            });
+
+            MathJax.startup.defaultReady();
+
+            // For forward references:
+            MathJax.startup.input[0].preFilters.add(({ math }) => {
+              if (math.inputData.recompile) {
+                MathJax.config.subequations =
+                  math.inputData.recompile.subequations;
+                MathJax.config.section = math.inputData.recompile.section;
+              }
+            });
+            MathJax.startup.input[0].postFilters.add(({ math }) => {
+              if (math.inputData.recompile) {
+                math.inputData.recompile.subequations =
+                  MathJax.config.subequations;
+                math.inputData.recompile.section = MathJax.config.section;
+              }
+            });
+
+            // For \left, \right with unicode-math:
+            const { DelimiterMap } = MathJax._.input.tex.SymbolMap;
+            const { Symbol } = MathJax._.input.tex.Symbol;
+            const { MapHandler } = MathJax._.input.tex.MapHandler;
+            const delimiter = MapHandler.getMap("delimiter");
+            delimiter.add("\\lBrack", new Symbol("\\lBrack", "\u27E6"));
+            delimiter.add("\\rBrack", new Symbol("\\rBrack", "\u27E7"));
+            delimiter.add("\\lAngle", new Symbol("\\lAngle", "\u27EA"));
+            delimiter.add("\\rAngle", new Symbol("\\rAngle", "\u27EB"));
+            delimiter.add("\\lbrbrak", new Symbol("\\lbrbrak", "\u2772"));
+            delimiter.add("\\rbrbrak", new Symbol("\\rbrbrak", "\u2773"));
+            delimiter.add("\\lbag", new Symbol("\\lbag", "\u27C5"));
+            delimiter.add("\\rbag", new Symbol("\\rbag", "\u27C6"));
+            delimiter.add(
+              "\\llparenthesis",
+              new Symbol("\\llparenthesis", "\u2987")
+            );
+            delimiter.add(
+              "\\rrparenthesis",
+              new Symbol("\\rrparenthesis", "\u2988")
+            );
+            delimiter.add("\\llangle", new Symbol("\\llangle", "\u2989"));
+            delimiter.add("\\rrangle", new Symbol("\\rrangle", "\u298A"));
+            delimiter.add("\\Lbrbrak", new Symbol("\\Lbrbrak", "\u27EC"));
+            delimiter.add("\\Rbrbrak", new Symbol("\\Rbrbrak", "\u27ED"));
+            delimiter.add("\\lBrace", new Symbol("\\lBrace", "\u2983"));
+            delimiter.add("\\rBrace", new Symbol("\\rBrace", "\u2984"));
+            delimiter.add("\\lParen", new Symbol("\\lParen", "\u2985"));
+            delimiter.add("\\rParen", new Symbol("\\rParen", "\u2986"));
+            delimiter.add("\\lbrackubar", new Symbol("\\lbrackubar", "\u298B"));
+            delimiter.add("\\rbrackubar", new Symbol("\\rbrackubar", "\u298C"));
+            delimiter.add(
+              "\\lbrackultick",
+              new Symbol("\\lbrackultick", "\u298D")
+            );
+            delimiter.add(
+              "\\rbracklrtick",
+              new Symbol("\\rbracklrtick", "\u298E")
+            );
+            delimiter.add(
+              "\\lbracklltick",
+              new Symbol("\\lbracklltick", "\u298F")
+            );
+            delimiter.add(
+              "\\rbrackurtick",
+              new Symbol("\\rbrackurtick", "\u2990")
+            );
+            delimiter.add("\\langledot", new Symbol("\\langledot", "\u2991"));
+            delimiter.add("\\rangledot", new Symbol("\\rangledot", "\u2992"));
+            delimiter.add("\\lparenless", new Symbol("\\lparenless", "\u2993"));
+            delimiter.add("\\rparengtr", new Symbol("\\rparengtr", "\u2994"));
+            delimiter.add("\\Lparengtr", new Symbol("\\Lparengtr", "\u2995"));
+            delimiter.add("\\Rparenless", new Symbol("\\Rparenless", "\u2996"));
+            delimiter.add("\\lblkbrbrak", new Symbol("\\lblkbrbrak", "\u2997"));
+            delimiter.add("\\rblkbrbrak", new Symbol("\\rblkbrbrak", "\u2998"));
+            delimiter.add("\\lvzigzag", new Symbol("\\lvzigzag", "\u29D8"));
+            delimiter.add("\\rvzigzag", new Symbol("\\rvzigzag", "\u29D9"));
+            delimiter.add("\\Lvzigzag", new Symbol("\\Lvzigzag", "\u29DA"));
+            delimiter.add("\\Rvzigzag", new Symbol("\\Rvzigzag", "\u29DB"));
+            delimiter.add(
+              "\\lcurvyangle",
+              new Symbol("\\lcurvyangle", "\u29FC")
+            );
+            delimiter.add(
+              "\\rcurvyangle",
+              new Symbol("\\rcurvyangle", "\u29FD")
+            );
+            delimiter.add("\\Vvert", new Symbol("\\Vvert", "\u2980"));
+          }, // ready
+        }, // startup
+
+        tex: {
+          packages: { "[+]": ["tagformat", "Lwarp-macros", "textmacros"] },
+          tags: "ams",
+          tagformat: {
+            number: function (n) {
+              if (MathJax.config.subequations == 0)
+                return MathJax.config.section + n;
+              else return MathJax.config.section + String.fromCharCode(96 + n);
+            },
+          },
+        },
+      };
+    </script>
+
+    <script
+      async
+      id="MathJax-script"
+      src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-chtml.js"
+    ></script>
+
+    <script src="pgfmanual.js"></script>
+
+    <link href="https://unpkg.com/@docsearch/css@alpha" rel="stylesheet" />
+    <link href="/favicon-16x16.png" rel="icon" sizes="16x16" type="image/png" />
+    <link href="/favicon-32x32.png" rel="icon" sizes="32x32" type="image/png" />
+    <link
+      href="/apple-touch-icon.png"
+      rel="apple-touch-icon"
+      sizes="180x180"
+      type="image/png"
+    />
+    <link href="/site.webmanifest" rel="manifest" />
+  </head>
+  <body>
+    <a id="pgfmanual-autopage-5940"></a>
+
+    <div class="bodyandsidetoc grid-container">
+      <header>
+        <strong><a href="/">PGF/Ti<i>k</i>Z Manual</a></strong>
+        <div id="search"></div>
+      </header>
+      <div class="sidetoccontainer" id="local-toc-container">
+        <nav class="sidetoc">
+          <div class="sidetoctitle"><p>On this page</p></div>
+          <div class="sidetoccontents">
+            <p>
+              <a class="tocsubsection" href="#sec-62.1">Form-Only Patterns</a>
+            </p>
+            <p>
+              <a class="tocsubsection" href="#sec-62.2"
+                >Inherently Colored Patterns</a
+              >
+            </p>
+            <p>
+              <a class="tocsubsection" href="#sec-62.3"
+                >User-Defined Patterns</a
+              >
+            </p>
+          </div>
+        </nav>
+      </div>
+      <div class="sidetoccontainer" id="chapter-toc-container">
+        <nav class="sidetoc">
+          <div class="sidetoctitle">
+            <p>
+              <span class="sidetocthetitle"
+                >The <span class="tikzname">TikZ</span> and PGF Packages<br />
+                Manual for version 3.1.9a</span
+              >
+            </p>
+
+            <p>Contents</p>
+          </div>
+
+          <div class="sidetoccontents">
+            <p></p>
+
+            <p>
+              <a class="linkintro" href="/">Introduction</a>
+            </p>
+
+            <p>
+              <a class="tocpart" href="tutorials-guidelines"
+                >Tutorials and Guidelines</a
+              >
+            </p>
+
+            <p>
+              <a class="tocpart" href="install"
+                >Installation and Configuration</a
+              >
+            </p>
+
+            <p>
+              <a class="tocpart" href="tikz">Ti<em>k</em>Z</a>
+            </p>
+
+            <p>
+              <a class="tocpart" href="gd">Graph Drawing</a>
+            </p>
+
+            <p class="current-part">
+              <a class="tocpart" href="libraries">Libraries</a>
+            </p>
+
+            <p class="current-part">
+              <a class="tocsection" href="library-3d"
+                >Three Dimensional Drawing Library</a
+              >
+            </p>
+
+            <p class="current-part">
+              <a class="tocsection" href="library-angle">Angle Library</a>
+            </p>
+
+            <p class="current-part">
+              <a class="tocsection" href="library-arrows">Arrow Tip Library</a>
+            </p>
+
+            <p class="current-part">
+              <a class="tocsection" href="library-automata"
+                >Automata Drawing Library</a
+              >
+            </p>
+
+            <p class="current-part">
+              <a class="tocsection" href="library-babel">Babel Library</a>
+            </p>
+
+            <p class="current-part">
+              <a class="tocsection" href="library-backgrounds"
+                >Background Library</a
+              >
+            </p>
+
+            <p class="current-part">
+              <a class="tocsection" href="library-calc">Calc Library</a>
+            </p>
+
+            <p class="current-part">
+              <a class="tocsection" href="library-calender">Calendar Library</a>
+            </p>
+
+            <p class="current-part">
+              <a class="tocsection" href="library-chains">Chains</a>
+            </p>
+
+            <p class="current-part">
+              <a class="tocsection" href="library-circuits"
+                >Circuit Libraries</a
+              >
+            </p>
+
+            <p class="current-part">
+              <a class="tocsection" href="library-decorations"
+                >Decoration Library</a
+              >
+            </p>
+
+            <p class="current-part">
+              <a class="tocsection" href="library-er"
+                >Entity-Relationship Diagram Drawing Library</a
+              >
+            </p>
+
+            <p class="current-part">
+              <a class="tocsection" href="library-external"
+                >Externalization Library</a
+              >
+            </p>
+
+            <p class="current-part">
+              <a class="tocsection" href="library-fadings">Fading Library</a>
+            </p>
+
+            <p class="current-part">
+              <a class="tocsection" href="library-fit">Fitting Library</a>
+            </p>
+
+            <p class="current-part">
+              <a class="tocsection" href="library-fixedpoint"
+                >Fixed Point Arithmetic Library</a
+              >
+            </p>
+
+            <p class="current-part">
+              <a class="tocsection" href="library-fpu"
+                >Floating Point Unit Library</a
+              >
+            </p>
+
+            <p class="current-part">
+              <a class="tocsection" href="library-lsystems"
+                >Lindenmayer System Drawing Library</a
+              >
+            </p>
+
+            <p class="current-part">
+              <a class="tocsection" href="library-math">Math Library</a>
+            </p>
+
+            <p class="current-part">
+              <a class="tocsection" href="library-matrix">Matrix Library</a>
+            </p>
+
+            <p class="current-part">
+              <a class="tocsection" href="library-mindmaps"
+                >Mindmap Drawing Library</a
+              >
+            </p>
+
+            <p class="current-part">
+              <a class="tocsection" href="library-folding"
+                >Paper-Folding Diagrams Library</a
+              >
+            </p>
+
+            <p class="current current-part">
+              <a class="tocsection" href="library-patterns">Pattern Library</a>
+            </p>
+
+            <p class="current-part">
+              <a class="tocsection" href="library-perspective"
+                >Three Point Perspective Drawing Library</a
+              >
+            </p>
+
+            <p class="current-part">
+              <a class="tocsection" href="library-petri"
+                >Petri-Net Drawing Library</a
+              >
+            </p>
+
+            <p class="current-part">
+              <a class="tocsection" href="library-plot-handlers"
+                >Plot Handler Library</a
+              >
+            </p>
+
+            <p class="current-part">
+              <a class="tocsection" href="library-plot-marks"
+                >Plot Mark Library</a
+              >
+            </p>
+
+            <p class="current-part">
+              <a class="tocsection" href="library-profiler">Profiler Library</a>
+            </p>
+
+            <p class="current-part">
+              <a class="tocsection" href="library-shadings">Shadings Library</a>
+            </p>
+
+            <p class="current-part">
+              <a class="tocsection" href="library-shadows">Shadows Library</a>
+            </p>
+
+            <p class="current-part">
+              <a class="tocsection" href="library-shapes">Shape Library</a>
+            </p>
+
+            <p class="current-part">
+              <a class="tocsection" href="library-spy"
+                >Spy Library: Magnifying Parts of Pictures</a
+              >
+            </p>
+
+            <p class="current-part">
+              <a class="tocsection" href="library-svg-path">SVG-Path Library</a>
+            </p>
+
+            <p class="current-part">
+              <a class="tocsection" href="library-edges">To Path Library</a>
+            </p>
+
+            <p class="current-part">
+              <a class="tocsection" href="library-through">Through Library</a>
+            </p>
+
+            <p class="current-part">
+              <a class="tocsection" href="library-trees">Tree Library</a>
+            </p>
+
+            <p class="current-part">
+              <a class="tocsection" href="library-turtle"
+                >Turtle Graphics Library</a
+              >
+            </p>
+
+            <p class="current-part">
+              <a class="tocsection" href="library-views">Views Library</a>
+            </p>
+
+            <p>
+              <a class="tocpart" href="dv">Data Visualization</a>
+            </p>
+
+            <p>
+              <a class="tocpart" href="utilities">Utilities</a>
+            </p>
+
+            <p>
+              <a class="tocpart" href="math"
+                >Mathematical and Object-Oriented Engines</a
+              >
+            </p>
+
+            <p>
+              <a class="tocpart" href="base">The Basic Layer</a>
+            </p>
+
+            <p>
+              <a class="tocpart" href="pgfsys">The System Layer</a>
+            </p>
+          </div>
+        </nav>
+      </div>
+
+      <main class="bodycontainer">
+        <section class="textbody">
+          <h1>
+            The <span class="tikzname">TikZ</span> and PGF Packages<br />
+            Manual for version 3.1.9a
+          </h1>
+          <h2 class="inserted">Libraries</h2>
+
+          <!--MathJax customizations:-->
+
+          <div class="hidden">
+            \(\newcommand{\footnotename}{footnote}\) \(\def \LWRfootnote {1}\)
+            \(\newcommand {\footnote }[2][\LWRfootnote ]{{}^{\mathrm {#1}}}\)
+            \(\newcommand {\footnotemark }[1][\LWRfootnote ]{{}^{\mathrm
+            {#1}}}\) \(\let \LWRorighspace \hspace \) \(\renewcommand {\hspace
+            }{\ifstar \LWRorighspace \LWRorighspace }\) \(\newcommand
+            {\mathnormal }[1]{{#1}}\) \(\newcommand \ensuremath [1]{#1}\)
+            \(\newcommand {\LWRframebox }[2][]{\fbox {#2}} \newcommand
+            {\framebox }[1][]{\LWRframebox } \) \(\newcommand {\setlength
+            }[2]{}\) \(\newcommand {\addtolength }[2]{}\) \(\newcommand
+            {\setcounter }[2]{}\) \(\newcommand {\addtocounter }[2]{}\)
+            \(\newcommand {\arabic }[1]{}\) \(\newcommand {\number }[1]{}\)
+            \(\newcommand {\noalign }[1]{\text {#1}\notag \\}\) \(\newcommand
+            {\cline }[1]{}\) \(\newcommand {\directlua }[1]{\text
+            {(directlua)}}\) \(\newcommand {\luatexdirectlua }[1]{\text
+            {(directlua)}}\) \(\newcommand {\protect }{}\) \(\def
+            \LWRabsorbnumber #1 {}\) \(\def \LWRabsorbquotenumber "#1 {}\)
+            \(\newcommand {\LWRabsorboption }[1][]{}\) \(\newcommand
+            {\LWRabsorbtwooptions }[1][]{\LWRabsorboption }\) \(\def \mathchar
+            {\ifnextchar "\LWRabsorbquotenumber \LWRabsorbnumber }\) \(\def
+            \mathcode #1={\mathchar }\) \(\let \delcode \mathcode \) \(\let
+            \delimiter \mathchar \) \(\def \oe {\unicode {x0153}}\) \(\def \OE
+            {\unicode {x0152}}\) \(\def \ae {\unicode {x00E6}}\) \(\def \AE
+            {\unicode {x00C6}}\) \(\def \aa {\unicode {x00E5}}\) \(\def \AA
+            {\unicode {x00C5}}\) \(\def \o {\unicode {x00F8}}\) \(\def \O
+            {\unicode {x00D8}}\) \(\def \l {\unicode {x0142}}\) \(\def \L
+            {\unicode {x0141}}\) \(\def \ss {\unicode {x00DF}}\) \(\def \SS
+            {\unicode {x1E9E}}\) \(\def \dag {\unicode {x2020}}\) \(\def \ddag
+            {\unicode {x2021}}\) \(\def \P {\unicode {x00B6}}\) \(\def
+            \copyright {\unicode {x00A9}}\) \(\def \pounds {\unicode {x00A3}}\)
+            \(\let \LWRref \ref \) \(\renewcommand {\ref }{\ifstar \LWRref
+            \LWRref }\) \( \newcommand {\multicolumn }[3]{#3}\) \(\require
+            {textcomp}\) \( \newcommand {\meta }[1]{\langle \textit {#1}\rangle
+            } \) \(\newcommand {\intertext }[1]{\text {#1}\notag \\}\) \(\let
+            \Hat \hat \) \(\let \Check \check \) \(\let \Tilde \tilde \) \(\let
+            \Acute \acute \) \(\let \Grave \grave \) \(\let \Dot \dot \) \(\let
+            \Ddot \ddot \) \(\let \Breve \breve \) \(\let \Bar \bar \) \(\let
+            \Vec \vec \)
+          </div>
+
+          <p></p>
+          <h4 id="autosec-5941">
+            <a id="section-library-patterns"></a
+            ><span class="sectionnumber">62&emsp;</span>Pattern Library
+          </h4>
+          <a id="pgfmanual-autopage-5941"></a>
+          <a id="pgfmanual-autofile-67"></a>
+
+          <div class="manualentry">
+            <div class="entryheadline">
+              <p>
+                <a id="pgf.patterns"></a>
+                <span class="hl-def"
+                  ><b><span class="tikzname">TikZ</span> Library</b>
+                  <kbd
+                    ><span class="textcolor" style="color: #bf0000"
+                      >patterns</span
+                    ></kbd
+                  ></span
+                >
+                <a class="anchor-link" href="#pgf.patterns">&para;</a>
+              </p>
+            </div>
+            <p>
+              <kbd
+                >\usepgflibrary{<span class="textcolor" style="color: #bf0000"
+                  >patterns</span
+                >} %
+                <span class="latexlogofont"
+                  ><span class="latexlogo"
+                    >L<span class="latexlogosup">a</span>T<span
+                      class="latexlogosub"
+                      >e</span
+                    >X</span
+                  ></span
+                >
+                and plain
+                <span class="latexlogofont"
+                  ><span class="latexlogo"
+                    >T<span class="latexlogosub">e</span>X</span
+                  ></span
+                >
+                and pure pgf</kbd
+              ><br />
+              <kbd
+                >\usepgflibrary[<span class="textcolor" style="color: #bf0000"
+                  >patterns</span
+                >] % Con<span class="latexlogofont"
+                  ><span class="latexlogo"
+                    >T<span class="latexlogosub">e</span>X</span
+                  ></span
+                >t and pure pgf</kbd
+              ><br />
+              <kbd
+                >\usetikzlibrary{<span class="textcolor" style="color: #bf0000"
+                  >patterns</span
+                >} %
+                <span class="latexlogofont"
+                  ><span class="latexlogo"
+                    >L<span class="latexlogosup">a</span>T<span
+                      class="latexlogosub"
+                      >e</span
+                    >X</span
+                  ></span
+                >
+                and plain
+                <span class="latexlogofont"
+                  ><span class="latexlogo"
+                    >T<span class="latexlogosub">e</span>X</span
+                  ></span
+                >
+                when using <span class="tikzname">TikZ</span></kbd
+              ><br />
+              <kbd
+                >\usetikzlibrary[<span class="textcolor" style="color: #bf0000"
+                  >patterns</span
+                >] % Con<span class="latexlogofont"
+                  ><span class="latexlogo"
+                    >T<span class="latexlogosub">e</span>X</span
+                  ></span
+                >t when using <span class="tikzname">TikZ</span></kbd
+              ><br />
+              <br />
+              The package defines patterns for filling areas.
+            </p>
+          </div>
+          <h5 id="autosec-5943">
+            <span class="sectionnumber" id="sec-62.1">62.1&emsp;</span>Form-Only
+            Patterns<a class="anchor-link" href="#sec-62.1">&para;</a>
+          </h5>
+          <a id="pgfmanual-autopage-5943"></a>
+          <table>
+            <tbody>
+              <tr>
+                <td class="tdl"><em>Pattern name</em></td>
+                <td class="tdl">
+                  <em
+                    >Example (pattern in black, blue, and red on faded
+                    checkerboard)</em
+                  >
+                </td>
+              </tr>
+
+              <tr>
+                <td class="tdl"><kbd>horizontal lines</kbd></td>
+                <td class="tdl">
+                  <span class="lateximagesource" id="lateximage-pgfmanual-2440"
+                    ><!--
+-->
+                    <img
+                      alt="(-tikz-&nbsp;diagram)"
+                      class="lateximage"
+                      height="56.019"
+                      loading="lazy"
+                      src="pgfmanual-images/image-2440.png"
+                      style
+                      width="382.154"
+                  /></span>
+                </td>
+              </tr>
+
+              <tr>
+                <td class="tdl"><kbd>vertical lines</kbd></td>
+                <td class="tdl">
+                  <span class="lateximagesource" id="lateximage-pgfmanual-2441"
+                    ><!--
+-->
+                    <img
+                      alt="(-tikz-&nbsp;diagram)"
+                      class="lateximage"
+                      height="56.019"
+                      loading="lazy"
+                      src="pgfmanual-images/image-2441.png"
+                      style
+                      width="382.154"
+                  /></span>
+                </td>
+              </tr>
+
+              <tr>
+                <td class="tdl"><kbd>north east lines</kbd></td>
+                <td class="tdl">
+                  <span class="lateximagesource" id="lateximage-pgfmanual-2442"
+                    ><!--
+-->
+                    <img
+                      alt="(-tikz-&nbsp;diagram)"
+                      class="lateximage"
+                      height="56.019"
+                      loading="lazy"
+                      src="pgfmanual-images/image-2442.png"
+                      style
+                      width="382.154"
+                  /></span>
+                </td>
+              </tr>
+
+              <tr>
+                <td class="tdl"><kbd>north west lines</kbd></td>
+                <td class="tdl">
+                  <span class="lateximagesource" id="lateximage-pgfmanual-2443"
+                    ><!--
+-->
+                    <img
+                      alt="(-tikz-&nbsp;diagram)"
+                      class="lateximage"
+                      height="56.019"
+                      loading="lazy"
+                      src="pgfmanual-images/image-2443.png"
+                      style
+                      width="382.154"
+                  /></span>
+                </td>
+              </tr>
+
+              <tr>
+                <td class="tdl"><kbd>grid</kbd></td>
+                <td class="tdl">
+                  <span class="lateximagesource" id="lateximage-pgfmanual-2444"
+                    ><!--
+-->
+                    <img
+                      alt="(-tikz-&nbsp;diagram)"
+                      class="lateximage"
+                      height="56.019"
+                      loading="lazy"
+                      src="pgfmanual-images/image-2444.png"
+                      style
+                      width="382.154"
+                  /></span>
+                </td>
+              </tr>
+
+              <tr>
+                <td class="tdl"><kbd>crosshatch</kbd></td>
+                <td class="tdl">
+                  <span class="lateximagesource" id="lateximage-pgfmanual-2445"
+                    ><!--
+-->
+                    <img
+                      alt="(-tikz-&nbsp;diagram)"
+                      class="lateximage"
+                      height="56.019"
+                      loading="lazy"
+                      src="pgfmanual-images/image-2445.png"
+                      style
+                      width="382.154"
+                  /></span>
+                </td>
+              </tr>
+
+              <tr>
+                <td class="tdl"><kbd>dots</kbd></td>
+                <td class="tdl">
+                  <span class="lateximagesource" id="lateximage-pgfmanual-2446"
+                    ><!--
+-->
+                    <img
+                      alt="(-tikz-&nbsp;diagram)"
+                      class="lateximage"
+                      height="56.019"
+                      loading="lazy"
+                      src="pgfmanual-images/image-2446.png"
+                      style
+                      width="382.154"
+                  /></span>
+                </td>
+              </tr>
+
+              <tr>
+                <td class="tdl"><kbd>crosshatch dots</kbd></td>
+                <td class="tdl">
+                  <span class="lateximagesource" id="lateximage-pgfmanual-2447"
+                    ><!--
+-->
+                    <img
+                      alt="(-tikz-&nbsp;diagram)"
+                      class="lateximage"
+                      height="56.019"
+                      loading="lazy"
+                      src="pgfmanual-images/image-2447.png"
+                      style
+                      width="382.154"
+                  /></span>
+                </td>
+              </tr>
+
+              <tr>
+                <td class="tdl"><kbd>fivepointed stars</kbd></td>
+                <td class="tdl">
+                  <span class="lateximagesource" id="lateximage-pgfmanual-2448"
+                    ><!--
+-->
+                    <img
+                      alt="(-tikz-&nbsp;diagram)"
+                      class="lateximage"
+                      height="56.019"
+                      loading="lazy"
+                      src="pgfmanual-images/image-2448.png"
+                      style
+                      width="382.154"
+                  /></span>
+                </td>
+              </tr>
+
+              <tr>
+                <td class="tdl"><kbd>sixpointed stars</kbd></td>
+                <td class="tdl">
+                  <span class="lateximagesource" id="lateximage-pgfmanual-2449"
+                    ><!--
+-->
+                    <img
+                      alt="(-tikz-&nbsp;diagram)"
+                      class="lateximage"
+                      height="56.019"
+                      loading="lazy"
+                      src="pgfmanual-images/image-2449.png"
+                      style
+                      width="382.154"
+                  /></span>
+                </td>
+              </tr>
+
+              <tr>
+                <td class="tdl"><kbd>bricks</kbd></td>
+                <td class="tdl">
+                  <span class="lateximagesource" id="lateximage-pgfmanual-2450"
+                    ><!--
+-->
+                    <img
+                      alt="(-tikz-&nbsp;diagram)"
+                      class="lateximage"
+                      height="56.019"
+                      loading="lazy"
+                      src="pgfmanual-images/image-2450.png"
+                      style
+                      width="382.154"
+                  /></span>
+                </td>
+              </tr>
+
+              <tr>
+                <td class="tdl"><kbd>checkerboard</kbd></td>
+                <td class="tdl">
+                  <span class="lateximagesource" id="lateximage-pgfmanual-2451"
+                    ><!--
+-->
+                    <img
+                      alt="(-tikz-&nbsp;diagram)"
+                      class="lateximage"
+                      height="56.019"
+                      loading="lazy"
+                      src="pgfmanual-images/image-2451.png"
+                      style
+                      width="382.154"
+                  /></span>
+                </td>
+              </tr>
+
+              <tr>
+                <td class="tdl"></td>
+                <td class="tdl"></td>
+              </tr>
+            </tbody>
+          </table>
+          <h5 id="autosec-5969">
+            <span class="sectionnumber" id="sec-62.2">62.2&emsp;</span
+            >Inherently Colored Patterns<a class="anchor-link" href="#sec-62.2"
+              >&para;</a
+            >
+          </h5>
+          <a id="pgfmanual-autopage-5969"></a>
+          <table>
+            <tbody>
+              <tr>
+                <td class="tdl"><em>Pattern name</em></td>
+                <td class="tdl"><em>Example</em></td>
+              </tr>
+
+              <tr>
+                <td class="tdl"><kbd>checkerboard light gray</kbd></td>
+                <td class="tdl">
+                  <span class="lateximagesource" id="lateximage-pgfmanual-2452"
+                    ><!--
+-->
+                    <img
+                      alt="(-tikz-&nbsp;diagram)"
+                      class="lateximage"
+                      height="56.019"
+                      loading="lazy"
+                      src="pgfmanual-images/image-2452.png"
+                      style
+                      width="382.154"
+                  /></span>
+                </td>
+              </tr>
+
+              <tr>
+                <td class="tdl"><kbd>horizontal lines light gray</kbd></td>
+                <td class="tdl">
+                  <span class="lateximagesource" id="lateximage-pgfmanual-2453"
+                    ><!--
+-->
+                    <img
+                      alt="(-tikz-&nbsp;diagram)"
+                      class="lateximage"
+                      height="56.019"
+                      loading="lazy"
+                      src="pgfmanual-images/image-2453.png"
+                      style
+                      width="382.154"
+                  /></span>
+                </td>
+              </tr>
+
+              <tr>
+                <td class="tdl"><kbd>horizontal lines gray</kbd></td>
+                <td class="tdl">
+                  <span class="lateximagesource" id="lateximage-pgfmanual-2454"
+                    ><!--
+-->
+                    <img
+                      alt="(-tikz-&nbsp;diagram)"
+                      class="lateximage"
+                      height="56.019"
+                      loading="lazy"
+                      src="pgfmanual-images/image-2454.png"
+                      style
+                      width="382.154"
+                  /></span>
+                </td>
+              </tr>
+
+              <tr>
+                <td class="tdl"><kbd>horizontal lines dark gray</kbd></td>
+                <td class="tdl">
+                  <span class="lateximagesource" id="lateximage-pgfmanual-2455"
+                    ><!--
+-->
+                    <img
+                      alt="(-tikz-&nbsp;diagram)"
+                      class="lateximage"
+                      height="56.019"
+                      loading="lazy"
+                      src="pgfmanual-images/image-2455.png"
+                      style
+                      width="382.154"
+                  /></span>
+                </td>
+              </tr>
+
+              <tr>
+                <td class="tdl"><kbd>horizontal lines light blue</kbd></td>
+                <td class="tdl">
+                  <span class="lateximagesource" id="lateximage-pgfmanual-2456"
+                    ><!--
+-->
+                    <img
+                      alt="(-tikz-&nbsp;diagram)"
+                      class="lateximage"
+                      height="56.019"
+                      loading="lazy"
+                      src="pgfmanual-images/image-2456.png"
+                      style
+                      width="382.154"
+                  /></span>
+                </td>
+              </tr>
+
+              <tr>
+                <td class="tdl"><kbd>horizontal lines dark blue</kbd></td>
+                <td class="tdl">
+                  <span class="lateximagesource" id="lateximage-pgfmanual-2457"
+                    ><!--
+-->
+                    <img
+                      alt="(-tikz-&nbsp;diagram)"
+                      class="lateximage"
+                      height="56.019"
+                      loading="lazy"
+                      src="pgfmanual-images/image-2457.png"
+                      style
+                      width="382.154"
+                  /></span>
+                </td>
+              </tr>
+
+              <tr>
+                <td class="tdl"><kbd>crosshatch dots gray</kbd></td>
+                <td class="tdl">
+                  <span class="lateximagesource" id="lateximage-pgfmanual-2458"
+                    ><!--
+-->
+                    <img
+                      alt="(-tikz-&nbsp;diagram)"
+                      class="lateximage"
+                      height="56.019"
+                      loading="lazy"
+                      src="pgfmanual-images/image-2458.png"
+                      style
+                      width="382.154"
+                  /></span>
+                </td>
+              </tr>
+
+              <tr>
+                <td class="tdl"><kbd>crosshatch dots light steel blue</kbd></td>
+                <td class="tdl">
+                  <span class="lateximagesource" id="lateximage-pgfmanual-2459"
+                    ><!--
+-->
+                    <img
+                      alt="(-tikz-&nbsp;diagram)"
+                      class="lateximage"
+                      height="56.019"
+                      loading="lazy"
+                      src="pgfmanual-images/image-2459.png"
+                      style
+                      width="382.154"
+                  /></span>
+                </td>
+              </tr>
+
+              <tr>
+                <td class="tdl"></td>
+                <td class="tdl"></td>
+              </tr>
+            </tbody>
+          </table>
+          <h5 id="autosec-5987">
+            <a id="section-library-patterns-meta"></a
+            ><span class="sectionnumber" id="sec-62.3">62.3&emsp;</span
+            >User-Defined Patterns<a class="anchor-link" href="#sec-62.3"
+              >&para;</a
+            >
+          </h5>
+          <a id="pgfmanual-autopage-5987"></a>
+
+          <p>
+            <em>by Mark Wibrow</em>
+          </p>
+
+          <div class="manualentry">
+            <div class="entryheadline">
+              <p>
+                <a id="pgf.patterns.meta"></a>
+                <span class="hl-def"
+                  ><b><span class="tikzname">TikZ</span> Library</b>
+                  <kbd
+                    ><span class="textcolor" style="color: #bf0000"
+                      >patterns.meta</span
+                    ></kbd
+                  ></span
+                >
+                <a class="anchor-link" href="#pgf.patterns.meta">&para;</a>
+              </p>
+            </div>
+
+            <p>
+              <kbd
+                >\usepgflibrary{<span class="textcolor" style="color: #bf0000"
+                  >patterns.meta</span
+                >} %
+                <span class="latexlogofont"
+                  ><span class="latexlogo"
+                    >L<span class="latexlogosup">a</span>T<span
+                      class="latexlogosub"
+                      >e</span
+                    >X</span
+                  ></span
+                >
+                and plain
+                <span class="latexlogofont"
+                  ><span class="latexlogo"
+                    >T<span class="latexlogosub">e</span>X</span
+                  ></span
+                >
+                and pure pgf</kbd
+              ><br />
+              <kbd
+                >\usepgflibrary[<span class="textcolor" style="color: #bf0000"
+                  >patterns.meta</span
+                >] % Con<span class="latexlogofont"
+                  ><span class="latexlogo"
+                    >T<span class="latexlogosub">e</span>X</span
+                  ></span
+                >t and pure pgf</kbd
+              ><br />
+              <kbd
+                >\usetikzlibrary{<span class="textcolor" style="color: #bf0000"
+                  >patterns.meta</span
+                >} %
+                <span class="latexlogofont"
+                  ><span class="latexlogo"
+                    >L<span class="latexlogosup">a</span>T<span
+                      class="latexlogosub"
+                      >e</span
+                    >X</span
+                  ></span
+                >
+                and plain
+                <span class="latexlogofont"
+                  ><span class="latexlogo"
+                    >T<span class="latexlogosub">e</span>X</span
+                  ></span
+                >
+                when using <span class="tikzname">TikZ</span></kbd
+              ><br />
+              <kbd
+                >\usetikzlibrary[<span class="textcolor" style="color: #bf0000"
+                  >patterns.meta</span
+                >] % Con<span class="latexlogofont"
+                  ><span class="latexlogo"
+                    >T<span class="latexlogosub">e</span>X</span
+                  ></span
+                >t when using <span class="tikzname">TikZ</span></kbd
+              ><br />
+              <br />
+              Define your own patterns with a syntax similar to
+              <span class="texttt">arrows.meta</span>.
+            </p>
+          </div>
+
+          <p>
+            <em>Caveat:</em> This library is currently experimental and might
+            change without notice. There are some known shortcomings that will
+            hopefully be fixed in the future.
+          </p>
+
+          <div class="manualentry">
+            <div class="entryheadline">
+              <p>
+                <a id="pgf.back/pgfdeclarepattern"></a>
+                <span class="hl-def"
+                  ><span class="textcolor" style="color: #bf0000"
+                    ><kbd>\pgfdeclarepattern</kbd></span
+                  >{<span class="angle">&langle;</span><i>config</i
+                  ><span class="angle">&rangle;</span>}</span
+                >
+                <a class="anchor-link" href="#pgf.back/pgfdeclarepattern"
+                  >&para;</a
+                >
+              </p>
+            </div>
+            <p>
+              This command is used to declare a new pattern. In contrast to the
+              normal patterns and in the spirit of
+              <span class="texttt">arrows.meta</span> this command takes a list
+              of keys and values to define the pattern. The following keys are
+              available:
+            </p>
+
+            <div class="manualentry">
+              <div class="entryheadline">
+                <p>
+                  <a id="pgf./pgf/patterns/name"></a>
+                  <span class="hl-def"
+                    ><kbd
+                      ><span class="keyname"
+                        ><span class="textcolor" style="color: #bf0000"
+                          >/pgf/patterns/name</span
+                        ></span
+                      >=</kbd
+                    ><span class="angle">&langle;</span><i>name</i
+                    ><span class="angle">&rangle;</span></span
+                  ><span class="hl-default">(no default)</span>
+                  <a class="anchor-link" href="#pgf./pgf/patterns/name"
+                    >&para;</a
+                  >
+                </p>
+              </div>
+              <p>The name of the pattern by which it can be used later on.</p>
+            </div>
+
+            <div class="manualentry">
+              <div class="entryheadline">
+                <p>
+                  <a id="pgf./pgf/patterns/type"></a><a id="pgf.type"></a>
+                  <span class="hl-def"
+                    ><kbd
+                      ><span class="keyname"
+                        ><span class="textcolor" style="color: #bf0000"
+                          >/pgf/patterns/type</span
+                        ></span
+                      ><span class="textcolor" style="color: #008000"
+                        >=</span
+                      ></kbd
+                    ><span class="textcolor" style="color: #008000"
+                      ><span class="angle">&langle;</span><i>type</i
+                      ><span class="angle">&rangle;</span>
+                    </span></span
+                  ><span class="hl-default"
+                    >(default <kbd>uncolored</kbd>)</span
+                  >
+                  <a class="anchor-link" href="#pgf./pgf/patterns/type"
+                    >&para;</a
+                  >
+                </p>
+              </div>
+              <p>
+                The type of the pattern maps to what was called &ldquo;form
+                only&rdquo; and &ldquo;inherently colored&rdquo; in the language
+                of the normal patterns. The available choices are:
+              </p>
+
+              <p>
+                &bull; <span class="texttt">uncolored</span> the pattern will
+                obey the surrounding color. &bull;
+                <span class="texttt">colored</span> the pattern will have an
+                intrinsic color. &bull;
+                <span class="texttt">form only</span> synonym for
+                <span class="texttt">uncolored</span> &bull;
+                <span class="texttt">inherently colored</span> synonym for
+                <span class="texttt">colored</span>
+              </p>
+            </div>
+
+            <div class="manualentry">
+              <div class="entryheadline">
+                <p>
+                  <a id="pgf./pgf/patterns/x"></a>
+                  <span class="hl-def"
+                    ><kbd
+                      ><span class="keyname"
+                        ><span class="textcolor" style="color: #bf0000"
+                          >/pgf/patterns/x</span
+                        ></span
+                      ><span class="textcolor" style="color: #008000"
+                        >=</span
+                      ></kbd
+                    ><span class="textcolor" style="color: #008000"
+                      ><span class="angle">&langle;</span><i>dimension</i
+                      ><span class="angle">&rangle;</span>
+                    </span></span
+                  ><span class="hl-default">(default <kbd>1cm</kbd>)</span>
+                  <a class="anchor-link" href="#pgf./pgf/patterns/x">&para;</a>
+                </p>
+              </div>
+              <p>
+                Unit vector of the coordinate system in the \(x\)-direction.
+              </p>
+            </div>
+
+            <div class="manualentry">
+              <div class="entryheadline">
+                <p>
+                  <a id="pgf./pgf/patterns/y"></a>
+                  <span class="hl-def"
+                    ><kbd
+                      ><span class="keyname"
+                        ><span class="textcolor" style="color: #bf0000"
+                          >/pgf/patterns/y</span
+                        ></span
+                      ><span class="textcolor" style="color: #008000"
+                        >=</span
+                      ></kbd
+                    ><span class="textcolor" style="color: #008000"
+                      ><span class="angle">&langle;</span><i>dimension</i
+                      ><span class="angle">&rangle;</span>
+                    </span></span
+                  ><span class="hl-default">(default <kbd>1cm</kbd>)</span>
+                  <a class="anchor-link" href="#pgf./pgf/patterns/y">&para;</a>
+                </p>
+              </div>
+              <p>
+                Unit vector of the coordinate system in the \(y\)-direction.
+              </p>
+            </div>
+
+            <div class="manualentry">
+              <div class="entryheadline">
+                <p>
+                  <a id="pgf./pgf/patterns/parameters"></a
+                  ><a id="pgf.parameters"></a>
+                  <span class="hl-def"
+                    ><kbd
+                      ><span class="keyname"
+                        ><span class="textcolor" style="color: #bf0000"
+                          >/pgf/patterns/parameters</span
+                        ></span
+                      ><span class="textcolor" style="color: #008000"
+                        >=</span
+                      ></kbd
+                    ><span class="textcolor" style="color: #008000"
+                      ><span class="angle">&langle;</span
+                      ><i>comma separated list</i
+                      ><span class="angle">&rangle;</span>
+                    </span></span
+                  ><span class="hl-default">(default <kbd>empty</kbd>)</span>
+                  <a class="anchor-link" href="#pgf./pgf/patterns/parameters"
+                    >&para;</a
+                  >
+                </p>
+              </div>
+              <p>
+                A list of parameters that are passed to the pattern. This is
+                usually a list of
+                <span class="latexlogofont"
+                  ><span class="latexlogo"
+                    >T<span class="latexlogosub">e</span>X</span
+                  ></span
+                >
+                macros. It is very important that these macros are fully
+                expandable because the values they hold are being used for
+                deduplication in the PDF file.
+              </p>
+            </div>
+
+            <div class="manualentry">
+              <div class="entryheadline">
+                <p>
+                  <a id="pgf./pgf/patterns/defaults"></a
+                  ><a id="pgf.defaults"></a>
+                  <span class="hl-def"
+                    ><kbd
+                      ><span class="keyname"
+                        ><span class="textcolor" style="color: #bf0000"
+                          >/pgf/patterns/defaults</span
+                        ></span
+                      ><span class="textcolor" style="color: #008000"
+                        >=</span
+                      ></kbd
+                    ><span class="textcolor" style="color: #008000"
+                      ><span class="angle">&langle;</span
+                      ><i>comma separated list</i
+                      ><span class="angle">&rangle;</span>
+                    </span></span
+                  ><span class="hl-default">(default <kbd>empty</kbd>)</span>
+                  <a class="anchor-link" href="#pgf./pgf/patterns/defaults"
+                    >&para;</a
+                  >
+                </p>
+              </div>
+              <p>
+                This list holds default assignments to the parameters passed to
+                the pattern. The default keys can then be found under the
+                <span class="texttt">/pgf/pattern keys/</span> prefix.
+              </p>
+            </div>
+
+            <div class="manualentry">
+              <div class="entryheadline">
+                <p>
+                  <a id="pgf./pgf/patterns/bottom:left"></a
+                  ><a id="pgf.bottom:left"></a>
+                  <span class="hl-def"
+                    ><kbd
+                      ><span class="keyname"
+                        ><span class="textcolor" style="color: #bf0000"
+                          >/pgf/patterns/bottom left</span
+                        ></span
+                      >=</kbd
+                    ><span class="angle">&langle;</span><i>pgfpoint</i
+                    ><span class="angle">&rangle;</span></span
+                  ><span class="hl-default">(no default)</span>
+                  <a class="anchor-link" href="#pgf./pgf/patterns/bottom:left"
+                    >&para;</a
+                  >
+                </p>
+              </div>
+              <p>
+                Bottom left corner of the pattern&rsquo;s bounding box, e.g.
+                <span class="texttt">\pgfqpoint{-.1pt}{-.1pt}</span>.
+              </p>
+            </div>
+
+            <div class="manualentry">
+              <div class="entryheadline">
+                <p>
+                  <a id="pgf./pgf/patterns/top:right"></a
+                  ><a id="pgf.top:right"></a>
+                  <span class="hl-def"
+                    ><kbd
+                      ><span class="keyname"
+                        ><span class="textcolor" style="color: #bf0000"
+                          >/pgf/patterns/top right</span
+                        ></span
+                      >=</kbd
+                    ><span class="angle">&langle;</span><i>pgfpoint</i
+                    ><span class="angle">&rangle;</span></span
+                  ><span class="hl-default">(no default)</span>
+                  <a class="anchor-link" href="#pgf./pgf/patterns/top:right"
+                    >&para;</a
+                  >
+                </p>
+              </div>
+              <p>
+                Top right corner of the pattern&rsquo;s bounding box, e.g.
+                <span class="texttt">\pgfqpoint{3.1pt}{3.1pt}</span>.
+              </p>
+            </div>
+
+            <div class="manualentry">
+              <div class="entryheadline">
+                <p>
+                  <a id="pgf./pgf/patterns/tile:size"></a
+                  ><a id="pgf.tile:size"></a>
+                  <span class="hl-def"
+                    ><kbd
+                      ><span class="keyname"
+                        ><span class="textcolor" style="color: #bf0000"
+                          >/pgf/patterns/tile size</span
+                        ></span
+                      >=</kbd
+                    ><span class="angle">&langle;</span><i>pgfpoint</i
+                    ><span class="angle">&rangle;</span></span
+                  ><span class="hl-default">(no default)</span>
+                  <a class="anchor-link" href="#pgf./pgf/patterns/tile:size"
+                    >&para;</a
+                  >
+                </p>
+              </div>
+              <p>
+                Width and height of a single of the pattern as a
+                <span class="textsc">pgf</span> point specification, i.e. the
+                \(x\) coordinate is the width and the \(y\) specification, i.e.
+                the \(x\) coordinate is the width and the \(y\) coordinate is
+                the height, e.g.
+                <span class="texttt">\pgfqpoint{3pt}{3pt}</span>.
+              </p>
+            </div>
+
+            <div class="manualentry">
+              <div class="entryheadline">
+                <p>
+                  <a id="pgf./pgf/patterns/tile:transformation"></a
+                  ><a id="pgf.tile:transformation"></a>
+                  <span class="hl-def"
+                    ><kbd
+                      ><span class="keyname"
+                        ><span class="textcolor" style="color: #bf0000"
+                          >/pgf/patterns/tile transformation</span
+                        ></span
+                      ><span class="textcolor" style="color: #008000"
+                        >=</span
+                      ></kbd
+                    ><span class="textcolor" style="color: #008000"
+                      ><span class="angle">&langle;</span
+                      ><i>pgftransformation</i
+                      ><span class="angle">&rangle;</span>
+                    </span></span
+                  ><span class="hl-default">(default <kbd>empty</kbd>)</span>
+                  <a
+                    class="anchor-link"
+                    href="#pgf./pgf/patterns/tile:transformation"
+                    >&para;</a
+                  >
+                </p>
+              </div>
+              <p>
+                A <span class="textsc">pgf</span> transformation, e.g.
+                <span class="texttt">\pgftransformrotate{30}</span>.
+              </p>
+            </div>
+
+            <div class="manualentry">
+              <div class="entryheadline">
+                <p>
+                  <a id="pgf./pgf/patterns/code"></a>
+                  <span class="hl-def"
+                    ><kbd
+                      ><span class="keyname"
+                        ><span class="textcolor" style="color: #bf0000"
+                          >/pgf/patterns/code</span
+                        ></span
+                      >=</kbd
+                    ><span class="angle">&langle;</span><i>code</i
+                    ><span class="angle">&rangle;</span></span
+                  ><span class="hl-default">(no default)</span>
+                  <a class="anchor-link" href="#pgf./pgf/patterns/code"
+                    >&para;</a
+                  >
+                </p>
+              </div>
+              <p>
+                The code should be <span class="textsc">pgf</span> code that can
+                be protocolled. It should not contain any color code or nodes.
+              </p>
+            </div>
+
+            <div class="manualentry">
+              <div class="entryheadline">
+                <p>
+                  <a id="pgf./pgf/patterns/set:up:code"></a
+                  ><a id="pgf.set:up:code"></a>
+                  <span class="hl-def"
+                    ><kbd
+                      ><span class="keyname"
+                        ><span class="textcolor" style="color: #bf0000"
+                          >/pgf/patterns/set up code</span
+                        ></span
+                      ><span class="textcolor" style="color: #008000"
+                        >=</span
+                      ></kbd
+                    ><span class="textcolor" style="color: #008000"
+                      ><span class="angle">&langle;</span><i>code</i
+                      ><span class="angle">&rangle;</span>
+                    </span></span
+                  ><span class="hl-default">(default <kbd>empty</kbd>)</span>
+                  <a class="anchor-link" href="#pgf./pgf/patterns/set:up:code"
+                    >&para;</a
+                  >
+                </p>
+              </div>
+              <p>
+                This code can be set if parameters have to be preprocessed
+                before the actual pattern code can be run.
+              </p>
+            </div>
+          </div>
+
+          <figure class="example">
+            <div class="example-image">
+              <p>
+                <span class="lateximagesource" id="lateximage-pgfmanual-2460"
+                  ><!--
+   -->
+                  <img
+                    alt="(-tikz-&nbsp;diagram)"
+                    class="lateximage"
+                    height="418.950"
+                    loading="lazy"
+                    src="pgfmanual-images/image-2460.png"
+                    style
+                    width="418.950"
+                /></span>
+              </p>
+            </div>
+
+            <div class="example-code">
+              <button class="clipboardButton" type="button">copy</button>
+
+              <code>
+                <span class="c- preamble">\usetikzlibrary {patterns.meta} </span
+                ><br />
+                <span class="textcolor" style="color: #0000b2"
+                  ><a href="library-patterns#pgf.back/pgfdeclarepattern"
+                    >\pgfdeclarepattern</a
+                  ></span
+                >{<br />
+                &numsp;&numsp;<span class="textcolor" style="color: #000000"
+                  >name=hatch</span
+                >,<br />
+                &numsp;&numsp;<span class="textcolor" style="color: #000000"
+                  >parameters=</span
+                >{<span class="textcolor" style="color: #0000b2"
+                  >\hatchsize</span
+                >,<span class="textcolor" style="color: #0000b2"
+                  >\hatchangle</span
+                >,<span class="textcolor" style="color: #0000b2"
+                  >\hatchlinewidth</span
+                >},<br />
+                &numsp;&numsp;<span class="textcolor" style="color: #000000"
+                  ><a href="base-scopes#pgf.bottom">bottom</a></span
+                >
+                <span class="textcolor" style="color: #000000">left=</span
+                >{<span class="textcolor" style="color: #0000b2"
+                  ><a href="base-points#pgf.back/pgfpoint">\pgfpoint</a></span
+                >{<span class="textcolor" style="color: #000000">-</span>.<span
+                  class="textcolor"
+                  style="color: #000000"
+                  >1pt</span
+                >}{<span class="textcolor" style="color: #000000">-</span>.<span
+                  class="textcolor"
+                  style="color: #000000"
+                  >1pt</span
+                >}},<br />
+                &numsp;&numsp;<span class="textcolor" style="color: #000000"
+                  ><a href="base-scopes#pgf.top">top</a></span
+                >
+                <span class="textcolor" style="color: #000000">right=</span
+                >{<span class="textcolor" style="color: #0000b2"
+                  ><a href="base-points#pgf.back/pgfpoint">\pgfpoint</a></span
+                >{<span class="textcolor" style="color: #0000b2"
+                  >\hatchsize</span
+                ><span class="textcolor" style="color: #000000">+</span>.<span
+                  class="textcolor"
+                  style="color: #000000"
+                  >1pt</span
+                >}{<span class="textcolor" style="color: #0000b2"
+                  >\hatchsize</span
+                ><span class="textcolor" style="color: #000000">+</span>.<span
+                  class="textcolor"
+                  style="color: #000000"
+                  >1pt</span
+                >}},<br />
+                &numsp;&numsp;<span class="textcolor" style="color: #000000"
+                  >tile</span
+                >
+                <span class="textcolor" style="color: #000000">size=</span
+                >{<span class="textcolor" style="color: #0000b2"
+                  ><a href="base-points#pgf.back/pgfpoint">\pgfpoint</a></span
+                >{<span class="textcolor" style="color: #0000b2"
+                  >\hatchsize</span
+                >}{<span class="textcolor" style="color: #0000b2"
+                  >\hatchsize</span
+                >}},<br />
+                &numsp;&numsp;<span class="textcolor" style="color: #000000"
+                  >tile</span
+                >
+                <span class="textcolor" style="color: #000000"
+                  >transformation=</span
+                >{<span class="textcolor" style="color: #0000b2"
+                  ><a href="base-transformations#pgf.back/pgftransformrotate"
+                    >\pgftransformrotate</a
+                  ></span
+                >{<span class="textcolor" style="color: #0000b2"
+                  >\hatchangle</span
+                >}},<br />
+                &numsp;&numsp;<span class="textcolor" style="color: #000000"
+                  >code=</span
+                >{<br />
+                &numsp;&numsp;&numsp;&numsp;<span
+                  class="textcolor"
+                  style="color: #0000b2"
+                  ><a href="base-actions#pgf.back/pgfsetlinewidth"
+                    >\pgfsetlinewidth</a
+                  ></span
+                >{<span class="textcolor" style="color: #0000b2"
+                  >\hatchlinewidth</span
+                >}<br />
+                &numsp;&numsp;&numsp;&numsp;<span
+                  class="textcolor"
+                  style="color: #0000b2"
+                  ><a href="base-paths#pgf.back/pgfpathmoveto"
+                    >\pgfpathmoveto</a
+                  ></span
+                >{<span class="textcolor" style="color: #0000b2"
+                  ><a href="base-points#pgf.back/pgfpoint">\pgfpoint</a></span
+                >{<span class="textcolor" style="color: #000000">-</span>.<span
+                  class="textcolor"
+                  style="color: #000000"
+                  >1pt</span
+                >}{<span class="textcolor" style="color: #000000">-</span>.<span
+                  class="textcolor"
+                  style="color: #000000"
+                  >1pt</span
+                >}}<br />
+                &numsp;&numsp;&numsp;&numsp;<span
+                  class="textcolor"
+                  style="color: #0000b2"
+                  ><a href="base-paths#pgf.back/pgfpathlineto"
+                    >\pgfpathlineto</a
+                  ></span
+                >{<span class="textcolor" style="color: #0000b2"
+                  ><a href="base-points#pgf.back/pgfpoint">\pgfpoint</a></span
+                >{<span class="textcolor" style="color: #0000b2"
+                  >\hatchsize</span
+                ><span class="textcolor" style="color: #000000">+</span>.<span
+                  class="textcolor"
+                  style="color: #000000"
+                  >1pt</span
+                >}{<span class="textcolor" style="color: #0000b2"
+                  >\hatchsize</span
+                ><span class="textcolor" style="color: #000000">+</span>.<span
+                  class="textcolor"
+                  style="color: #000000"
+                  >1pt</span
+                >}}<br />
+                &numsp;&numsp;&numsp;&numsp;<span
+                  class="textcolor"
+                  style="color: #0000b2"
+                  ><a href="base-paths#pgf.back/pgfpathmoveto"
+                    >\pgfpathmoveto</a
+                  ></span
+                >{<span class="textcolor" style="color: #0000b2"
+                  ><a href="base-points#pgf.back/pgfpoint">\pgfpoint</a></span
+                >{<span class="textcolor" style="color: #000000">-</span>.<span
+                  class="textcolor"
+                  style="color: #000000"
+                  >1pt</span
+                >}{<span class="textcolor" style="color: #0000b2"
+                  >\hatchsize</span
+                ><span class="textcolor" style="color: #000000">+</span>.<span
+                  class="textcolor"
+                  style="color: #000000"
+                  >1pt</span
+                >}}<br />
+                &numsp;&numsp;&numsp;&numsp;<span
+                  class="textcolor"
+                  style="color: #0000b2"
+                  ><a href="base-paths#pgf.back/pgfpathlineto"
+                    >\pgfpathlineto</a
+                  ></span
+                >{<span class="textcolor" style="color: #0000b2"
+                  ><a href="base-points#pgf.back/pgfpoint">\pgfpoint</a></span
+                >{<span class="textcolor" style="color: #0000b2"
+                  >\hatchsize</span
+                ><span class="textcolor" style="color: #000000">+</span>.<span
+                  class="textcolor"
+                  style="color: #000000"
+                  >1pt</span
+                >}{<span class="textcolor" style="color: #000000">-</span>.<span
+                  class="textcolor"
+                  style="color: #000000"
+                  >1pt</span
+                >}}<br />
+                &numsp;&numsp;&numsp;&numsp;<span
+                  class="textcolor"
+                  style="color: #0000b2"
+                  ><a href="base-actions#pgf.back/pgfusepath"
+                    >\pgfusepath</a
+                  ></span
+                >{<span class="textcolor" style="color: #000000">stroke</span
+                >}<br />
+                &numsp;&numsp;}<br />
+                }<br />
+                <br />
+                <a href="tikz-scopes#pgf.back/tikzset">\tikzset</a>{<br />
+                &numsp;&numsp;<span class="textcolor" style="color: #008000"
+                  >hatch size</span
+                >/<span class="textcolor" style="color: #0000b2"
+                  ><a href="pgfkeys#pgf./handlers/.store:in">.store in</a></span
+                >=<span class="textcolor" style="color: #008000"
+                  ><span class="textcolor" style="color: #0000b2"
+                    >\hatchsize</span
+                  ></span
+                >,<br />
+                &numsp;&numsp;<span class="textcolor" style="color: #008000"
+                  >hatch angle</span
+                >/<span class="textcolor" style="color: #0000b2"
+                  ><a href="pgfkeys#pgf./handlers/.store:in">.store in</a></span
+                >=<span class="textcolor" style="color: #008000"
+                  ><span class="textcolor" style="color: #0000b2"
+                    >\hatchangle</span
+                  ></span
+                >,<br />
+                &numsp;&numsp;<span class="textcolor" style="color: #008000"
+                  >hatch line width</span
+                >/<span class="textcolor" style="color: #0000b2"
+                  ><a href="pgfkeys#pgf./handlers/.store:in">.store in</a></span
+                >=<span class="textcolor" style="color: #008000"
+                  ><span class="textcolor" style="color: #0000b2"
+                    >\hatchlinewidth</span
+                  ></span
+                >,<br />
+                &numsp;&numsp;<span class="textcolor" style="color: #008000"
+                  >hatch size</span
+                >=<span class="textcolor" style="color: #008000">5pt</span
+                >,<br />
+                &numsp;&numsp;<span class="textcolor" style="color: #008000"
+                  >hatch angle</span
+                >=<span class="textcolor" style="color: #008000">0pt</span
+                >,<br />
+                &numsp;&numsp;<span class="textcolor" style="color: #008000"
+                  >hatch line width</span
+                >=<span class="textcolor" style="color: #008000">.5pt</span
+                >,<br />
+                }<br />
+                <br />
+                <span class="textcolor" style="color: #000000">\begin</span
+                >{<span class="textcolor" style="color: #0000b2"
+                  ><a href="tikz-scopes#pgf.tikzpicture">tikzpicture</a></span
+                >}<br />
+                <span class="textcolor" style="color: #0000b2"
+                  ><a href="pgffor#pgf.back/foreach">\foreach</a></span
+                >&numsp;<span class="textcolor" style="color: #0000b2">\r</span
+                >&numsp;<span class="textcolor" style="color: #000000"
+                  ><a href="library-edges#pgf.in">in</a></span
+                >
+                {<span class="textcolor" style="color: #000000">1</span
+                >,...,<span class="textcolor" style="color: #000000">4</span
+                >}<br />
+                &numsp;&numsp;<span class="textcolor" style="color: #0000b2"
+                  ><a href="tikz-actions#pgf.back/draw">\draw</a></span
+                >&numsp;[<span class="textcolor" style="color: #008000"
+                  ><a href="tikz-actions#pgf.pattern">pattern</a></span
+                >=<span class="textcolor" style="color: #008000">hatch</span
+                >,&numsp;<span class="textcolor" style="color: #008000"
+                  ><a href="tikz-actions#pgf.pattern:color"
+                    >pattern color</a
+                  ></span
+                >=<span class="textcolor" style="color: #008000">red</span
+                >]<br />
+                &numsp;&numsp;&numsp;&numsp;<span
+                  class="textcolor"
+                  style="color: #800080"
+                  >(\r*3,0)</span
+                >&numsp;<span class="textcolor" style="color: #000000"
+                  ><a href="tikz-paths#pgf.rectangle">rectangle</a></span
+                >
+                <span class="textcolor" style="color: #000000">++</span
+                ><span class="textcolor" style="color: #800080">(2,2)</span
+                >;<br />
+                <br />
+                <span class="textcolor" style="color: #0000b2"
+                  ><a href="pgffor#pgf.back/foreach">\foreach</a></span
+                >&numsp;<span class="textcolor" style="color: #0000b2">\r</span
+                >&numsp;<span class="textcolor" style="color: #000000"
+                  ><a href="library-edges#pgf.in">in</a></span
+                >
+                {<span class="textcolor" style="color: #000000">1</span
+                >,...,<span class="textcolor" style="color: #000000">4</span
+                >}<br />
+                &numsp;&numsp;<span class="textcolor" style="color: #0000b2"
+                  ><a href="tikz-actions#pgf.back/draw">\draw</a></span
+                >&numsp;[<span class="textcolor" style="color: #008000"
+                  ><a href="tikz-actions#pgf.pattern">pattern</a></span
+                >=<span class="textcolor" style="color: #008000">hatch</span
+                >,&numsp;<span class="textcolor" style="color: #008000"
+                  ><a href="tikz-actions#pgf.pattern:color"
+                    >pattern color</a
+                  ></span
+                >=<span class="textcolor" style="color: #008000">green</span
+                >,&numsp;<span class="textcolor" style="color: #008000"
+                  >hatch size</span
+                >=<span class="textcolor" style="color: #008000">2pt</span
+                >]<br />
+                &numsp;&numsp;&numsp;&numsp;<span
+                  class="textcolor"
+                  style="color: #800080"
+                  >(\r*3,3)</span
+                >&numsp;<span class="textcolor" style="color: #000000"
+                  ><a href="tikz-paths#pgf.rectangle">rectangle</a></span
+                >
+                <span class="textcolor" style="color: #000000">++</span
+                ><span class="textcolor" style="color: #800080">(2,2)</span
+                >;<br />
+                <br />
+                <span class="textcolor" style="color: #0000b2"
+                  ><a href="pgffor#pgf.back/foreach">\foreach</a></span
+                >&numsp;<span class="textcolor" style="color: #0000b2">\r</span
+                >&numsp;<span class="textcolor" style="color: #000000"
+                  ><a href="library-edges#pgf.in">in</a></span
+                >
+                {<span class="textcolor" style="color: #000000">1</span
+                >,...,<span class="textcolor" style="color: #000000">4</span
+                >}<br />
+                &numsp;&numsp;<span class="textcolor" style="color: #0000b2"
+                  ><a href="tikz-actions#pgf.back/draw">\draw</a></span
+                >&numsp;[<span class="textcolor" style="color: #008000"
+                  ><a href="tikz-actions#pgf.pattern">pattern</a></span
+                >=<span class="textcolor" style="color: #008000">hatch</span
+                >,&numsp;<span class="textcolor" style="color: #008000"
+                  ><a href="tikz-actions#pgf.pattern:color"
+                    >pattern color</a
+                  ></span
+                >=<span class="textcolor" style="color: #008000">blue</span
+                >,&numsp;<span class="textcolor" style="color: #008000"
+                  >hatch size</span
+                >=<span class="textcolor" style="color: #008000">10pt</span
+                >,&numsp;<span class="textcolor" style="color: #008000"
+                  >hatch angle</span
+                >=<span class="textcolor" style="color: #008000">21</span
+                >]<br />
+                &numsp;&numsp;&numsp;&numsp;<span
+                  class="textcolor"
+                  style="color: #800080"
+                  >(\r*3,6)</span
+                >&numsp;<span class="textcolor" style="color: #000000"
+                  ><a href="tikz-paths#pgf.rectangle">rectangle</a></span
+                >
+                <span class="textcolor" style="color: #000000">++</span
+                ><span class="textcolor" style="color: #800080">(2,2)</span
+                >;<br />
+                <br />
+                <span class="textcolor" style="color: #0000b2"
+                  ><a href="pgffor#pgf.back/foreach">\foreach</a></span
+                >&numsp;<span class="textcolor" style="color: #0000b2">\r</span
+                >&numsp;<span class="textcolor" style="color: #000000"
+                  ><a href="library-edges#pgf.in">in</a></span
+                >
+                {<span class="textcolor" style="color: #000000">1</span
+                >,...,<span class="textcolor" style="color: #000000">4</span
+                >}<br />
+                &numsp;&numsp;<span class="textcolor" style="color: #0000b2"
+                  ><a href="tikz-actions#pgf.back/draw">\draw</a></span
+                >&numsp;[<span class="textcolor" style="color: #008000"
+                  ><a href="tikz-actions#pgf.pattern">pattern</a></span
+                >=<span class="textcolor" style="color: #008000">hatch</span
+                >,&numsp;<span class="textcolor" style="color: #008000"
+                  ><a href="tikz-actions#pgf.pattern:color"
+                    >pattern color</a
+                  ></span
+                >=<span class="textcolor" style="color: #008000">orange</span
+                >,&numsp;<span class="textcolor" style="color: #008000"
+                  >hatch line width</span
+                >=<span class="textcolor" style="color: #008000">2pt</span
+                >]<br />
+                &numsp;&numsp;&numsp;&numsp;<span
+                  class="textcolor"
+                  style="color: #800080"
+                  >(\r*3,9)</span
+                >&numsp;<span class="textcolor" style="color: #000000"
+                  ><a href="tikz-paths#pgf.rectangle">rectangle</a></span
+                >
+                <span class="textcolor" style="color: #000000">++</span
+                ><span class="textcolor" style="color: #800080">(2,2)</span
+                >;<br />
+                <span class="textcolor" style="color: #000000">\end</span>{<span
+                  class="textcolor"
+                  style="color: #0000b2"
+                  ><a href="tikz-scopes#pgf.tikzpicture">tikzpicture</a></span
+                >}<br />
+              </code>
+            </div>
+          </figure>
+
+          <p>
+            There are a couple of predefined
+            <span class="textsc">pgf</span> patterns which are similar to their
+            normal counterparts. For all of these the
+            <span class="texttt">xshift</span> and
+            <span class="texttt">yshift</span> are applied <em>before</em> the
+            rotation. If you want to rotate before shifting, just rotate in the
+            drawing code.
+          </p>
+
+          <div class="manualentry">
+            <div class="entryheadline">
+              <p>
+                <span class="hl-def"><b>Pattern</b> <kbd>Lines</kbd></span>
+              </p>
+            </div>
+            <p>
+              The <span class="texttt">Lines</span> pattern replaces the
+              <span class="texttt">horizontal lines</span>,
+              <span class="texttt">vertical lines</span>,
+              <span class="texttt">north east lines</span>, and
+              <span class="texttt">north west lines</span> patterns.
+              Unfortunately, due to the way the old patterns are constructed,
+              namely that they are not simply related to each other by rotation,
+              the <span class="texttt">Lines</span> pattern cannot be used as a
+              drop-in replacement.
+            </p>
+            <p>
+              However, the pattern options can be tuned to resemble the other
+              versions closely. The available parameters are:
+            </p>
+
+            <div class="manualentry">
+              <div class="entryheadline">
+                <p>
+                  <a id="pgf./pgf/pattern:keys/distance"></a
+                  ><a id="pgf.distance"></a>
+                  <span class="hl-def"
+                    ><kbd
+                      ><span class="keyname"
+                        ><span class="textcolor" style="color: #bf0000"
+                          >/pgf/pattern keys/distance</span
+                        ></span
+                      ></kbd
+                    ></span
+                  ><span class="hl-default">(initially <kbd>3pt</kbd>)</span>
+                  <a class="anchor-link" href="#pgf./pgf/pattern:keys/distance"
+                    >&para;</a
+                  >
+                </p>
+              </div>
+              <p>Distance between lines.</p>
+            </div>
+
+            <div class="manualentry">
+              <div class="entryheadline">
+                <p>
+                  <a id="pgf./pgf/pattern:keys/angle"></a>
+                  <span class="hl-def"
+                    ><kbd
+                      ><span class="keyname"
+                        ><span class="textcolor" style="color: #bf0000"
+                          >/pgf/pattern keys/angle</span
+                        ></span
+                      ></kbd
+                    ></span
+                  ><span class="hl-default">(initially <kbd>0</kbd>)</span>
+                  <a class="anchor-link" href="#pgf./pgf/pattern:keys/angle"
+                    >&para;</a
+                  >
+                </p>
+              </div>
+              <p>
+                By default the lines are horizontal. The whole pattern is
+                rotated by this angle. The rotation angle is measured in the
+                mathematically positive sense.
+              </p>
+            </div>
+
+            <div class="manualentry">
+              <div class="entryheadline">
+                <p>
+                  <a id="pgf./pgf/pattern:keys/xshift"></a>
+                  <span class="hl-def"
+                    ><kbd
+                      ><span class="keyname"
+                        ><span class="textcolor" style="color: #bf0000"
+                          >/pgf/pattern keys/xshift</span
+                        ></span
+                      ></kbd
+                    ></span
+                  ><span class="hl-default">(initially <kbd>0pt</kbd>)</span>
+                  <a class="anchor-link" href="#pgf./pgf/pattern:keys/xshift"
+                    >&para;</a
+                  >
+                </p>
+              </div>
+              <p>
+                Shifts the whole pattern in \(x\)-direction (before applying the
+                rotation).
+              </p>
+            </div>
+
+            <div class="manualentry">
+              <div class="entryheadline">
+                <p>
+                  <a id="pgf./pgf/pattern:keys/yshift"></a>
+                  <span class="hl-def"
+                    ><kbd
+                      ><span class="keyname"
+                        ><span class="textcolor" style="color: #bf0000"
+                          >/pgf/pattern keys/yshift</span
+                        ></span
+                      ></kbd
+                    ></span
+                  ><span class="hl-default">(initially <kbd>0pt</kbd>)</span>
+                  <a class="anchor-link" href="#pgf./pgf/pattern:keys/yshift"
+                    >&para;</a
+                  >
+                </p>
+              </div>
+              <p>
+                Shifts the whole pattern in \(y\)-direction (before applying the
+                rotation).
+              </p>
+            </div>
+
+            <div class="manualentry">
+              <div class="entryheadline">
+                <p>
+                  <a id="pgf./pgf/pattern:keys/line:width"></a>
+                  <span class="hl-def"
+                    ><kbd
+                      ><span class="keyname"
+                        ><span class="textcolor" style="color: #bf0000"
+                          >/pgf/pattern keys/line width</span
+                        ></span
+                      ></kbd
+                    ></span
+                  ><span class="hl-default"
+                    >(initially <kbd>\the\pgflinewidth</kbd>)</span
+                  >
+                  <a
+                    class="anchor-link"
+                    href="#pgf./pgf/pattern:keys/line:width"
+                    >&para;</a
+                  >
+                </p>
+              </div>
+              <p>Thickness of the lines.</p>
+            </div>
+            <p>
+              The following settings can be used to reproduce the other
+              <span class="texttt">... lines</span> patterns.
+            </p>
+
+            <figure class="example">
+              <div class="example-image">
+                <p>
+                  <span class="lateximagesource" id="lateximage-pgfmanual-2461"
+                    ><!--
+   -->
+                    <img
+                      alt="(-tikz-&nbsp;diagram)"
+                      class="lateximage"
+                      height="78.789"
+                      loading="lazy"
+                      src="pgfmanual-images/image-2461.png"
+                      style
+                      width="78.789"
+                  /></span>
+                </p>
+              </div>
+
+              <div class="example-code">
+                <button class="clipboardButton" type="button">copy</button>
+                <code>
+                  <span class="c- preamble"
+                    >\usetikzlibrary {patterns,patterns.meta} </span
+                  ><br />
+                  <span class="textcolor" style="color: #000000">\begin</span
+                  >{<span class="textcolor" style="color: #0000b2"
+                    ><a href="tikz-scopes#pgf.tikzpicture">tikzpicture</a></span
+                  >}<br />
+                  &numsp;&numsp;<span class="textcolor" style="color: #0000b2"
+                    ><a href="tikz-actions#pgf.back/draw">\draw</a></span
+                  >[<span class="textcolor" style="color: #008000"
+                    ><a href="tikz-actions#pgf.pattern">pattern</a></span
+                  >=<span class="textcolor" style="color: #008000"
+                    >{<a href="gd-usage-tikz#pgf.horizontal">horizontal</a>
+                    lines}</span
+                  >,<span class="textcolor" style="color: #008000"
+                    ><a href="tikz-actions#pgf.pattern:color"
+                      >pattern color</a
+                    ></span
+                  >=<span class="textcolor" style="color: #008000">orange</span
+                  >]<br />
+                  &numsp;&numsp;&numsp;&numsp;<span
+                    class="textcolor"
+                    style="color: #800080"
+                    >(0,0)</span
+                  >&numsp;<span class="textcolor" style="color: #000000"
+                    ><a href="tikz-paths#pgf.rectangle">rectangle</a></span
+                  >
+                  <span class="textcolor" style="color: #000000">+</span
+                  ><span class="textcolor" style="color: #800080">(1,1)</span
+                  >;<br />
+                  &numsp;&numsp;<span class="textcolor" style="color: #0000b2"
+                    ><a href="tikz-actions#pgf.back/draw">\draw</a></span
+                  >[<span class="textcolor" style="color: #008000"
+                    ><a href="tikz-actions#pgf.pattern">pattern</a></span
+                  >=<span class="textcolor" style="color: #008000"
+                    >{Lines[<span class="textcolor" style="color: #008000"
+                      ><a href="tikz-transformations#pgf.yshift"
+                        >yshift</a
+                      ></span
+                    >=<span class="textcolor" style="color: #008000">.5pt</span
+                    >]}</span
+                  >,<span class="textcolor" style="color: #008000"
+                    ><a href="tikz-actions#pgf.pattern:color"
+                      >pattern color</a
+                    ></span
+                  >=<span class="textcolor" style="color: #008000">blue</span
+                  >]<br />
+                  &numsp;&numsp;&numsp;&numsp;<span
+                    class="textcolor"
+                    style="color: #800080"
+                    >(0,0)</span
+                  >&numsp;<span class="textcolor" style="color: #000000"
+                    ><a href="tikz-paths#pgf.rectangle">rectangle</a></span
+                  >
+                  <span class="textcolor" style="color: #000000">+</span
+                  ><span class="textcolor" style="color: #800080">(1,1)</span
+                  >;<br />
+                  <br />
+                  &numsp;&numsp;<span class="textcolor" style="color: #0000b2"
+                    ><a href="tikz-actions#pgf.back/draw">\draw</a></span
+                  >[<span class="textcolor" style="color: #008000"
+                    ><a href="tikz-actions#pgf.pattern">pattern</a></span
+                  >=<span class="textcolor" style="color: #008000"
+                    >{<a href="gd-usage-tikz#pgf.vertical">vertical</a>
+                    lines}</span
+                  >,<span class="textcolor" style="color: #008000"
+                    ><a href="tikz-actions#pgf.pattern:color"
+                      >pattern color</a
+                    ></span
+                  >=<span class="textcolor" style="color: #008000">orange</span
+                  >]<br />
+                  &numsp;&numsp;&numsp;&numsp;<span
+                    class="textcolor"
+                    style="color: #800080"
+                    >(1,0)</span
+                  >&numsp;<span class="textcolor" style="color: #000000"
+                    ><a href="tikz-paths#pgf.rectangle">rectangle</a></span
+                  >
+                  <span class="textcolor" style="color: #000000">+</span
+                  ><span class="textcolor" style="color: #800080">(1,1)</span
+                  >;<br />
+                  &numsp;&numsp;<span class="textcolor" style="color: #0000b2"
+                    ><a href="tikz-actions#pgf.back/draw">\draw</a></span
+                  >[<span class="textcolor" style="color: #008000"
+                    ><a href="tikz-actions#pgf.pattern">pattern</a></span
+                  >=<span class="textcolor" style="color: #008000"
+                    >{Lines[<span class="textcolor" style="color: #008000"
+                      ><a href="tikz-coordinates#pgf.angle">angle</a></span
+                    >=<span class="textcolor" style="color: #008000">90</span
+                    >,<span class="textcolor" style="color: #008000"
+                      ><a href="tikz-transformations#pgf.yshift"
+                        >yshift</a
+                      ></span
+                    >=<span class="textcolor" style="color: #008000">-.5pt</span
+                    >]}</span
+                  >,<span class="textcolor" style="color: #008000"
+                    ><a href="tikz-actions#pgf.pattern:color"
+                      >pattern color</a
+                    ></span
+                  >=<span class="textcolor" style="color: #008000">blue</span
+                  >]<br />
+                  &numsp;&numsp;&numsp;&numsp;<span
+                    class="textcolor"
+                    style="color: #800080"
+                    >(1,0)</span
+                  >&numsp;<span class="textcolor" style="color: #000000"
+                    ><a href="tikz-paths#pgf.rectangle">rectangle</a></span
+                  >
+                  <span class="textcolor" style="color: #000000">+</span
+                  ><span class="textcolor" style="color: #800080">(1,1)</span
+                  >;<br />
+                  <br />
+                  &numsp;&numsp;<span class="textcolor" style="color: #0000b2"
+                    ><a href="tikz-actions#pgf.back/draw">\draw</a></span
+                  >[<span class="textcolor" style="color: #008000"
+                    ><a href="tikz-actions#pgf.pattern">pattern</a></span
+                  >=<span class="textcolor" style="color: #008000"
+                    >{north east lines}</span
+                  >,<span class="textcolor" style="color: #008000"
+                    ><a href="tikz-actions#pgf.pattern:color"
+                      >pattern color</a
+                    ></span
+                  >=<span class="textcolor" style="color: #008000">orange</span
+                  >]<br />
+                  &numsp;&numsp;&numsp;&numsp;<span
+                    class="textcolor"
+                    style="color: #800080"
+                    >(0,1)</span
+                  >&numsp;<span class="textcolor" style="color: #000000"
+                    ><a href="tikz-paths#pgf.rectangle">rectangle</a></span
+                  >
+                  <span class="textcolor" style="color: #000000">+</span
+                  ><span class="textcolor" style="color: #800080">(1,1)</span
+                  >;<br />
+                  &numsp;&numsp;<span class="textcolor" style="color: #0000b2"
+                    ><a href="tikz-actions#pgf.back/draw">\draw</a></span
+                  >[<span class="textcolor" style="color: #008000"
+                    ><a href="tikz-actions#pgf.pattern">pattern</a></span
+                  >=<span class="textcolor" style="color: #008000"
+                    >{Lines[<span class="textcolor" style="color: #008000"
+                      ><a href="tikz-coordinates#pgf.angle">angle</a></span
+                    >=<span class="textcolor" style="color: #008000">45</span
+                    >,<span class="textcolor" style="color: #008000"
+                      ><a href="library-patterns#pgf.distance"
+                        >distance</a
+                      ></span
+                    >=<span class="textcolor" style="color: #008000"
+                      >{3pt/sqrt<span class="textcolor" style="color: #800080"
+                        >(2)</span
+                      >}</span
+                    >]}</span
+                  >,<span class="textcolor" style="color: #008000"
+                    ><a href="tikz-actions#pgf.pattern:color"
+                      >pattern color</a
+                    ></span
+                  >=<span class="textcolor" style="color: #008000">blue</span
+                  >]<br />
+                  &numsp;&numsp;&numsp;&numsp;<span
+                    class="textcolor"
+                    style="color: #800080"
+                    >(0,1)</span
+                  >&numsp;<span class="textcolor" style="color: #000000"
+                    ><a href="tikz-paths#pgf.rectangle">rectangle</a></span
+                  >
+                  <span class="textcolor" style="color: #000000">+</span
+                  ><span class="textcolor" style="color: #800080">(1,1)</span
+                  >;<br />
+                  <br />
+                  &numsp;&numsp;<span class="textcolor" style="color: #0000b2"
+                    ><a href="tikz-actions#pgf.back/draw">\draw</a></span
+                  >[<span class="textcolor" style="color: #008000"
+                    ><a href="tikz-actions#pgf.pattern">pattern</a></span
+                  >=<span class="textcolor" style="color: #008000"
+                    >{north west lines}</span
+                  >,<span class="textcolor" style="color: #008000"
+                    ><a href="tikz-actions#pgf.pattern:color"
+                      >pattern color</a
+                    ></span
+                  >=<span class="textcolor" style="color: #008000">orange</span
+                  >]<br />
+                  &numsp;&numsp;&numsp;&numsp;<span
+                    class="textcolor"
+                    style="color: #800080"
+                    >(1,1)</span
+                  >&numsp;<span class="textcolor" style="color: #000000"
+                    ><a href="tikz-paths#pgf.rectangle">rectangle</a></span
+                  >
+                  <span class="textcolor" style="color: #000000">+</span
+                  ><span class="textcolor" style="color: #800080">(1,1)</span
+                  >;<br />
+                  &numsp;&numsp;<span class="textcolor" style="color: #0000b2"
+                    ><a href="tikz-actions#pgf.back/draw">\draw</a></span
+                  >[<span class="textcolor" style="color: #008000"
+                    ><a href="tikz-actions#pgf.pattern">pattern</a></span
+                  >=<span class="textcolor" style="color: #008000"
+                    >{Lines[<span class="textcolor" style="color: #008000"
+                      ><a href="tikz-coordinates#pgf.angle">angle</a></span
+                    >=<span class="textcolor" style="color: #008000">-45</span
+                    >,<span class="textcolor" style="color: #008000"
+                      ><a href="library-patterns#pgf.distance"
+                        >distance</a
+                      ></span
+                    >=<span class="textcolor" style="color: #008000"
+                      >{3pt/sqrt<span class="textcolor" style="color: #800080"
+                        >(2)</span
+                      >}</span
+                    >]}</span
+                  >,<span class="textcolor" style="color: #008000"
+                    ><a href="tikz-actions#pgf.pattern:color"
+                      >pattern color</a
+                    ></span
+                  >=<span class="textcolor" style="color: #008000">blue</span
+                  >]<br />
+                  &numsp;&numsp;&numsp;&numsp;<span
+                    class="textcolor"
+                    style="color: #800080"
+                    >(1,1)</span
+                  >&numsp;<span class="textcolor" style="color: #000000"
+                    ><a href="tikz-paths#pgf.rectangle">rectangle</a></span
+                  >
+                  <span class="textcolor" style="color: #000000">+</span
+                  ><span class="textcolor" style="color: #800080">(1,1)</span
+                  >;<br />
+                  <span class="textcolor" style="color: #000000">\end</span
+                  >{<span class="textcolor" style="color: #0000b2"
+                    ><a href="tikz-scopes#pgf.tikzpicture">tikzpicture</a></span
+                  >}<br />
+                </code>
+              </div>
+            </figure>
+          </div>
+
+          <div class="manualentry">
+            <div class="entryheadline">
+              <p>
+                <span class="hl-def"><b>Pattern</b> <kbd>Hatch</kbd></span>
+              </p>
+            </div>
+            <p>
+              The <span class="texttt">Hatch</span> pattern replaces the
+              <span class="texttt">grid</span> and
+              <span class="texttt">crosshatch</span> patterns. The
+              <span class="texttt">Hatch</span> pattern without options is a
+              drop-in replacement for the
+              <span class="texttt">grid</span> pattern.
+            </p>
+
+            <div class="manualentry">
+              <div class="entryheadline">
+                <p>
+                  <span class="hl-def"
+                    ><kbd
+                      ><span class="keyname"
+                        ><span class="textcolor" style="color: #bf0000"
+                          >/pgf/pattern keys/distance</span
+                        ></span
+                      ></kbd
+                    ></span
+                  ><span class="hl-default">(initially <kbd>3pt</kbd>)</span>
+                </p>
+              </div>
+              <p>Distance between crosses.</p>
+            </div>
+
+            <div class="manualentry">
+              <div class="entryheadline">
+                <p>
+                  <span class="hl-def"
+                    ><kbd
+                      ><span class="keyname"
+                        ><span class="textcolor" style="color: #bf0000"
+                          >/pgf/pattern keys/angle</span
+                        ></span
+                      ></kbd
+                    ></span
+                  ><span class="hl-default">(initially <kbd>0</kbd>)</span>
+                </p>
+              </div>
+              <p>
+                By default the lines are horizontal and vertical. The whole
+                pattern is rotated by this angle. The rotation angle is measured
+                in the mathematically positive sense.
+              </p>
+            </div>
+
+            <div class="manualentry">
+              <div class="entryheadline">
+                <p>
+                  <span class="hl-def"
+                    ><kbd
+                      ><span class="keyname"
+                        ><span class="textcolor" style="color: #bf0000"
+                          >/pgf/pattern keys/xshift</span
+                        ></span
+                      ></kbd
+                    ></span
+                  ><span class="hl-default">(initially <kbd>0pt</kbd>)</span>
+                </p>
+              </div>
+              <p>
+                Shifts the whole pattern in \(x\)-direction (before applying the
+                rotation).
+              </p>
+            </div>
+
+            <div class="manualentry">
+              <div class="entryheadline">
+                <p>
+                  <span class="hl-def"
+                    ><kbd
+                      ><span class="keyname"
+                        ><span class="textcolor" style="color: #bf0000"
+                          >/pgf/pattern keys/yshift</span
+                        ></span
+                      ></kbd
+                    ></span
+                  ><span class="hl-default">(initially <kbd>0pt</kbd>)</span>
+                </p>
+              </div>
+              <p>
+                Shifts the whole pattern in \(y\)-direction (before applying the
+                rotation).
+              </p>
+            </div>
+
+            <div class="manualentry">
+              <div class="entryheadline">
+                <p>
+                  <span class="hl-def"
+                    ><kbd
+                      ><span class="keyname"
+                        ><span class="textcolor" style="color: #bf0000"
+                          >/pgf/pattern keys/line width</span
+                        ></span
+                      ></kbd
+                    ></span
+                  ><span class="hl-default"
+                    >(initially <kbd>\the\pgflinewidth</kbd>)</span
+                  >
+                </p>
+              </div>
+              <p>Thickness of the lines.</p>
+            </div>
+            <p>
+              The following settings can be used to reproduce the
+              <span class="texttt">grid</span> and
+              <span class="texttt">crosshatch</span> patterns.
+            </p>
+
+            <figure class="example">
+              <div class="example-image">
+                <p>
+                  <span class="lateximagesource" id="lateximage-pgfmanual-2462"
+                    ><!--
+   -->
+                    <img
+                      alt="(-tikz-&nbsp;diagram)"
+                      class="lateximage"
+                      height="40.993"
+                      loading="lazy"
+                      src="pgfmanual-images/image-2462.png"
+                      style
+                      width="78.789"
+                  /></span>
+                </p>
+              </div>
+
+              <div class="example-code">
+                <button class="clipboardButton" type="button">copy</button>
+                <code>
+                  <span class="c- preamble"
+                    >\usetikzlibrary {patterns,patterns.meta} </span
+                  ><br />
+                  <span class="textcolor" style="color: #000000">\begin</span
+                  >{<span class="textcolor" style="color: #0000b2"
+                    ><a href="tikz-scopes#pgf.tikzpicture">tikzpicture</a></span
+                  >}<br />
+                  &numsp;&numsp;<span class="textcolor" style="color: #0000b2"
+                    ><a href="tikz-actions#pgf.back/draw">\draw</a></span
+                  >[<span class="textcolor" style="color: #008000"
+                    ><a href="tikz-actions#pgf.pattern">pattern</a></span
+                  >=<span class="textcolor" style="color: #008000"
+                    >{<a href="tikz-paths#pgf.grid">grid</a>}</span
+                  >,<span class="textcolor" style="color: #008000"
+                    ><a href="tikz-actions#pgf.pattern:color"
+                      >pattern color</a
+                    ></span
+                  >=<span class="textcolor" style="color: #008000">orange</span
+                  >]<br />
+                  &numsp;&numsp;&numsp;&numsp;<span
+                    class="textcolor"
+                    style="color: #800080"
+                    >(0,0)</span
+                  >&numsp;<span class="textcolor" style="color: #000000"
+                    ><a href="tikz-paths#pgf.rectangle">rectangle</a></span
+                  >
+                  <span class="textcolor" style="color: #000000">+</span
+                  ><span class="textcolor" style="color: #800080">(1,1)</span
+                  >;<br />
+                  &numsp;&numsp;<span class="textcolor" style="color: #0000b2"
+                    ><a href="tikz-actions#pgf.back/draw">\draw</a></span
+                  >[<span class="textcolor" style="color: #008000"
+                    ><a href="tikz-actions#pgf.pattern">pattern</a></span
+                  >=<span class="textcolor" style="color: #008000">{Hatch}</span
+                  >,<span class="textcolor" style="color: #008000"
+                    ><a href="tikz-actions#pgf.pattern:color"
+                      >pattern color</a
+                    ></span
+                  >=<span class="textcolor" style="color: #008000">blue</span
+                  >]<br />
+                  &numsp;&numsp;&numsp;&numsp;<span
+                    class="textcolor"
+                    style="color: #800080"
+                    >(0,0)</span
+                  >&numsp;<span class="textcolor" style="color: #000000"
+                    ><a href="tikz-paths#pgf.rectangle">rectangle</a></span
+                  >
+                  <span class="textcolor" style="color: #000000">+</span
+                  ><span class="textcolor" style="color: #800080">(1,1)</span
+                  >;<br />
+                  <br />
+                  &numsp;&numsp;<span class="textcolor" style="color: #0000b2"
+                    ><a href="tikz-actions#pgf.back/draw">\draw</a></span
+                  >[<span class="textcolor" style="color: #008000"
+                    ><a href="tikz-actions#pgf.pattern">pattern</a></span
+                  >=<span class="textcolor" style="color: #008000"
+                    >{crosshatch}</span
+                  >,<span class="textcolor" style="color: #008000"
+                    ><a href="tikz-actions#pgf.pattern:color"
+                      >pattern color</a
+                    ></span
+                  >=<span class="textcolor" style="color: #008000">orange</span
+                  >]<br />
+                  &numsp;&numsp;&numsp;&numsp;<span
+                    class="textcolor"
+                    style="color: #800080"
+                    >(1,0)</span
+                  >&numsp;<span class="textcolor" style="color: #000000"
+                    ><a href="tikz-paths#pgf.rectangle">rectangle</a></span
+                  >
+                  <span class="textcolor" style="color: #000000">+</span
+                  ><span class="textcolor" style="color: #800080">(1,1)</span
+                  >;<br />
+                  &numsp;&numsp;<span class="textcolor" style="color: #0000b2"
+                    ><a href="tikz-actions#pgf.back/draw">\draw</a></span
+                  >[<span class="textcolor" style="color: #008000"
+                    ><a href="tikz-actions#pgf.pattern">pattern</a></span
+                  >=<span class="textcolor" style="color: #008000"
+                    >{Hatch[<span class="textcolor" style="color: #008000"
+                      ><a href="tikz-coordinates#pgf.angle">angle</a></span
+                    >=<span class="textcolor" style="color: #008000">45</span
+                    >,<span class="textcolor" style="color: #008000"
+                      ><a href="library-patterns#pgf.distance"
+                        >distance</a
+                      ></span
+                    >=<span class="textcolor" style="color: #008000"
+                      >{3pt/sqrt<span class="textcolor" style="color: #800080"
+                        >(2)</span
+                      >}</span
+                    >,<span class="textcolor" style="color: #008000"
+                      ><a href="tikz-transformations#pgf.xshift"
+                        >xshift</a
+                      ></span
+                    >=<span class="textcolor" style="color: #008000">.1pt</span
+                    >]}</span
+                  >,<br />
+                  &numsp;&numsp;&numsp;&numsp;<span
+                    class="textcolor"
+                    style="color: #008000"
+                    ><a href="tikz-actions#pgf.pattern:color"
+                      >pattern color</a
+                    ></span
+                  >=<span class="textcolor" style="color: #008000">blue</span
+                  >]&numsp;<span class="textcolor" style="color: #800080"
+                    >(1,0)</span
+                  >&numsp;<span class="textcolor" style="color: #000000"
+                    ><a href="tikz-paths#pgf.rectangle">rectangle</a></span
+                  >
+                  <span class="textcolor" style="color: #000000">+</span
+                  ><span class="textcolor" style="color: #800080">(1,1)</span
+                  >;<br />
+                  <span class="textcolor" style="color: #000000">\end</span
+                  >{<span class="textcolor" style="color: #0000b2"
+                    ><a href="tikz-scopes#pgf.tikzpicture">tikzpicture</a></span
+                  >}<br />
+                </code>
+              </div>
+            </figure>
+          </div>
+
+          <div class="manualentry">
+            <div class="entryheadline">
+              <p>
+                <span class="hl-def"><b>Pattern</b> <kbd>Dots</kbd></span>
+              </p>
+            </div>
+            <p>
+              The <span class="texttt">Dots</span> pattern replaces the
+              <span class="texttt">dots</span> and
+              <span class="texttt">crosshatch dots</span> patterns. The
+              <span class="texttt">Dots</span> pattern without options is a
+              drop-in replacement for the
+              <span class="texttt">dots</span> pattern.
+            </p>
+
+            <div class="manualentry">
+              <div class="entryheadline">
+                <p>
+                  <span class="hl-def"
+                    ><kbd
+                      ><span class="keyname"
+                        ><span class="textcolor" style="color: #bf0000"
+                          >/pgf/pattern keys/distance</span
+                        ></span
+                      ></kbd
+                    ></span
+                  ><span class="hl-default">(initially <kbd>3pt</kbd>)</span>
+                </p>
+              </div>
+              <p>Distance between dots.</p>
+            </div>
+
+            <div class="manualentry">
+              <div class="entryheadline">
+                <p>
+                  <span class="hl-def"
+                    ><kbd
+                      ><span class="keyname"
+                        ><span class="textcolor" style="color: #bf0000"
+                          >/pgf/pattern keys/angle</span
+                        ></span
+                      ></kbd
+                    ></span
+                  ><span class="hl-default">(initially <kbd>0</kbd>)</span>
+                </p>
+              </div>
+              <p>
+                By default the lines are arranged on a regular grid. The whole
+                pattern is rotated by this angle. The rotation angle is measured
+                in the mathematically positive sense.
+              </p>
+            </div>
+
+            <div class="manualentry">
+              <div class="entryheadline">
+                <p>
+                  <span class="hl-def"
+                    ><kbd
+                      ><span class="keyname"
+                        ><span class="textcolor" style="color: #bf0000"
+                          >/pgf/pattern keys/xshift</span
+                        ></span
+                      ></kbd
+                    ></span
+                  ><span class="hl-default">(initially <kbd>0pt</kbd>)</span>
+                </p>
+              </div>
+              <p>
+                Shifts the whole pattern in \(x\)-direction (before applying the
+                rotation).
+              </p>
+            </div>
+
+            <div class="manualentry">
+              <div class="entryheadline">
+                <p>
+                  <span class="hl-def"
+                    ><kbd
+                      ><span class="keyname"
+                        ><span class="textcolor" style="color: #bf0000"
+                          >/pgf/pattern keys/yshift</span
+                        ></span
+                      ></kbd
+                    ></span
+                  ><span class="hl-default">(initially <kbd>0pt</kbd>)</span>
+                </p>
+              </div>
+              <p>
+                Shifts the whole pattern in \(y\)-direction (before applying the
+                rotation).
+              </p>
+            </div>
+
+            <div class="manualentry">
+              <div class="entryheadline">
+                <p>
+                  <a id="pgf./pgf/pattern:keys/radius"></a>
+                  <span class="hl-def"
+                    ><kbd
+                      ><span class="keyname"
+                        ><span class="textcolor" style="color: #bf0000"
+                          >/pgf/pattern keys/radius</span
+                        ></span
+                      ></kbd
+                    ></span
+                  ><span class="hl-default">(initially <kbd>0.5pt</kbd>)</span>
+                  <a class="anchor-link" href="#pgf./pgf/pattern:keys/radius"
+                    >&para;</a
+                  >
+                </p>
+              </div>
+              <p>Radius of the dots.</p>
+            </div>
+            <p>
+              The following settings can be used to reproduce the
+              <span class="texttt">dots</span> and
+              <span class="texttt">crosshatch dots</span> patterns.
+            </p>
+
+            <figure class="example">
+              <div class="example-image">
+                <p>
+                  <span class="lateximagesource" id="lateximage-pgfmanual-2463"
+                    ><!--
+   -->
+                    <img
+                      alt="(-tikz-&nbsp;diagram)"
+                      class="lateximage"
+                      height="40.993"
+                      loading="lazy"
+                      src="pgfmanual-images/image-2463.png"
+                      style
+                      width="78.789"
+                  /></span>
+                </p>
+              </div>
+
+              <div class="example-code">
+                <button class="clipboardButton" type="button">copy</button>
+                <code>
+                  <span class="c- preamble"
+                    >\usetikzlibrary {patterns,patterns.meta} </span
+                  ><br />
+                  <span class="textcolor" style="color: #000000">\begin</span
+                  >{<span class="textcolor" style="color: #0000b2"
+                    ><a href="tikz-scopes#pgf.tikzpicture">tikzpicture</a></span
+                  >}<br />
+                  &numsp;&numsp;<span class="textcolor" style="color: #0000b2"
+                    ><a href="tikz-actions#pgf.back/draw">\draw</a></span
+                  >[<span class="textcolor" style="color: #008000"
+                    ><a href="tikz-actions#pgf.pattern">pattern</a></span
+                  >=<span class="textcolor" style="color: #008000">{dots}</span
+                  >,<span class="textcolor" style="color: #008000"
+                    ><a href="tikz-actions#pgf.pattern:color"
+                      >pattern color</a
+                    ></span
+                  >=<span class="textcolor" style="color: #008000">orange</span
+                  >]<br />
+                  &numsp;&numsp;&numsp;&numsp;<span
+                    class="textcolor"
+                    style="color: #800080"
+                    >(0,0)</span
+                  >&numsp;<span class="textcolor" style="color: #000000"
+                    ><a href="tikz-paths#pgf.rectangle">rectangle</a></span
+                  >
+                  <span class="textcolor" style="color: #000000">+</span
+                  ><span class="textcolor" style="color: #800080">(1,1)</span
+                  >;<br />
+                  &numsp;&numsp;<span class="textcolor" style="color: #0000b2"
+                    ><a href="tikz-actions#pgf.back/draw">\draw</a></span
+                  >[<span class="textcolor" style="color: #008000"
+                    ><a href="tikz-actions#pgf.pattern">pattern</a></span
+                  >=<span class="textcolor" style="color: #008000">{Dots}</span
+                  >,<span class="textcolor" style="color: #008000"
+                    ><a href="tikz-actions#pgf.pattern:color"
+                      >pattern color</a
+                    ></span
+                  >=<span class="textcolor" style="color: #008000">blue</span
+                  >]<br />
+                  &numsp;&numsp;&numsp;&numsp;<span
+                    class="textcolor"
+                    style="color: #800080"
+                    >(0,0)</span
+                  >&numsp;<span class="textcolor" style="color: #000000"
+                    ><a href="tikz-paths#pgf.rectangle">rectangle</a></span
+                  >
+                  <span class="textcolor" style="color: #000000">+</span
+                  ><span class="textcolor" style="color: #800080">(1,1)</span
+                  >;<br />
+                  <br />
+                  &numsp;&numsp;<span class="textcolor" style="color: #0000b2"
+                    ><a href="tikz-actions#pgf.back/draw">\draw</a></span
+                  >[<span class="textcolor" style="color: #008000"
+                    ><a href="tikz-actions#pgf.pattern">pattern</a></span
+                  >=<span class="textcolor" style="color: #008000"
+                    >{crosshatch dots}</span
+                  >,<span class="textcolor" style="color: #008000"
+                    ><a href="tikz-actions#pgf.pattern:color"
+                      >pattern color</a
+                    ></span
+                  >=<span class="textcolor" style="color: #008000">orange</span
+                  >]<br />
+                  &numsp;&numsp;&numsp;&numsp;<span
+                    class="textcolor"
+                    style="color: #800080"
+                    >(1,0)</span
+                  >&numsp;<span class="textcolor" style="color: #000000"
+                    ><a href="tikz-paths#pgf.rectangle">rectangle</a></span
+                  >
+                  <span class="textcolor" style="color: #000000">+</span
+                  ><span class="textcolor" style="color: #800080">(1,1)</span
+                  >;<br />
+                  &numsp;&numsp;<span class="textcolor" style="color: #0000b2"
+                    ><a href="tikz-actions#pgf.back/draw">\draw</a></span
+                  >[<span class="textcolor" style="color: #008000"
+                    ><a href="tikz-actions#pgf.pattern">pattern</a></span
+                  >=<span class="textcolor" style="color: #008000"
+                    >{Dots[<span class="textcolor" style="color: #008000"
+                      ><a href="tikz-coordinates#pgf.angle">angle</a></span
+                    >=<span class="textcolor" style="color: #008000">45</span
+                    >,<span class="textcolor" style="color: #008000"
+                      ><a href="library-patterns#pgf.distance"
+                        >distance</a
+                      ></span
+                    >=<span class="textcolor" style="color: #008000"
+                      >{3pt/sqrt<span class="textcolor" style="color: #800080"
+                        >(2)</span
+                      >}</span
+                    >]}</span
+                  >,<br />
+                  &numsp;&numsp;&numsp;&numsp;<span
+                    class="textcolor"
+                    style="color: #008000"
+                    ><a href="tikz-actions#pgf.pattern:color"
+                      >pattern color</a
+                    ></span
+                  >=<span class="textcolor" style="color: #008000">blue</span
+                  >]&numsp;<span class="textcolor" style="color: #800080"
+                    >(1,0)</span
+                  >&numsp;<span class="textcolor" style="color: #000000"
+                    ><a href="tikz-paths#pgf.rectangle">rectangle</a></span
+                  >
+                  <span class="textcolor" style="color: #000000">+</span
+                  ><span class="textcolor" style="color: #800080">(1,1)</span
+                  >;<br />
+                  <span class="textcolor" style="color: #000000">\end</span
+                  >{<span class="textcolor" style="color: #0000b2"
+                    ><a href="tikz-scopes#pgf.tikzpicture">tikzpicture</a></span
+                  >}<br />
+                </code>
+              </div>
+            </figure>
+          </div>
+
+          <div class="manualentry">
+            <div class="entryheadline">
+              <p>
+                <span class="hl-def"><b>Pattern</b> <kbd>Stars</kbd></span>
+              </p>
+            </div>
+            <p>
+              The <span class="texttt">Stars</span> pattern replaces the
+              <span class="texttt">fivepointed stars</span> and
+              <span class="texttt">sixpointed stars</span> patterns. However,
+              the stars of the <span class="texttt">Stars</span> pattern are
+              constructed in a fundamentally different fashion, so it
+              can&rsquo;t be used as a drop-in replacement.
+            </p>
+
+            <div class="manualentry">
+              <div class="entryheadline">
+                <p>
+                  <span class="hl-def"
+                    ><kbd
+                      ><span class="keyname"
+                        ><span class="textcolor" style="color: #bf0000"
+                          >/pgf/pattern keys/distance</span
+                        ></span
+                      ></kbd
+                    ></span
+                  ><span class="hl-default">(initially <kbd>3mm</kbd>)</span>
+                </p>
+              </div>
+              <p>Distance between stars.</p>
+            </div>
+
+            <div class="manualentry">
+              <div class="entryheadline">
+                <p>
+                  <span class="hl-def"
+                    ><kbd
+                      ><span class="keyname"
+                        ><span class="textcolor" style="color: #bf0000"
+                          >/pgf/pattern keys/angle</span
+                        ></span
+                      ></kbd
+                    ></span
+                  ><span class="hl-default">(initially <kbd>0</kbd>)</span>
+                </p>
+              </div>
+              <p>
+                By default the stars are arranged on a regular grid. The whole
+                pattern is rotated by this angle. The rotation angle is measured
+                in the mathematically positive sense.
+              </p>
+            </div>
+
+            <div class="manualentry">
+              <div class="entryheadline">
+                <p>
+                  <span class="hl-def"
+                    ><kbd
+                      ><span class="keyname"
+                        ><span class="textcolor" style="color: #bf0000"
+                          >/pgf/pattern keys/xshift</span
+                        ></span
+                      ></kbd
+                    ></span
+                  ><span class="hl-default">(initially <kbd>0pt</kbd>)</span>
+                </p>
+              </div>
+              <p>
+                Shifts the whole pattern in \(x\)-direction (before applying the
+                rotation).
+              </p>
+            </div>
+
+            <div class="manualentry">
+              <div class="entryheadline">
+                <p>
+                  <span class="hl-def"
+                    ><kbd
+                      ><span class="keyname"
+                        ><span class="textcolor" style="color: #bf0000"
+                          >/pgf/pattern keys/yshift</span
+                        ></span
+                      ></kbd
+                    ></span
+                  ><span class="hl-default">(initially <kbd>0pt</kbd>)</span>
+                </p>
+              </div>
+              <p>
+                Shifts the whole pattern in \(y\)-direction (before applying the
+                rotation).
+              </p>
+            </div>
+
+            <div class="manualentry">
+              <div class="entryheadline">
+                <p>
+                  <span class="hl-def"
+                    ><kbd
+                      ><span class="keyname"
+                        ><span class="textcolor" style="color: #bf0000"
+                          >/pgf/pattern keys/radius</span
+                        ></span
+                      ></kbd
+                    ></span
+                  ><span class="hl-default">(initially <kbd>1mm</kbd>)</span>
+                </p>
+              </div>
+              <p>Outer radius of the enclosing circle of the stars.</p>
+            </div>
+
+            <div class="manualentry">
+              <div class="entryheadline">
+                <p>
+                  <a id="pgf./pgf/pattern:keys/points"></a
+                  ><a id="pgf.points"></a>
+                  <span class="hl-def"
+                    ><kbd
+                      ><span class="keyname"
+                        ><span class="textcolor" style="color: #bf0000"
+                          >/pgf/pattern keys/points</span
+                        ></span
+                      ></kbd
+                    ></span
+                  ><span class="hl-default">(initially <kbd>5</kbd>)</span>
+                  <a class="anchor-link" href="#pgf./pgf/pattern:keys/points"
+                    >&para;</a
+                  >
+                </p>
+              </div>
+              <p>Number of pointy ends of the stars.</p>
+            </div>
+
+            <figure class="example">
+              <div class="example-image">
+                <p>
+                  <span class="lateximagesource" id="lateximage-pgfmanual-2464"
+                    ><!--
+   -->
+                    <img
+                      alt="(-tikz-&nbsp;diagram)"
+                      class="lateximage"
+                      height="40.993"
+                      loading="lazy"
+                      src="pgfmanual-images/image-2464.png"
+                      style
+                      width="78.789"
+                  /></span>
+                </p>
+              </div>
+
+              <div class="example-code">
+                <button class="clipboardButton" type="button">copy</button>
+                <code>
+                  <span class="c- preamble"
+                    >\usetikzlibrary {patterns,patterns.meta} </span
+                  ><br />
+                  <span class="textcolor" style="color: #000000">\begin</span
+                  >{<span class="textcolor" style="color: #0000b2"
+                    ><a href="tikz-scopes#pgf.tikzpicture">tikzpicture</a></span
+                  >}<br />
+                  &numsp;&numsp;<span class="textcolor" style="color: #0000b2"
+                    ><a href="tikz-actions#pgf.back/draw">\draw</a></span
+                  >[<span class="textcolor" style="color: #008000"
+                    ><a href="tikz-actions#pgf.pattern">pattern</a></span
+                  >=<span class="textcolor" style="color: #008000"
+                    >{fivepointed stars}</span
+                  >,<span class="textcolor" style="color: #008000"
+                    ><a href="tikz-actions#pgf.pattern:color"
+                      >pattern color</a
+                    ></span
+                  >=<span class="textcolor" style="color: #008000">orange</span
+                  >]<br />
+                  &numsp;&numsp;&numsp;&numsp;<span
+                    class="textcolor"
+                    style="color: #800080"
+                    >(0,0)</span
+                  >&numsp;<span class="textcolor" style="color: #000000"
+                    ><a href="tikz-paths#pgf.rectangle">rectangle</a></span
+                  >
+                  <span class="textcolor" style="color: #000000">+</span
+                  ><span class="textcolor" style="color: #800080">(1,1)</span
+                  >;<br />
+                  &numsp;&numsp;<span class="textcolor" style="color: #0000b2"
+                    ><a href="tikz-actions#pgf.back/draw">\draw</a></span
+                  >[<span class="textcolor" style="color: #008000"
+                    ><a href="tikz-actions#pgf.pattern">pattern</a></span
+                  >=<span class="textcolor" style="color: #008000">{Stars}</span
+                  >,<span class="textcolor" style="color: #008000"
+                    ><a href="tikz-actions#pgf.pattern:color"
+                      >pattern color</a
+                    ></span
+                  >=<span class="textcolor" style="color: #008000">blue</span
+                  >]<br />
+                  &numsp;&numsp;&numsp;&numsp;<span
+                    class="textcolor"
+                    style="color: #800080"
+                    >(0,0)</span
+                  >&numsp;<span class="textcolor" style="color: #000000"
+                    ><a href="tikz-paths#pgf.rectangle">rectangle</a></span
+                  >
+                  <span class="textcolor" style="color: #000000">+</span
+                  ><span class="textcolor" style="color: #800080">(1,1)</span
+                  >;<br />
+                  <br />
+                  &numsp;&numsp;<span class="textcolor" style="color: #0000b2"
+                    ><a href="tikz-actions#pgf.back/draw">\draw</a></span
+                  >[<span class="textcolor" style="color: #008000"
+                    ><a href="tikz-actions#pgf.pattern">pattern</a></span
+                  >=<span class="textcolor" style="color: #008000"
+                    >{sixpointed stars}</span
+                  >,<span class="textcolor" style="color: #008000"
+                    ><a href="tikz-actions#pgf.pattern:color"
+                      >pattern color</a
+                    ></span
+                  >=<span class="textcolor" style="color: #008000">orange</span
+                  >]<br />
+                  &numsp;&numsp;&numsp;&numsp;<span
+                    class="textcolor"
+                    style="color: #800080"
+                    >(1,0)</span
+                  >&numsp;<span class="textcolor" style="color: #000000"
+                    ><a href="tikz-paths#pgf.rectangle">rectangle</a></span
+                  >
+                  <span class="textcolor" style="color: #000000">+</span
+                  ><span class="textcolor" style="color: #800080">(1,1)</span
+                  >;<br />
+                  &numsp;&numsp;<span class="textcolor" style="color: #0000b2"
+                    ><a href="tikz-actions#pgf.back/draw">\draw</a></span
+                  >[<span class="textcolor" style="color: #008000"
+                    ><a href="tikz-actions#pgf.pattern">pattern</a></span
+                  >=<span class="textcolor" style="color: #008000"
+                    >{Stars[<span class="textcolor" style="color: #008000"
+                      ><a href="library-patterns#pgf.points">points</a></span
+                    >=<span class="textcolor" style="color: #008000">6</span
+                    >]}</span
+                  >,<span class="textcolor" style="color: #008000"
+                    ><a href="tikz-actions#pgf.pattern:color"
+                      >pattern color</a
+                    ></span
+                  >=<span class="textcolor" style="color: #008000">blue</span
+                  >]<br />
+                  &numsp;&numsp;&numsp;&numsp;<span
+                    class="textcolor"
+                    style="color: #800080"
+                    >(1,0)</span
+                  >&numsp;<span class="textcolor" style="color: #000000"
+                    ><a href="tikz-paths#pgf.rectangle">rectangle</a></span
+                  >
+                  <span class="textcolor" style="color: #000000">+</span
+                  ><span class="textcolor" style="color: #800080">(1,1)</span
+                  >;<br />
+                  <span class="textcolor" style="color: #000000">\end</span
+                  >{<span class="textcolor" style="color: #0000b2"
+                    ><a href="tikz-scopes#pgf.tikzpicture">tikzpicture</a></span
+                  >}<br />
+                </code>
+              </div>
+            </figure>
+          </div>
+
+          <div class="manualentry">
+            <div class="entryheadline">
+              <p>
+                <a id="pgf.back/tikzdeclarepattern"></a>
+                <span class="hl-def"
+                  ><span class="textcolor" style="color: #bf0000"
+                    ><kbd>\tikzdeclarepattern</kbd></span
+                  >{<span class="angle">&langle;</span><i>config</i
+                  ><span class="angle">&rangle;</span>}</span
+                >
+                <a class="anchor-link" href="#pgf.back/tikzdeclarepattern"
+                  >&para;</a
+                >
+              </p>
+            </div>
+            <p>
+              A pattern declared with
+              <span class="texttt">\pgfdeclarepattern</span> can only execute
+              <span class="textsc">pgf</span> code. This command extends the
+              functionality to also allow
+              <span class="tikzname">TikZ</span> code. All the same keys of
+              <span class="texttt">\pgfdeclarepattern</span> are valid, but some
+              of them have been overloaded to give a more natural
+              <span class="tikzname">TikZ</span> syntax.
+            </p>
+
+            <div class="manualentry">
+              <div class="entryheadline">
+                <p>
+                  <a id="pgf./tikz/patterns/bottom:left"></a>
+                  <span class="hl-def"
+                    ><kbd
+                      ><span class="keyname"
+                        ><span class="textcolor" style="color: #bf0000"
+                          >/tikz/patterns/bottom left</span
+                        ></span
+                      >=</kbd
+                    ><span class="angle">&langle;</span><i>point</i
+                    ><span class="angle">&rangle;</span></span
+                  ><span class="hl-default">(no default)</span>
+                  <a class="anchor-link" href="#pgf./tikz/patterns/bottom:left"
+                    >&para;</a
+                  >
+                </p>
+              </div>
+              <p>
+                Instead of a <span class="textsc">pgf</span> name point, this
+                key takes a <span class="tikzname">TikZ</span> point, e.g.
+                <span class="texttt">(-.1,-.1)</span>.
+              </p>
+            </div>
+
+            <div class="manualentry">
+              <div class="entryheadline">
+                <p>
+                  <a id="pgf./tikz/patterns/top:right"></a>
+                  <span class="hl-def"
+                    ><kbd
+                      ><span class="keyname"
+                        ><span class="textcolor" style="color: #bf0000"
+                          >/tikz/patterns/top right</span
+                        ></span
+                      >=</kbd
+                    ><span class="angle">&langle;</span><i>point</i
+                    ><span class="angle">&rangle;</span></span
+                  ><span class="hl-default">(no default)</span>
+                  <a class="anchor-link" href="#pgf./tikz/patterns/top:right"
+                    >&para;</a
+                  >
+                </p>
+              </div>
+              <p>
+                Instead of a <span class="textsc">pgf</span> name point, this
+                key takes a <span class="tikzname">TikZ</span> point, e.g.
+                <span class="texttt">(3.1,3.1)</span>.
+              </p>
+            </div>
+
+            <div class="manualentry">
+              <div class="entryheadline">
+                <p>
+                  <a id="pgf./tikz/patterns/tile:size"></a>
+                  <span class="hl-def"
+                    ><kbd
+                      ><span class="keyname"
+                        ><span class="textcolor" style="color: #bf0000"
+                          >/tikz/patterns/tile size</span
+                        ></span
+                      >=</kbd
+                    ><span class="angle">&langle;</span><i>point</i
+                    ><span class="angle">&rangle;</span></span
+                  ><span class="hl-default">(no default)</span>
+                  <a class="anchor-link" href="#pgf./tikz/patterns/tile:size"
+                    >&para;</a
+                  >
+                </p>
+              </div>
+              <p>
+                Instead of a <span class="textsc">pgf</span> name point, this
+                key takes a <span class="tikzname">TikZ</span> point, e.g.
+                <span class="texttt">(3,3)</span>.
+              </p>
+            </div>
+
+            <div class="manualentry">
+              <div class="entryheadline">
+                <p>
+                  <a id="pgf./tikz/patterns/tile:transformation"></a>
+                  <span class="hl-def"
+                    ><kbd
+                      ><span class="keyname"
+                        ><span class="textcolor" style="color: #bf0000"
+                          >/tikz/patterns/tile transformation</span
+                        ></span
+                      >=</kbd
+                    ><span class="angle">&langle;</span><i>transformation</i
+                    ><span class="angle">&rangle;</span></span
+                  ><span class="hl-default">(no default)</span>
+                  <a
+                    class="anchor-link"
+                    href="#pgf./tikz/patterns/tile:transformation"
+                    >&para;</a
+                  >
+                </p>
+              </div>
+              <p>
+                Instead of a <span class="textsc">pgf</span> transformation,
+                this key takes a list of keys and value and extracts the
+                resulting transformation from them, e.g.
+                <span class="texttt">rotate=30</span>.
+              </p>
+            </div>
+            <p>
+              In addition to the overloaded keys, some new keys have been added.
+            </p>
+
+            <div class="manualentry">
+              <div class="entryheadline">
+                <p>
+                  <a id="pgf./tikz/patterns/bounding:box"></a
+                  ><a id="pgf.bounding:box"></a>
+                  <span class="hl-def"
+                    ><kbd
+                      ><span class="keyname"
+                        ><span class="textcolor" style="color: #bf0000"
+                          >/tikz/patterns/bounding box</span
+                        ></span
+                      >=</kbd
+                    ><span class="angle">&langle;</span><i>point</i
+                    ><span class="angle">&rangle;</span> and
+                    <span class="angle">&langle;</span><i>point</i
+                    ><span class="angle">&rangle;</span></span
+                  ><span class="hl-default">(no default)</span>
+                  <a class="anchor-link" href="#pgf./tikz/patterns/bounding:box"
+                    >&para;</a
+                  >
+                </p>
+              </div>
+              <p>
+                This is a shorthand to set the bounding box. It will assign the
+                first point to <span class="texttt">bottom left</span> and the
+                second point to <span class="texttt">top right</span>.
+              </p>
+            </div>
+
+            <div class="manualentry">
+              <div class="entryheadline">
+                <p>
+                  <a id="pgf./tikz/patterns/infer:tile:bounding:box"></a
+                  ><a id="pgf.infer:tile:bounding:box"></a>
+                  <span class="hl-def"
+                    ><kbd
+                      ><span class="keyname"
+                        ><span class="textcolor" style="color: #bf0000"
+                          >/tikz/patterns/infer tile bounding box</span
+                        ></span
+                      ><span class="textcolor" style="color: #008000"
+                        >=</span
+                      ></kbd
+                    ><span class="textcolor" style="color: #008000"
+                      ><span class="angle">&langle;</span><i>dimension</i
+                      ><span class="angle">&rangle;</span>
+                    </span></span
+                  ><span class="hl-default">(default <kbd>0pt</kbd>)</span>
+                  <a
+                    class="anchor-link"
+                    href="#pgf./tikz/patterns/infer:tile:bounding:box"
+                    >&para;</a
+                  >
+                </p>
+              </div>
+              <p>
+                Instead of specifying the bounding box by hand, you can ask
+                <span class="tikzname">TikZ</span> to infer the size of the
+                bounding box for you. The <span class="angle">&langle;</span
+                ><i>dimension</i><span class="angle">&rangle;</span> parameter
+                is padding that is added around the bounding box.
+              </p>
+            </div>
+          </div>
+
+          <figure class="example">
+            <div class="example-image">
+              <p>
+                <span class="lateximagesource" id="lateximage-pgfmanual-2465"
+                  ><!--
+-->
+                  <img
+                    alt="(-tikz-&nbsp;diagram)"
+                    class="lateximage"
+                    height="78.818"
+                    loading="lazy"
+                    src="pgfmanual-images/image-2465.png"
+                    style
+                    width="78.813"
+                /></span>
+              </p>
+            </div>
+
+            <div class="example-code">
+              <button class="clipboardButton" type="button">copy</button>
+
+              <code>
+                <span class="c- preamble">\usetikzlibrary {patterns.meta} </span
+                ><br />
+                <span class="textcolor" style="color: #0000b2"
+                  ><a href="library-patterns#pgf.back/tikzdeclarepattern"
+                    >\tikzdeclarepattern</a
+                  ></span
+                >{<br />
+                &numsp;&numsp;<span class="textcolor" style="color: #000000"
+                  >name=flower</span
+                >,<br />
+                &numsp;&numsp;<span class="textcolor" style="color: #000000"
+                  >type=colored</span
+                >,<br />
+                &numsp;&numsp;<span class="textcolor" style="color: #000000"
+                  ><a href="base-scopes#pgf.bottom">bottom</a></span
+                >
+                <span class="textcolor" style="color: #000000">left=</span
+                >{<span class="textcolor" style="color: #800080"
+                  >(-.1pt,-.1pt)</span
+                >},<br />
+                &numsp;&numsp;<span class="textcolor" style="color: #000000"
+                  ><a href="base-scopes#pgf.top">top</a></span
+                >
+                <span class="textcolor" style="color: #000000">right=</span
+                >{<span class="textcolor" style="color: #800080"
+                  >(10.1pt,10.1pt)</span
+                >},<br />
+                &numsp;&numsp;<span class="textcolor" style="color: #000000"
+                  >tile</span
+                >
+                <span class="textcolor" style="color: #000000">size=</span
+                >{<span class="textcolor" style="color: #800080"
+                  >(10pt,10pt)</span
+                >},<br />
+                &numsp;&numsp;<span class="textcolor" style="color: #000000"
+                  >code=</span
+                >{<br />
+                &numsp;&numsp;&numsp;&numsp;<a
+                  href="tikz-scopes#pgf.back/tikzset"
+                  >\tikzset</a
+                >{<span class="textcolor" style="color: #008000"
+                  ><a href="tikz-coordinates#pgf.x">x</a></span
+                >=<span class="textcolor" style="color: #008000">1pt</span
+                >,<span class="textcolor" style="color: #008000"
+                  ><a href="tikz-coordinates#pgf.y">y</a></span
+                >=<span class="textcolor" style="color: #008000">1pt</span
+                >}<br />
+                &numsp;&numsp;&numsp;&numsp;<span
+                  class="textcolor"
+                  style="color: #0000b2"
+                  ><a href="tikz-paths#pgf.back/path">\path</a></span
+                >&numsp;[<span class="textcolor" style="color: #008000"
+                  ><a href="tikz-actions#pgf.draw">draw</a></span
+                >=<span class="textcolor" style="color: #008000">green</span
+                >]&numsp;<span class="textcolor" style="color: #800080"
+                  >(5,2.5)</span
+                >&numsp;<span class="textcolor" style="color: #000000"
+                  ><a href="tikz-paths#pgf.--">--</a></span
+                >
+                <span class="textcolor" style="color: #800080">(5, 7.5)</span
+                >;<br />
+                &numsp;&numsp;&numsp;&numsp;<span
+                  class="textcolor"
+                  style="color: #0000b2"
+                  ><a href="pgffor#pgf.back/foreach">\foreach</a></span
+                >&numsp;<span class="textcolor" style="color: #0000b2">\i</span
+                >&numsp;<span class="textcolor" style="color: #000000"
+                  ><a href="library-edges#pgf.in">in</a></span
+                >
+                {<span class="textcolor" style="color: #000000">0</span>,<span
+                  class="textcolor"
+                  style="color: #000000"
+                  >60</span
+                >,...,<span class="textcolor" style="color: #000000">300</span
+                >}<br />
+                &numsp;&numsp;&numsp;&numsp;&numsp;&numsp;<span
+                  class="textcolor"
+                  style="color: #0000b2"
+                  ><a href="tikz-paths#pgf.back/path">\path</a></span
+                >&numsp;[<span class="textcolor" style="color: #008000"
+                  ><a href="tikz-actions#pgf.fill">fill</a></span
+                >=<span class="textcolor" style="color: #008000">pink</span
+                >,&numsp;<span class="textcolor" style="color: #008000"
+                  ><a href="tikz-transformations#pgf.shift">shift</a></span
+                >=<span class="textcolor" style="color: #008000"
+                  >{<span class="textcolor" style="color: #800080">(5,7.5)</span
+                  >}</span
+                >,&numsp;<span class="textcolor" style="color: #008000"
+                  ><a href="tikz-transformations#pgf.rotate">rotate</a></span
+                >=<span class="textcolor" style="color: #008000"
+                  >-<span class="textcolor" style="color: #0000b2"
+                    >\i</span
+                  ></span
+                >]<br />
+                &numsp;&numsp;&numsp;&numsp;&numsp;&numsp;&numsp;&numsp;<span
+                  class="textcolor"
+                  style="color: #800080"
+                  >(0,0)</span
+                >&numsp;..&numsp;<span class="textcolor" style="color: #000000"
+                  ><a href="library-edges#pgf.controls">controls</a></span
+                >
+                <span class="textcolor" style="color: #000000">++</span
+                ><span class="textcolor" style="color: #800080">(120:4)</span
+                >&numsp;<span class="textcolor" style="color: #000000"
+                  ><a href="pgfkeys#pgf.and">and</a></span
+                >
+                <span class="textcolor" style="color: #000000">++</span
+                ><span class="textcolor" style="color: #800080">(60:4)</span
+                >&numsp;..&numsp;<span class="textcolor" style="color: #800080"
+                  >(0,0)</span
+                >;<br />
+                &numsp;&numsp;&numsp;&numsp;<span
+                  class="textcolor"
+                  style="color: #0000b2"
+                  ><a href="tikz-paths#pgf.back/path">\path</a></span
+                >&numsp;[<span class="textcolor" style="color: #008000"
+                  ><a href="tikz-actions#pgf.fill">fill</a></span
+                >=<span class="textcolor" style="color: #008000">red</span
+                >]&numsp;<span class="textcolor" style="color: #800080"
+                  >(5,7.5)</span
+                >&numsp;<span class="textcolor" style="color: #000000"
+                  ><a href="tikz-paths#pgf.circle">circle</a></span
+                >
+                [<span class="textcolor" style="color: #008000"
+                  ><a href="tikz-coordinates#pgf.radius">radius</a></span
+                >=<span class="textcolor" style="color: #008000">1</span
+                >];<br />
+                &numsp;&numsp;&numsp;&numsp;<span
+                  class="textcolor"
+                  style="color: #0000b2"
+                  ><a href="pgffor#pgf.back/foreach">\foreach</a></span
+                >&numsp;<span class="textcolor" style="color: #0000b2">\i</span
+                >&numsp;<span class="textcolor" style="color: #000000"
+                  ><a href="library-edges#pgf.in">in</a></span
+                >
+                {<span class="textcolor" style="color: #000000">-45</span>,<span
+                  class="textcolor"
+                  style="color: #000000"
+                  >45</span
+                >}<br />
+                &numsp;&numsp;&numsp;&numsp;&numsp;&numsp;<span
+                  class="textcolor"
+                  style="color: #0000b2"
+                  ><a href="tikz-paths#pgf.back/path">\path</a></span
+                >&numsp;[<span class="textcolor" style="color: #008000"
+                  ><a href="tikz-actions#pgf.fill">fill</a></span
+                >=<span class="textcolor" style="color: #008000">green</span
+                >,&numsp;<span class="textcolor" style="color: #008000"
+                  ><a href="tikz-transformations#pgf.shift">shift</a></span
+                >=<span class="textcolor" style="color: #008000"
+                  >{<span class="textcolor" style="color: #800080">(5,2.5)</span
+                  >}</span
+                >,&numsp;<span class="textcolor" style="color: #008000"
+                  ><a href="tikz-transformations#pgf.rotate">rotate</a></span
+                >=<span class="textcolor" style="color: #008000"
+                  >-<span class="textcolor" style="color: #0000b2"
+                    >\i</span
+                  ></span
+                >]<br />
+                &numsp;&numsp;&numsp;&numsp;&numsp;&numsp;&numsp;&numsp;<span
+                  class="textcolor"
+                  style="color: #800080"
+                  >(0,0)</span
+                >&numsp;..&numsp;<span class="textcolor" style="color: #000000"
+                  ><a href="library-edges#pgf.controls">controls</a></span
+                >
+                <span class="textcolor" style="color: #000000">++</span
+                ><span class="textcolor" style="color: #800080">(120:4)</span
+                >&numsp;<span class="textcolor" style="color: #000000"
+                  ><a href="pgfkeys#pgf.and">and</a></span
+                >
+                <span class="textcolor" style="color: #000000">++</span
+                ><span class="textcolor" style="color: #800080">(60:4)</span
+                >&numsp;..&numsp;<span class="textcolor" style="color: #800080"
+                  >(0,0)</span
+                >;<br />
+                &numsp;&numsp;}<br />
+                }<br />
+                <br />
+                <span class="textcolor" style="color: #0000b2"
+                  ><a href="tikz-scopes#pgf.back/tikz">\tikz</a></span
+                ><span class="textcolor" style="color: #0000b2"
+                  ><a href="tikz-actions#pgf.back/draw">\draw</a></span
+                >&numsp;[<span class="textcolor" style="color: #008000"
+                  ><a href="tikz-actions#pgf.pattern">pattern</a></span
+                >=<span class="textcolor" style="color: #008000">flower</span
+                >]&numsp;<span class="textcolor" style="color: #000000"
+                  ><a href="tikz-paths#pgf.circle">circle</a></span
+                >
+                [<span class="textcolor" style="color: #008000"
+                  ><a href="tikz-coordinates#pgf.radius">radius</a></span
+                >=<span class="textcolor" style="color: #008000">1</span
+                >];<br />
+              </code>
+            </div>
+          </figure>
+
+          <figure class="example">
+            <div class="example-image">
+              <p>
+                <span class="lateximagesource" id="lateximage-pgfmanual-2466"
+                  ><!--
+-->
+                  <img
+                    alt="(-tikz-&nbsp;diagram)"
+                    class="lateximage"
+                    height="154.381"
+                    loading="lazy"
+                    src="pgfmanual-images/image-2466.png"
+                    style
+                    width="154.381"
+                /></span>
+              </p>
+            </div>
+
+            <div class="example-code">
+              <button class="clipboardButton" type="button">copy</button>
+
+              <code>
+                <span class="c- preamble">\usetikzlibrary {patterns.meta} </span
+                ><br />
+                <span class="textcolor" style="color: #0000b2"
+                  ><a href="library-patterns#pgf.back/tikzdeclarepattern"
+                    >\tikzdeclarepattern</a
+                  ></span
+                >{<br />
+                &numsp;&numsp;<span class="textcolor" style="color: #000000"
+                  >name=mystars</span
+                >,<br />
+                &numsp;&numsp;<span class="textcolor" style="color: #000000"
+                  >type=uncolored</span
+                >,<br />
+                &numsp;&numsp;<span class="textcolor" style="color: #000000"
+                  >bounding</span
+                >
+                <span class="textcolor" style="color: #000000">box=</span>{<span
+                  class="textcolor"
+                  style="color: #800080"
+                  >(-5pt,-5pt)</span
+                >&numsp;<span class="textcolor" style="color: #000000"
+                  ><a href="pgfkeys#pgf.and">and</a></span
+                >
+                <span class="textcolor" style="color: #800080">(5pt,5pt)</span
+                >},<br />
+                &numsp;&numsp;<span class="textcolor" style="color: #000000"
+                  >tile</span
+                >
+                <span class="textcolor" style="color: #000000">size=</span
+                >{<span class="textcolor" style="color: #800080"
+                  >(\tikztilesize,\tikztilesize)</span
+                >},<br />
+                &numsp;&numsp;<span class="textcolor" style="color: #000000"
+                  >parameters=</span
+                >{<span class="textcolor" style="color: #0000b2"
+                  >\tikzstarpoints</span
+                >,<span class="textcolor" style="color: #0000b2"
+                  >\tikzstarradius</span
+                >,<span class="textcolor" style="color: #0000b2"
+                  >\tikzstarrotate</span
+                >,<span class="textcolor" style="color: #0000b2"
+                  >\tikztilesize</span
+                >},<br />
+                &numsp;&numsp;<span class="textcolor" style="color: #000000"
+                  >tile</span
+                >
+                <span class="textcolor" style="color: #000000"
+                  >transformation=</span
+                >{<span class="textcolor" style="color: #000000">rotate=</span
+                ><span class="textcolor" style="color: #0000b2"
+                  >\tikzstarrotate</span
+                >},<br />
+                &numsp;&numsp;<span class="textcolor" style="color: #000000"
+                  >defaults=</span
+                >{<br />
+                &numsp;&numsp;&numsp;&numsp;<span
+                  class="textcolor"
+                  style="color: #000000"
+                  >points/</span
+                >.<span class="textcolor" style="color: #000000"
+                  ><a href="dv-main#pgf.store">store</a></span
+                >
+                <span class="textcolor" style="color: #000000">in=</span
+                ><span class="textcolor" style="color: #0000b2"
+                  >\tikzstarpoints</span
+                >,<span class="textcolor" style="color: #000000">points=5</span
+                >,<br />
+                &numsp;&numsp;&numsp;&numsp;<span
+                  class="textcolor"
+                  style="color: #000000"
+                  >radius/</span
+                >.<span class="textcolor" style="color: #000000"
+                  ><a href="dv-main#pgf.store">store</a></span
+                >
+                <span class="textcolor" style="color: #000000">in=</span
+                ><span class="textcolor" style="color: #0000b2"
+                  >\tikzstarradius</span
+                >,<span class="textcolor" style="color: #000000"
+                  >radius=3pt</span
+                >,<br />
+                &numsp;&numsp;&numsp;&numsp;<span
+                  class="textcolor"
+                  style="color: #000000"
+                  >rotate/</span
+                >.<span class="textcolor" style="color: #000000"
+                  ><a href="dv-main#pgf.store">store</a></span
+                >
+                <span class="textcolor" style="color: #000000">in=</span
+                ><span class="textcolor" style="color: #0000b2"
+                  >\tikzstarrotate</span
+                >,<span class="textcolor" style="color: #000000">rotate=0</span
+                >,<br />
+                &numsp;&numsp;&numsp;&numsp;<span
+                  class="textcolor"
+                  style="color: #000000"
+                  >tile</span
+                >
+                <span class="textcolor" style="color: #000000">size/</span
+                >.<span class="textcolor" style="color: #000000"
+                  ><a href="dv-main#pgf.store">store</a></span
+                >
+                <span class="textcolor" style="color: #000000">in=</span
+                ><span class="textcolor" style="color: #0000b2"
+                  >\tikztilesize</span
+                >,<span class="textcolor" style="color: #000000">tile</span>
+                <span class="textcolor" style="color: #000000">size=10pt</span
+                >,<br />
+                &numsp;&numsp;},<br />
+                &numsp;&numsp;<span class="textcolor" style="color: #000000"
+                  >code=</span
+                >{<br />
+                &numsp;&numsp;&numsp;&numsp;<span
+                  class="textcolor"
+                  style="color: #0000b2"
+                  ><a href="math-parsing#pgf.back/pgfmathparse"
+                    >\pgfmathparse</a
+                  ></span
+                >{<span class="textcolor" style="color: #000000">180/</span
+                ><span class="textcolor" style="color: #0000b2"
+                  >\tikzstarpoints</span
+                >}<span class="textcolor" style="color: #0000b2">\let</span
+                ><span class="textcolor" style="color: #0000b2">\a</span
+                ><span class="textcolor" style="color: #000000">=</span
+                ><span class="textcolor" style="color: #0000b2"
+                  >\pgfmathresult</span
+                ><br />
+                &numsp;&numsp;&numsp;&numsp;<span
+                  class="textcolor"
+                  style="color: #0000b2"
+                  ><a href="tikz-actions#pgf.back/fill">\fill</a></span
+                >&numsp;<span class="textcolor" style="color: #800080"
+                  >(90:\tikzstarradius)</span
+                >&numsp;<span class="textcolor" style="color: #0000b2"
+                  ><a href="pgffor#pgf.back/foreach">\foreach</a></span
+                >&numsp;<span class="textcolor" style="color: #0000b2">\i</span
+                >&numsp;<span class="textcolor" style="color: #000000"
+                  ><a href="library-edges#pgf.in">in</a></span
+                >
+                {<span class="textcolor" style="color: #000000">1</span
+                >,...,<span class="textcolor" style="color: #0000b2"
+                  >\tikzstarpoints</span
+                >}{<br />
+                &numsp;&numsp;&numsp;&numsp;&numsp;&numsp;<span
+                  class="textcolor"
+                  style="color: #000000"
+                  ><a href="tikz-paths#pgf.--">--</a></span
+                >
+                <span class="textcolor" style="color: #800080"
+                  >(90+2*\i*\a-\a:\tikzstarradius/2)</span
+                >&numsp;<span class="textcolor" style="color: #000000"
+                  ><a href="tikz-paths#pgf.--">--</a></span
+                >
+                <span class="textcolor" style="color: #800080"
+                  >(90+2*\i*\a:\tikzstarradius)</span
+                ><br />
+                &numsp;&numsp;&numsp;&numsp;}&numsp;<span
+                  class="textcolor"
+                  style="color: #000000"
+                  ><a href="tikz-paths#pgf.--">--</a></span
+                >
+                <span class="textcolor" style="color: #000000"
+                  ><a href="tikz-graphs#pgf.cycle">cycle</a></span
+                >;<br />
+                &numsp;&numsp;}<br />
+                }<br />
+                <br />
+                <span class="textcolor" style="color: #000000">\begin</span
+                >{<span class="textcolor" style="color: #0000b2"
+                  ><a href="tikz-scopes#pgf.tikzpicture">tikzpicture</a></span
+                >}<br />
+                &numsp;<span class="textcolor" style="color: #0000b2"
+                  ><a href="tikz-actions#pgf.back/draw">\draw</a></span
+                >[<span class="textcolor" style="color: #008000"
+                  ><a href="tikz-actions#pgf.pattern">pattern</a></span
+                >=<span class="textcolor" style="color: #008000">mystars</span
+                >,<span class="textcolor" style="color: #008000"
+                  ><a href="tikz-actions#pgf.pattern:color"
+                    >pattern color</a
+                  ></span
+                >=<span class="textcolor" style="color: #008000">blue</span
+                >]&numsp;&numsp;&numsp;&numsp;&numsp;&numsp;&numsp;&numsp;&numsp;&numsp;&numsp;&numsp;&numsp;&numsp;&numsp;<span
+                  class="textcolor"
+                  style="color: #800080"
+                  >(0,0)</span
+                >&numsp;<span class="textcolor" style="color: #000000"
+                  ><a href="tikz-paths#pgf.rectangle">rectangle</a></span
+                >
+                <span class="textcolor" style="color: #000000">+</span
+                ><span class="textcolor" style="color: #800080">(2,2)</span
+                >;<br />
+                &numsp;<span class="textcolor" style="color: #0000b2"
+                  ><a href="tikz-actions#pgf.back/draw">\draw</a></span
+                >[<span class="textcolor" style="color: #008000"
+                  ><a href="tikz-actions#pgf.pattern">pattern</a></span
+                >=<span class="textcolor" style="color: #008000"
+                  >{mystars[<span class="textcolor" style="color: #008000"
+                    ><a href="library-patterns#pgf.points">points</a></span
+                  >=<span class="textcolor" style="color: #008000">7</span
+                  >,<span class="textcolor" style="color: #008000"
+                    ><a href="library-patterns#pgf.tile:size"
+                      >tile size</a
+                    ></span
+                  >=<span class="textcolor" style="color: #008000">15pt</span
+                  >]}</span
+                >]&numsp;&numsp;&numsp;&numsp;&numsp;&numsp;&numsp;<span
+                  class="textcolor"
+                  style="color: #800080"
+                  >(2,0)</span
+                >&numsp;<span class="textcolor" style="color: #000000"
+                  ><a href="tikz-paths#pgf.rectangle">rectangle</a></span
+                >
+                <span class="textcolor" style="color: #000000">+</span
+                ><span class="textcolor" style="color: #800080">(2,2)</span
+                >;<br />
+                &numsp;<span class="textcolor" style="color: #0000b2"
+                  ><a href="tikz-actions#pgf.back/draw">\draw</a></span
+                >[<span class="textcolor" style="color: #008000"
+                  ><a href="tikz-actions#pgf.pattern">pattern</a></span
+                >=<span class="textcolor" style="color: #008000"
+                  >{mystars[<span class="textcolor" style="color: #008000"
+                    ><a href="tikz-transformations#pgf.rotate">rotate</a></span
+                  >=<span class="textcolor" style="color: #008000">45</span
+                  >]}</span
+                >,<span class="textcolor" style="color: #008000"
+                  ><a href="tikz-actions#pgf.pattern:color"
+                    >pattern color</a
+                  ></span
+                >=<span class="textcolor" style="color: #008000">red</span
+                >]&numsp;&numsp;&numsp;<span
+                  class="textcolor"
+                  style="color: #800080"
+                  >(0,2)</span
+                >&numsp;<span class="textcolor" style="color: #000000"
+                  ><a href="tikz-paths#pgf.rectangle">rectangle</a></span
+                >
+                <span class="textcolor" style="color: #000000">+</span
+                ><span class="textcolor" style="color: #800080">(2,2)</span
+                >;<br />
+                &numsp;<span class="textcolor" style="color: #0000b2"
+                  ><a href="tikz-actions#pgf.back/draw">\draw</a></span
+                >[<span class="textcolor" style="color: #008000"
+                  ><a href="tikz-actions#pgf.pattern">pattern</a></span
+                >=<span class="textcolor" style="color: #008000"
+                  >{mystars[<span class="textcolor" style="color: #008000"
+                    ><a href="tikz-transformations#pgf.rotate">rotate</a></span
+                  >=<span class="textcolor" style="color: #008000">30</span
+                  >,<span class="textcolor" style="color: #008000"
+                    ><a href="library-patterns#pgf.points">points</a></span
+                  >=<span class="textcolor" style="color: #008000">4</span
+                  >,<span class="textcolor" style="color: #008000"
+                    ><a href="tikz-coordinates#pgf.radius">radius</a></span
+                  >=<span class="textcolor" style="color: #008000">5pt</span
+                  >]}</span
+                >]&numsp;<span class="textcolor" style="color: #800080"
+                  >(2,2)</span
+                >&numsp;<span class="textcolor" style="color: #000000"
+                  ><a href="tikz-paths#pgf.rectangle">rectangle</a></span
+                >
+                <span class="textcolor" style="color: #000000">+</span
+                ><span class="textcolor" style="color: #800080">(2,2)</span
+                >;<br />
+                <span class="textcolor" style="color: #000000">\end</span>{<span
+                  class="textcolor"
+                  style="color: #0000b2"
+                  ><a href="tikz-scopes#pgf.tikzpicture">tikzpicture</a></span
+                >}<br />
+              </code>
+            </div>
+          </figure>
+
+          <p>
+            Instead of macros you can also use
+            <span class="textsc">pgf</span> keys as parameters, if that is what
+            you prefer.
+          </p>
+
+          <figure class="example">
+            <div class="example-image">
+              <p>
+                <span class="lateximagesource" id="lateximage-pgfmanual-2467"
+                  ><!--
+-->
+                  <img
+                    alt="(-tikz-&nbsp;diagram)"
+                    class="lateximage"
+                    height="154.381"
+                    loading="lazy"
+                    src="pgfmanual-images/image-2467.png"
+                    style
+                    width="154.381"
+                /></span>
+              </p>
+            </div>
+
+            <div class="example-code">
+              <button class="clipboardButton" type="button">copy</button>
+
+              <code>
+                <span class="c- preamble">\usetikzlibrary {patterns.meta} </span
+                ><br />
+                <span class="textcolor" style="color: #0000b2"
+                  ><a href="library-patterns#pgf.back/tikzdeclarepattern"
+                    >\tikzdeclarepattern</a
+                  ></span
+                >{<br />
+                &numsp;&numsp;<span class="textcolor" style="color: #000000"
+                  >name=mylines</span
+                >,<br />
+                &numsp;&numsp;<span class="textcolor" style="color: #000000"
+                  >parameters=</span
+                >{<br />
+                &numsp;&numsp;&numsp;&numsp;&numsp;&numsp;<span
+                  class="textcolor"
+                  style="color: #0000b2"
+                  ><a href="pgfkeys#pgf.back/pgfkeysvalueof"
+                    >\pgfkeysvalueof</a
+                  ></span
+                >{<span class="textcolor" style="color: #000000"
+                  >/pgf/pattern</span
+                >
+                <span class="textcolor" style="color: #000000">keys/size</span
+                >},<br />
+                &numsp;&numsp;&numsp;&numsp;&numsp;&numsp;<span
+                  class="textcolor"
+                  style="color: #0000b2"
+                  ><a href="pgfkeys#pgf.back/pgfkeysvalueof"
+                    >\pgfkeysvalueof</a
+                  ></span
+                >{<span class="textcolor" style="color: #000000"
+                  >/pgf/pattern</span
+                >
+                <span class="textcolor" style="color: #000000">keys/angle</span
+                >},<br />
+                &numsp;&numsp;&numsp;&numsp;&numsp;&numsp;<span
+                  class="textcolor"
+                  style="color: #0000b2"
+                  ><a href="pgfkeys#pgf.back/pgfkeysvalueof"
+                    >\pgfkeysvalueof</a
+                  ></span
+                >{<span class="textcolor" style="color: #000000"
+                  >/pgf/pattern</span
+                >
+                <span class="textcolor" style="color: #000000">keys/line</span>
+                <span class="textcolor" style="color: #000000"
+                  ><a href="tikz-arrows#pgf.width">width</a></span
+                >},<br />
+                &numsp;&numsp;},<br />
+                &numsp;&numsp;<span class="textcolor" style="color: #000000"
+                  >bounding</span
+                >
+                <span class="textcolor" style="color: #000000">box=</span
+                >{<br />
+                &numsp;&numsp;&numsp;&numsp;<span
+                  class="textcolor"
+                  style="color: #800080"
+                  >(0,-0.5*\pgfkeysvalueof{/pgf/pattern keys/line width})</span
+                >&numsp;<span class="textcolor" style="color: #000000"
+                  ><a href="pgfkeys#pgf.and">and</a></span
+                ><br />
+                &numsp;&numsp;&numsp;&numsp;<span
+                  class="textcolor"
+                  style="color: #800080"
+                  >(\pgfkeysvalueof{/pgf/pattern keys/size},<br />
+                  0.5*\pgfkeysvalueof{/pgf/pattern keys/line width})</span
+                >},<br />
+                &numsp;&numsp;<span class="textcolor" style="color: #000000"
+                  >tile</span
+                >
+                <span class="textcolor" style="color: #000000">size=</span
+                >{<span class="textcolor" style="color: #800080"
+                  >(\pgfkeysvalueof{/pgf/pattern keys/size},<br />
+                  \pgfkeysvalueof{/pgf/pattern keys/size})</span
+                >},<br />
+                &numsp;&numsp;<span class="textcolor" style="color: #000000"
+                  >tile</span
+                >
+                <span class="textcolor" style="color: #000000"
+                  >transformation=</span
+                >{<span class="textcolor" style="color: #000000">rotate=</span
+                ><span class="textcolor" style="color: #0000b2"
+                  ><a href="pgfkeys#pgf.back/pgfkeysvalueof"
+                    >\pgfkeysvalueof</a
+                  ></span
+                >{<span class="textcolor" style="color: #000000"
+                  >/pgf/pattern</span
+                >
+                <span class="textcolor" style="color: #000000">keys/angle</span
+                >}},<br />
+                &numsp;&numsp;<span class="textcolor" style="color: #000000"
+                  >defaults=</span
+                >{<br />
+                &numsp;&numsp;&numsp;&numsp;<span
+                  class="textcolor"
+                  style="color: #000000"
+                  >size/</span
+                >.<span class="textcolor" style="color: #000000"
+                  >initial=5pt</span
+                >,<br />
+                &numsp;&numsp;&numsp;&numsp;<span
+                  class="textcolor"
+                  style="color: #000000"
+                  >angle/</span
+                >.<span class="textcolor" style="color: #000000"
+                  >initial=45</span
+                >,<br />
+                &numsp;&numsp;&numsp;&numsp;<span
+                  class="textcolor"
+                  style="color: #000000"
+                  >line</span
+                >
+                <span class="textcolor" style="color: #000000">width/</span
+                >.<span class="textcolor" style="color: #000000">initial=</span
+                >.<span class="textcolor" style="color: #000000">4pt</span
+                >,<br />
+                &numsp;&numsp;},<br />
+                &numsp;&numsp;<span class="textcolor" style="color: #000000"
+                  >code=</span
+                >{<br />
+                &numsp;&numsp;&numsp;&numsp;&numsp;&numsp;<span
+                  class="textcolor"
+                  style="color: #0000b2"
+                  ><a href="tikz-actions#pgf.back/draw">\draw</a></span
+                >&numsp;[<span class="textcolor" style="color: #008000"
+                  ><a href="tikz-actions#pgf.line:width">line width</a></span
+                >=<span class="textcolor" style="color: #008000"
+                  ><span class="textcolor" style="color: #0000b2"
+                    ><a href="pgfkeys#pgf.back/pgfkeysvalueof"
+                      >\pgfkeysvalueof</a
+                    ></span
+                  >{/pgf/pattern keys/line
+                  <a href="tikz-arrows#pgf.width">width</a>}</span
+                >]<br />
+                &numsp;&numsp;&numsp;&numsp;&numsp;&numsp;&numsp;&numsp;<span
+                  class="textcolor"
+                  style="color: #800080"
+                  >(0,0)</span
+                >&numsp;<span class="textcolor" style="color: #000000"
+                  ><a href="tikz-paths#pgf.--">--</a></span
+                >
+                <span class="textcolor" style="color: #800080"
+                  >(\pgfkeysvalueof{/pgf/pattern keys/size},0)</span
+                >;<br />
+                &numsp;&numsp;},<br />
+                }<br />
+                <br />
+                <span class="textcolor" style="color: #000000">\begin</span
+                >{<span class="textcolor" style="color: #0000b2"
+                  ><a href="tikz-scopes#pgf.tikzpicture">tikzpicture</a></span
+                >}<br />
+                &numsp;&numsp;<span class="textcolor" style="color: #0000b2"
+                  ><a href="tikz-actions#pgf.back/draw">\draw</a></span
+                >[<span class="textcolor" style="color: #008000"
+                  ><a href="tikz-actions#pgf.pattern">pattern</a></span
+                >=<span class="textcolor" style="color: #008000"
+                  >{mylines[<span class="textcolor" style="color: #008000"
+                    ><a href="library-spy#pgf.size">size</a></span
+                  >=<span class="textcolor" style="color: #008000">10pt</span
+                  >,<span class="textcolor" style="color: #008000"
+                    ><a href="tikz-actions#pgf.line:width">line width</a></span
+                  >=<span class="textcolor" style="color: #008000">.8pt</span
+                  >,<span class="textcolor" style="color: #008000"
+                    ><a href="tikz-coordinates#pgf.angle">angle</a></span
+                  >=<span class="textcolor" style="color: #008000">10</span
+                  >]}</span
+                >,<br />
+                &numsp;&numsp;&numsp;&numsp;&numsp;&numsp;&numsp;&numsp;<span
+                  class="textcolor"
+                  style="color: #008000"
+                  ><a href="tikz-actions#pgf.pattern:color"
+                    >pattern color</a
+                  ></span
+                >=<span class="textcolor" style="color: #008000">red</span
+                >]&numsp;&numsp;&numsp;&numsp;<span
+                  class="textcolor"
+                  style="color: #800080"
+                  >(0,0)</span
+                >&numsp;<span class="textcolor" style="color: #000000"
+                  ><a href="tikz-paths#pgf.rectangle">rectangle</a></span
+                >
+                <span class="textcolor" style="color: #000000">++</span
+                ><span class="textcolor" style="color: #800080">(2,2)</span
+                >;<br />
+                &numsp;&numsp;<span class="textcolor" style="color: #0000b2"
+                  ><a href="tikz-actions#pgf.back/draw">\draw</a></span
+                >[<span class="textcolor" style="color: #008000"
+                  ><a href="tikz-actions#pgf.pattern">pattern</a></span
+                >=<span class="textcolor" style="color: #008000"
+                  >{mylines[<span class="textcolor" style="color: #008000"
+                    ><a href="library-spy#pgf.size">size</a></span
+                  >=
+                  <span class="textcolor" style="color: #008000">5pt</span
+                  >,<span class="textcolor" style="color: #008000"
+                    ><a href="tikz-actions#pgf.line:width">line width</a></span
+                  >=<span class="textcolor" style="color: #008000">.8pt</span
+                  >,<span class="textcolor" style="color: #008000"
+                    ><a href="tikz-coordinates#pgf.angle">angle</a></span
+                  >=<span class="textcolor" style="color: #008000">40</span
+                  >]}</span
+                >,<br />
+                &numsp;&numsp;&numsp;&numsp;&numsp;&numsp;&numsp;&numsp;<span
+                  class="textcolor"
+                  style="color: #008000"
+                  ><a href="tikz-actions#pgf.pattern:color"
+                    >pattern color</a
+                  ></span
+                >=<span class="textcolor" style="color: #008000">blue</span
+                >]&numsp;&numsp;&numsp;<span
+                  class="textcolor"
+                  style="color: #800080"
+                  >(2,0)</span
+                >&numsp;<span class="textcolor" style="color: #000000"
+                  ><a href="tikz-paths#pgf.rectangle">rectangle</a></span
+                >
+                <span class="textcolor" style="color: #000000">++</span
+                ><span class="textcolor" style="color: #800080">(2,2)</span
+                >;<br />
+                &numsp;&numsp;<span class="textcolor" style="color: #0000b2"
+                  ><a href="tikz-actions#pgf.back/draw">\draw</a></span
+                >[<span class="textcolor" style="color: #008000"
+                  ><a href="tikz-actions#pgf.pattern">pattern</a></span
+                >=<span class="textcolor" style="color: #008000"
+                  >{mylines[<span class="textcolor" style="color: #008000"
+                    ><a href="library-spy#pgf.size">size</a></span
+                  >=<span class="textcolor" style="color: #008000">10pt</span
+                  >,<span class="textcolor" style="color: #008000"
+                    ><a href="tikz-actions#pgf.line:width">line width</a></span
+                  >=<span class="textcolor" style="color: #008000">.4pt</span
+                  >,<span class="textcolor" style="color: #008000"
+                    ><a href="tikz-coordinates#pgf.angle">angle</a></span
+                  >=<span class="textcolor" style="color: #008000">90</span
+                  >]}</span
+                >,<br />
+                &numsp;&numsp;&numsp;&numsp;&numsp;&numsp;&numsp;&numsp;<span
+                  class="textcolor"
+                  style="color: #008000"
+                  ><a href="tikz-actions#pgf.pattern:color"
+                    >pattern color</a
+                  ></span
+                >=<span class="textcolor" style="color: #008000">green</span
+                >]&numsp;&numsp;<span class="textcolor" style="color: #800080"
+                  >(0,2)</span
+                >&numsp;<span class="textcolor" style="color: #000000"
+                  ><a href="tikz-paths#pgf.rectangle">rectangle</a></span
+                >
+                <span class="textcolor" style="color: #000000">++</span
+                ><span class="textcolor" style="color: #800080">(2,2)</span
+                >;<br />
+                &numsp;&numsp;<span class="textcolor" style="color: #0000b2"
+                  ><a href="tikz-actions#pgf.back/draw">\draw</a></span
+                >[<span class="textcolor" style="color: #008000"
+                  ><a href="tikz-actions#pgf.pattern">pattern</a></span
+                >=<span class="textcolor" style="color: #008000"
+                  >{mylines[<span class="textcolor" style="color: #008000"
+                    ><a href="library-spy#pgf.size">size</a></span
+                  >=
+                  <span class="textcolor" style="color: #008000">2pt</span
+                  >,<span class="textcolor" style="color: #008000"
+                    ><a href="tikz-actions#pgf.line:width">line width</a></span
+                  >=
+                  <span class="textcolor" style="color: #008000">1pt</span
+                  >,<span class="textcolor" style="color: #008000"
+                    ><a href="tikz-coordinates#pgf.angle">angle</a></span
+                  >=<span class="textcolor" style="color: #008000">70</span
+                  >]}</span
+                >,<br />
+                &numsp;&numsp;&numsp;&numsp;&numsp;&numsp;&numsp;&numsp;<span
+                  class="textcolor"
+                  style="color: #008000"
+                  ><a href="tikz-actions#pgf.pattern:color"
+                    >pattern color</a
+                  ></span
+                >=<span class="textcolor" style="color: #008000">orange</span
+                >]&numsp;<span class="textcolor" style="color: #800080"
+                  >(2,2)</span
+                >&numsp;<span class="textcolor" style="color: #000000"
+                  ><a href="tikz-paths#pgf.rectangle">rectangle</a></span
+                >
+                <span class="textcolor" style="color: #000000">++</span
+                ><span class="textcolor" style="color: #800080">(2,2)</span
+                >;<br />
+                <span class="textcolor" style="color: #000000">\end</span>{<span
+                  class="textcolor"
+                  style="color: #0000b2"
+                  ><a href="tikz-scopes#pgf.tikzpicture">tikzpicture</a></span
+                >}<br />
+              </code>
+            </div>
+          </figure>
+        </section>
+      </main>
+
+      <footer>
+        <div class_="footer-left">
+          <a href="https://github.com/pgf-tikz/pgf">Github</a> &middot;
+          <a href="/license">License</a> &middot;
+          <a href="https://ctan.org/pkg/pgf">CTAN</a> &middot;
+          <a href="https://pgf-tikz.github.io/pgf/pgfmanual.pdf">PDF version</a>
+          &middot;
+          <a href="https://github.com/DominikPeters/pgf-tikz-html-manual"
+            >About this HTML version</a
+          >
+        </div>
+        <div class_="footer-right">
+          <em>Manual last updated: 2022-04-23</em>
+        </div>
+      </footer>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/@docsearch/js@alpha"></script>
+    <script>
+      docsearch({
+        apiKey: "ae66ec3fc9df4b52b4d6f24fc8508fd3",
+        indexName: "tikz.dev",
+        appId: "Q70NNMA9GC",
+        container: "#search",
+      });
+    </script>
+  </body>
+</html>

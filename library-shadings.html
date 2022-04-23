@@ -1,0 +1,1812 @@
+<!DOCTYPE html>
+<html lang="en-US">
+  <head>
+    <meta charset="utf-8" />
+    <meta content="LaTeX Lwarp package" name="generator" />
+    <meta content="width=device-width, initial-scale=1.0" name="viewport" />
+    <!--[if lt IE 9]>
+      <script src="http://html5shiv.googlecode.com/svn/trunk/html5.js"></script>
+    <![endif]-->
+    <title>Shadings Library - PGF/TikZ Manual</title>
+    <link href="style.css" rel="stylesheet" type="text/css" />
+
+    <script>
+      // Lwarp MathJax emulation code
+      //
+      // Based on code by Davide P. Cervone.
+      // Equation numbering: https://github.com/mathjax/MathJax/issues/2427
+      // Starred and ifnextchar macros: https://github.com/mathjax/MathJax/issues/2428
+      // \left, \right delimiters: https://github.com/mathjax/MathJax/issues/2535
+      //
+      // Modified by Brian Dunn to adjust equation numbering and add subequations.
+      //
+      // LaTeX can use \seteqnumber{subequations?}{section}{number} before each equation.
+      // subequations? is 0 usually, 1 if inside subequations.
+      // section is a string printed as-is, or empty.
+      // number is auto-incremented by MathJax between equations.
+      //
+      MathJax = {
+        subequations: "0",
+        section: "",
+        loader: {
+          load: ["[tex]/tagformat", "[tex]/textmacros"],
+        },
+        startup: {
+          ready() {
+            // These would be replaced by import commands if you wanted to make
+            // a proper extension.
+            const Configuration =
+              MathJax._.input.tex.Configuration.Configuration;
+            const CommandMap = MathJax._.input.tex.SymbolMap.CommandMap;
+            const Macro = MathJax._.input.tex.Symbol.Macro;
+            const TexError = MathJax._.input.tex.TexError.default;
+            const ParseUtil = MathJax._.input.tex.ParseUtil.default;
+            const expandable = MathJax._.util.Options.expandable;
+
+            // Insert the replacement string into the TeX string, and check
+            // that there haven't been too many maxro substitutions (prevents
+            // infinite loops).
+            const useArgument = (parser, text) => {
+              parser.string = ParseUtil.addArgs(
+                parser,
+                text,
+                parser.string.slice(parser.i)
+              );
+              parser.i = 0;
+              if (
+                ++parser.macroCount > parser.configuration.options.maxMacros
+              ) {
+                throw new TexError(
+                  "MaxMacroSub1",
+                  "MathJax maximum macro substitution count exceeded; " +
+                    "is there a recursive macro call?"
+                );
+              }
+            };
+
+            // Create the command map for:
+            // \ifstar, \ifnextchar, \ifblank, \ifstrequal, \seteqnumber
+            new CommandMap(
+              "Lwarp-macros",
+              {
+                ifstar: "IfstarFunction",
+                ifnextchar: "IfnextcharFunction",
+                ifblank: "IfblankFunction",
+                ifstrequal: "IfstrequalFunction",
+                seteqnumber: "SeteqnumberFunction",
+              },
+              {
+                // This function implements an ifstar macro.
+                IfstarFunction(parser, name) {
+                  const resultstar = parser.GetArgument(name);
+                  const resultnostar = parser.GetArgument(name);
+                  const star = parser.GetStar(); // true if there is a *
+                  useArgument(parser, star ? resultstar : resultnostar);
+                },
+
+                // This function implements an ifnextchar macro.
+                IfnextcharFunction(parser, name) {
+                  let whichchar = parser.GetArgument(name);
+                  if (whichchar.match(/^(?:0x[0-9A-F]+|[0-9]+)$/i)) {
+                    // $ syntax highlighting
+                    whichchar = String.fromCodePoint(parseInt(whichchar));
+                  }
+                  const resultnextchar = parser.GetArgument(name);
+                  const resultnotnextchar = parser.GetArgument(name);
+                  const gotchar = parser.GetNext() === whichchar;
+                  useArgument(
+                    parser,
+                    gotchar ? resultnextchar : resultnotnextchar
+                  );
+                },
+
+                // This function implements an ifblank macro.
+                IfblankFunction(parser, name) {
+                  const blankarg = parser.GetArgument(name);
+                  const resultblank = parser.GetArgument(name);
+                  const resultnotblank = parser.GetArgument(name);
+                  const isblank = blankarg.trim() == "";
+                  useArgument(parser, isblank ? resultblank : resultnotblank);
+                },
+
+                // This function implements an ifstrequal macro.
+                IfstrequalFunction(parser, name) {
+                  const strequalfirst = parser.GetArgument(name);
+                  const strequalsecond = parser.GetArgument(name);
+                  const resultequal = parser.GetArgument(name);
+                  const resultnotequal = parser.GetArgument(name);
+                  const isequal = strequalfirst == strequalsecond;
+                  useArgument(parser, isequal ? resultequal : resultnotequal);
+                },
+
+                // This function modifies the equation numbers.
+                SeteqnumberFunction(parser, name) {
+                  // Get the macro parameters
+                  const star = parser.GetStar(); // true if there is a *
+                  const optBrackets = parser.GetBrackets(name); // contents of optional brackets
+                  const newsubequations = parser.GetArgument(name); // the subequations argument
+                  const neweqsection = parser.GetArgument(name); // the eq section argument
+                  const neweqnumber = parser.GetArgument(name); // the eq number argument
+                  MathJax.config.subequations = newsubequations; // a string with boolean meaning
+                  MathJax.config.section = neweqsection; // a string with numeric meaning
+                  parser.tags.counter = parser.tags.allCounter = neweqnumber;
+                },
+              }
+            );
+
+            // Create the Lwarp-macros package
+            Configuration.create("Lwarp-macros", {
+              handler: { macro: ["Lwarp-macros"] },
+            });
+
+            MathJax.startup.defaultReady();
+
+            // For forward references:
+            MathJax.startup.input[0].preFilters.add(({ math }) => {
+              if (math.inputData.recompile) {
+                MathJax.config.subequations =
+                  math.inputData.recompile.subequations;
+                MathJax.config.section = math.inputData.recompile.section;
+              }
+            });
+            MathJax.startup.input[0].postFilters.add(({ math }) => {
+              if (math.inputData.recompile) {
+                math.inputData.recompile.subequations =
+                  MathJax.config.subequations;
+                math.inputData.recompile.section = MathJax.config.section;
+              }
+            });
+
+            // For \left, \right with unicode-math:
+            const { DelimiterMap } = MathJax._.input.tex.SymbolMap;
+            const { Symbol } = MathJax._.input.tex.Symbol;
+            const { MapHandler } = MathJax._.input.tex.MapHandler;
+            const delimiter = MapHandler.getMap("delimiter");
+            delimiter.add("\\lBrack", new Symbol("\\lBrack", "\u27E6"));
+            delimiter.add("\\rBrack", new Symbol("\\rBrack", "\u27E7"));
+            delimiter.add("\\lAngle", new Symbol("\\lAngle", "\u27EA"));
+            delimiter.add("\\rAngle", new Symbol("\\rAngle", "\u27EB"));
+            delimiter.add("\\lbrbrak", new Symbol("\\lbrbrak", "\u2772"));
+            delimiter.add("\\rbrbrak", new Symbol("\\rbrbrak", "\u2773"));
+            delimiter.add("\\lbag", new Symbol("\\lbag", "\u27C5"));
+            delimiter.add("\\rbag", new Symbol("\\rbag", "\u27C6"));
+            delimiter.add(
+              "\\llparenthesis",
+              new Symbol("\\llparenthesis", "\u2987")
+            );
+            delimiter.add(
+              "\\rrparenthesis",
+              new Symbol("\\rrparenthesis", "\u2988")
+            );
+            delimiter.add("\\llangle", new Symbol("\\llangle", "\u2989"));
+            delimiter.add("\\rrangle", new Symbol("\\rrangle", "\u298A"));
+            delimiter.add("\\Lbrbrak", new Symbol("\\Lbrbrak", "\u27EC"));
+            delimiter.add("\\Rbrbrak", new Symbol("\\Rbrbrak", "\u27ED"));
+            delimiter.add("\\lBrace", new Symbol("\\lBrace", "\u2983"));
+            delimiter.add("\\rBrace", new Symbol("\\rBrace", "\u2984"));
+            delimiter.add("\\lParen", new Symbol("\\lParen", "\u2985"));
+            delimiter.add("\\rParen", new Symbol("\\rParen", "\u2986"));
+            delimiter.add("\\lbrackubar", new Symbol("\\lbrackubar", "\u298B"));
+            delimiter.add("\\rbrackubar", new Symbol("\\rbrackubar", "\u298C"));
+            delimiter.add(
+              "\\lbrackultick",
+              new Symbol("\\lbrackultick", "\u298D")
+            );
+            delimiter.add(
+              "\\rbracklrtick",
+              new Symbol("\\rbracklrtick", "\u298E")
+            );
+            delimiter.add(
+              "\\lbracklltick",
+              new Symbol("\\lbracklltick", "\u298F")
+            );
+            delimiter.add(
+              "\\rbrackurtick",
+              new Symbol("\\rbrackurtick", "\u2990")
+            );
+            delimiter.add("\\langledot", new Symbol("\\langledot", "\u2991"));
+            delimiter.add("\\rangledot", new Symbol("\\rangledot", "\u2992"));
+            delimiter.add("\\lparenless", new Symbol("\\lparenless", "\u2993"));
+            delimiter.add("\\rparengtr", new Symbol("\\rparengtr", "\u2994"));
+            delimiter.add("\\Lparengtr", new Symbol("\\Lparengtr", "\u2995"));
+            delimiter.add("\\Rparenless", new Symbol("\\Rparenless", "\u2996"));
+            delimiter.add("\\lblkbrbrak", new Symbol("\\lblkbrbrak", "\u2997"));
+            delimiter.add("\\rblkbrbrak", new Symbol("\\rblkbrbrak", "\u2998"));
+            delimiter.add("\\lvzigzag", new Symbol("\\lvzigzag", "\u29D8"));
+            delimiter.add("\\rvzigzag", new Symbol("\\rvzigzag", "\u29D9"));
+            delimiter.add("\\Lvzigzag", new Symbol("\\Lvzigzag", "\u29DA"));
+            delimiter.add("\\Rvzigzag", new Symbol("\\Rvzigzag", "\u29DB"));
+            delimiter.add(
+              "\\lcurvyangle",
+              new Symbol("\\lcurvyangle", "\u29FC")
+            );
+            delimiter.add(
+              "\\rcurvyangle",
+              new Symbol("\\rcurvyangle", "\u29FD")
+            );
+            delimiter.add("\\Vvert", new Symbol("\\Vvert", "\u2980"));
+          }, // ready
+        }, // startup
+
+        tex: {
+          packages: { "[+]": ["tagformat", "Lwarp-macros", "textmacros"] },
+          tags: "ams",
+          tagformat: {
+            number: function (n) {
+              if (MathJax.config.subequations == 0)
+                return MathJax.config.section + n;
+              else return MathJax.config.section + String.fromCharCode(96 + n);
+            },
+          },
+        },
+      };
+    </script>
+
+    <script
+      async
+      id="MathJax-script"
+      src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-chtml.js"
+    ></script>
+
+    <script src="pgfmanual.js"></script>
+
+    <link href="https://unpkg.com/@docsearch/css@alpha" rel="stylesheet" />
+    <link href="/favicon-16x16.png" rel="icon" sizes="16x16" type="image/png" />
+    <link href="/favicon-32x32.png" rel="icon" sizes="32x32" type="image/png" />
+    <link
+      href="/apple-touch-icon.png"
+      rel="apple-touch-icon"
+      sizes="180x180"
+      type="image/png"
+    />
+    <link href="/site.webmanifest" rel="manifest" />
+  </head>
+  <body>
+    <a id="pgfmanual-autopage-6219"></a>
+
+    <div class="bodyandsidetoc grid-container">
+      <header>
+        <strong><a href="/">PGF/Ti<i>k</i>Z Manual</a></strong>
+        <div id="search"></div>
+      </header>
+      <div class="sidetoccontainer" id="local-toc-container">
+        <nav class="sidetoc">
+          <div class="sidetoctitle"><p>On this page</p></div>
+          <div class="sidetoccontents"></div>
+        </nav>
+      </div>
+      <div class="sidetoccontainer" id="chapter-toc-container">
+        <nav class="sidetoc">
+          <div class="sidetoctitle">
+            <p>
+              <span class="sidetocthetitle"
+                >The <span class="tikzname">TikZ</span> and PGF Packages<br />
+                Manual for version 3.1.9a</span
+              >
+            </p>
+
+            <p>Contents</p>
+          </div>
+
+          <div class="sidetoccontents">
+            <p></p>
+
+            <p>
+              <a class="linkintro" href="/">Introduction</a>
+            </p>
+
+            <p>
+              <a class="tocpart" href="tutorials-guidelines"
+                >Tutorials and Guidelines</a
+              >
+            </p>
+
+            <p>
+              <a class="tocpart" href="install"
+                >Installation and Configuration</a
+              >
+            </p>
+
+            <p>
+              <a class="tocpart" href="tikz">Ti<em>k</em>Z</a>
+            </p>
+
+            <p>
+              <a class="tocpart" href="gd">Graph Drawing</a>
+            </p>
+
+            <p class="current-part">
+              <a class="tocpart" href="libraries">Libraries</a>
+            </p>
+
+            <p class="current-part">
+              <a class="tocsection" href="library-3d"
+                >Three Dimensional Drawing Library</a
+              >
+            </p>
+
+            <p class="current-part">
+              <a class="tocsection" href="library-angle">Angle Library</a>
+            </p>
+
+            <p class="current-part">
+              <a class="tocsection" href="library-arrows">Arrow Tip Library</a>
+            </p>
+
+            <p class="current-part">
+              <a class="tocsection" href="library-automata"
+                >Automata Drawing Library</a
+              >
+            </p>
+
+            <p class="current-part">
+              <a class="tocsection" href="library-babel">Babel Library</a>
+            </p>
+
+            <p class="current-part">
+              <a class="tocsection" href="library-backgrounds"
+                >Background Library</a
+              >
+            </p>
+
+            <p class="current-part">
+              <a class="tocsection" href="library-calc">Calc Library</a>
+            </p>
+
+            <p class="current-part">
+              <a class="tocsection" href="library-calender">Calendar Library</a>
+            </p>
+
+            <p class="current-part">
+              <a class="tocsection" href="library-chains">Chains</a>
+            </p>
+
+            <p class="current-part">
+              <a class="tocsection" href="library-circuits"
+                >Circuit Libraries</a
+              >
+            </p>
+
+            <p class="current-part">
+              <a class="tocsection" href="library-decorations"
+                >Decoration Library</a
+              >
+            </p>
+
+            <p class="current-part">
+              <a class="tocsection" href="library-er"
+                >Entity-Relationship Diagram Drawing Library</a
+              >
+            </p>
+
+            <p class="current-part">
+              <a class="tocsection" href="library-external"
+                >Externalization Library</a
+              >
+            </p>
+
+            <p class="current-part">
+              <a class="tocsection" href="library-fadings">Fading Library</a>
+            </p>
+
+            <p class="current-part">
+              <a class="tocsection" href="library-fit">Fitting Library</a>
+            </p>
+
+            <p class="current-part">
+              <a class="tocsection" href="library-fixedpoint"
+                >Fixed Point Arithmetic Library</a
+              >
+            </p>
+
+            <p class="current-part">
+              <a class="tocsection" href="library-fpu"
+                >Floating Point Unit Library</a
+              >
+            </p>
+
+            <p class="current-part">
+              <a class="tocsection" href="library-lsystems"
+                >Lindenmayer System Drawing Library</a
+              >
+            </p>
+
+            <p class="current-part">
+              <a class="tocsection" href="library-math">Math Library</a>
+            </p>
+
+            <p class="current-part">
+              <a class="tocsection" href="library-matrix">Matrix Library</a>
+            </p>
+
+            <p class="current-part">
+              <a class="tocsection" href="library-mindmaps"
+                >Mindmap Drawing Library</a
+              >
+            </p>
+
+            <p class="current-part">
+              <a class="tocsection" href="library-folding"
+                >Paper-Folding Diagrams Library</a
+              >
+            </p>
+
+            <p class="current-part">
+              <a class="tocsection" href="library-patterns">Pattern Library</a>
+            </p>
+
+            <p class="current-part">
+              <a class="tocsection" href="library-perspective"
+                >Three Point Perspective Drawing Library</a
+              >
+            </p>
+
+            <p class="current-part">
+              <a class="tocsection" href="library-petri"
+                >Petri-Net Drawing Library</a
+              >
+            </p>
+
+            <p class="current-part">
+              <a class="tocsection" href="library-plot-handlers"
+                >Plot Handler Library</a
+              >
+            </p>
+
+            <p class="current-part">
+              <a class="tocsection" href="library-plot-marks"
+                >Plot Mark Library</a
+              >
+            </p>
+
+            <p class="current-part">
+              <a class="tocsection" href="library-profiler">Profiler Library</a>
+            </p>
+
+            <p class="current current-part">
+              <a class="tocsection" href="library-shadings">Shadings Library</a>
+            </p>
+
+            <p class="current-part">
+              <a class="tocsection" href="library-shadows">Shadows Library</a>
+            </p>
+
+            <p class="current-part">
+              <a class="tocsection" href="library-shapes">Shape Library</a>
+            </p>
+
+            <p class="current-part">
+              <a class="tocsection" href="library-spy"
+                >Spy Library: Magnifying Parts of Pictures</a
+              >
+            </p>
+
+            <p class="current-part">
+              <a class="tocsection" href="library-svg-path">SVG-Path Library</a>
+            </p>
+
+            <p class="current-part">
+              <a class="tocsection" href="library-edges">To Path Library</a>
+            </p>
+
+            <p class="current-part">
+              <a class="tocsection" href="library-through">Through Library</a>
+            </p>
+
+            <p class="current-part">
+              <a class="tocsection" href="library-trees">Tree Library</a>
+            </p>
+
+            <p class="current-part">
+              <a class="tocsection" href="library-turtle"
+                >Turtle Graphics Library</a
+              >
+            </p>
+
+            <p class="current-part">
+              <a class="tocsection" href="library-views">Views Library</a>
+            </p>
+
+            <p>
+              <a class="tocpart" href="dv">Data Visualization</a>
+            </p>
+
+            <p>
+              <a class="tocpart" href="utilities">Utilities</a>
+            </p>
+
+            <p>
+              <a class="tocpart" href="math"
+                >Mathematical and Object-Oriented Engines</a
+              >
+            </p>
+
+            <p>
+              <a class="tocpart" href="base">The Basic Layer</a>
+            </p>
+
+            <p>
+              <a class="tocpart" href="pgfsys">The System Layer</a>
+            </p>
+          </div>
+        </nav>
+      </div>
+
+      <main class="bodycontainer">
+        <section class="textbody">
+          <h1>
+            The <span class="tikzname">TikZ</span> and PGF Packages<br />
+            Manual for version 3.1.9a
+          </h1>
+          <h2 class="inserted">Libraries</h2>
+
+          <!--MathJax customizations:-->
+
+          <div class="hidden">
+            \(\newcommand{\footnotename}{footnote}\) \(\def \LWRfootnote {1}\)
+            \(\newcommand {\footnote }[2][\LWRfootnote ]{{}^{\mathrm {#1}}}\)
+            \(\newcommand {\footnotemark }[1][\LWRfootnote ]{{}^{\mathrm
+            {#1}}}\) \(\let \LWRorighspace \hspace \) \(\renewcommand {\hspace
+            }{\ifstar \LWRorighspace \LWRorighspace }\) \(\newcommand
+            {\mathnormal }[1]{{#1}}\) \(\newcommand \ensuremath [1]{#1}\)
+            \(\newcommand {\LWRframebox }[2][]{\fbox {#2}} \newcommand
+            {\framebox }[1][]{\LWRframebox } \) \(\newcommand {\setlength
+            }[2]{}\) \(\newcommand {\addtolength }[2]{}\) \(\newcommand
+            {\setcounter }[2]{}\) \(\newcommand {\addtocounter }[2]{}\)
+            \(\newcommand {\arabic }[1]{}\) \(\newcommand {\number }[1]{}\)
+            \(\newcommand {\noalign }[1]{\text {#1}\notag \\}\) \(\newcommand
+            {\cline }[1]{}\) \(\newcommand {\directlua }[1]{\text
+            {(directlua)}}\) \(\newcommand {\luatexdirectlua }[1]{\text
+            {(directlua)}}\) \(\newcommand {\protect }{}\) \(\def
+            \LWRabsorbnumber #1 {}\) \(\def \LWRabsorbquotenumber "#1 {}\)
+            \(\newcommand {\LWRabsorboption }[1][]{}\) \(\newcommand
+            {\LWRabsorbtwooptions }[1][]{\LWRabsorboption }\) \(\def \mathchar
+            {\ifnextchar "\LWRabsorbquotenumber \LWRabsorbnumber }\) \(\def
+            \mathcode #1={\mathchar }\) \(\let \delcode \mathcode \) \(\let
+            \delimiter \mathchar \) \(\def \oe {\unicode {x0153}}\) \(\def \OE
+            {\unicode {x0152}}\) \(\def \ae {\unicode {x00E6}}\) \(\def \AE
+            {\unicode {x00C6}}\) \(\def \aa {\unicode {x00E5}}\) \(\def \AA
+            {\unicode {x00C5}}\) \(\def \o {\unicode {x00F8}}\) \(\def \O
+            {\unicode {x00D8}}\) \(\def \l {\unicode {x0142}}\) \(\def \L
+            {\unicode {x0141}}\) \(\def \ss {\unicode {x00DF}}\) \(\def \SS
+            {\unicode {x1E9E}}\) \(\def \dag {\unicode {x2020}}\) \(\def \ddag
+            {\unicode {x2021}}\) \(\def \P {\unicode {x00B6}}\) \(\def
+            \copyright {\unicode {x00A9}}\) \(\def \pounds {\unicode {x00A3}}\)
+            \(\let \LWRref \ref \) \(\renewcommand {\ref }{\ifstar \LWRref
+            \LWRref }\) \( \newcommand {\multicolumn }[3]{#3}\) \(\require
+            {textcomp}\) \( \newcommand {\meta }[1]{\langle \textit {#1}\rangle
+            } \) \(\newcommand {\intertext }[1]{\text {#1}\notag \\}\) \(\let
+            \Hat \hat \) \(\let \Check \check \) \(\let \Tilde \tilde \) \(\let
+            \Acute \acute \) \(\let \Grave \grave \) \(\let \Dot \dot \) \(\let
+            \Ddot \ddot \) \(\let \Breve \breve \) \(\let \Bar \bar \) \(\let
+            \Vec \vec \)
+          </div>
+
+          <p></p>
+          <h4 id="autosec-6220">
+            <a id="section-library-shadings"></a
+            ><span class="sectionnumber">68&emsp;</span>Shadings Library
+          </h4>
+          <a id="pgfmanual-autopage-6220"></a>
+          <a id="pgfmanual-autofile-73"></a>
+
+          <div class="manualentry">
+            <div class="entryheadline">
+              <p>
+                <a id="pgf.shadings"></a>
+                <span class="hl-def"
+                  ><b><span class="tikzname">TikZ</span> Library</b>
+                  <kbd
+                    ><span class="textcolor" style="color: #bf0000"
+                      >shadings</span
+                    ></kbd
+                  ></span
+                >
+                <a class="anchor-link" href="#pgf.shadings">&para;</a>
+              </p>
+            </div>
+            <p>
+              <kbd
+                >\usepgflibrary{<span class="textcolor" style="color: #bf0000"
+                  >shadings</span
+                >} %
+                <span class="latexlogofont"
+                  ><span class="latexlogo"
+                    >L<span class="latexlogosup">a</span>T<span
+                      class="latexlogosub"
+                      >e</span
+                    >X</span
+                  ></span
+                >
+                and plain
+                <span class="latexlogofont"
+                  ><span class="latexlogo"
+                    >T<span class="latexlogosub">e</span>X</span
+                  ></span
+                >
+                and pure pgf</kbd
+              ><br />
+              <kbd
+                >\usepgflibrary[<span class="textcolor" style="color: #bf0000"
+                  >shadings</span
+                >] % Con<span class="latexlogofont"
+                  ><span class="latexlogo"
+                    >T<span class="latexlogosub">e</span>X</span
+                  ></span
+                >t and pure pgf</kbd
+              ><br />
+              <kbd
+                >\usetikzlibrary{<span class="textcolor" style="color: #bf0000"
+                  >shadings</span
+                >} %
+                <span class="latexlogofont"
+                  ><span class="latexlogo"
+                    >L<span class="latexlogosup">a</span>T<span
+                      class="latexlogosub"
+                      >e</span
+                    >X</span
+                  ></span
+                >
+                and plain
+                <span class="latexlogofont"
+                  ><span class="latexlogo"
+                    >T<span class="latexlogosub">e</span>X</span
+                  ></span
+                >
+                when using <span class="tikzname">TikZ</span></kbd
+              ><br />
+              <kbd
+                >\usetikzlibrary[<span class="textcolor" style="color: #bf0000"
+                  >shadings</span
+                >] % Con<span class="latexlogofont"
+                  ><span class="latexlogo"
+                    >T<span class="latexlogosub">e</span>X</span
+                  ></span
+                >t when using <span class="tikzname">TikZ</span></kbd
+              ><br />
+              <br />
+              The package defines a number of shadings in addition to the ball
+              and axis shadings that are available by default.
+            </p>
+          </div>
+
+          <p>
+            In the following, the shadings defined in the library are listed in
+            alphabetical order. The colors of some of these shadings can be
+            configured using special options (like
+            <span class="texttt">left color</span>). These options implicitly
+            select the shading.
+          </p>
+
+          <p>
+            The three shadings <span class="texttt">axis</span>,
+            <span class="texttt">ball</span>, and
+            <span class="texttt">radial</span> are always defined, even when
+            this library is not used.
+          </p>
+
+          <div class="manualentry">
+            <div class="entryheadline">
+              <p>
+                <a id="pgf.axis"></a>
+                <span class="hl-def"
+                  ><b>Shading</b>
+                  <kbd
+                    ><span class="textcolor" style="color: #bf0000"
+                      >axis</span
+                    ></kbd
+                  ></span
+                >
+                <a class="anchor-link" href="#pgf.axis">&para;</a>
+              </p>
+            </div>
+            <p>
+              In this always-defined shading the colors change gradually between
+              three horizontal lines. The top line is at the top (uppermost)
+              point of the path, the middle is in the middle, the bottom line is
+              at the bottom of the path.
+            </p>
+
+            <div class="manualentry">
+              <div class="entryheadline">
+                <p>
+                  <a id="pgf./tikz/top:color"></a><a id="pgf.top:color"></a>
+                  <span class="hl-def"
+                    ><kbd
+                      ><span class="keyname"
+                        ><span class="textcolor" style="color: #bf0000"
+                          >/tikz/top color</span
+                        ></span
+                      >=</kbd
+                    ><span class="angle">&langle;</span><i>color</i
+                    ><span class="angle">&rangle;</span></span
+                  ><span class="hl-default">(no default)</span>
+                  <a class="anchor-link" href="#pgf./tikz/top:color">&para;</a>
+                </p>
+              </div>
+              <p>
+                This option sets the color to be used at the top in an
+                <span class="texttt">axis</span> shading. When this option is
+                given, several things happen:
+              </p>
+
+              <p>
+                1. The <span class="texttt">shade</span> option is selected.
+              </p>
+              <p>
+                2. The <span class="texttt">shading=axis</span> option is
+                selected.
+              </p>
+              <p>
+                3. The middle color of the axis shading is set to the average of
+                the given top color <span class="angle">&langle;</span
+                ><i>color</i><span class="angle">&rangle;</span> and of whatever
+                color is currently selected for the bottom.
+              </p>
+              <p>4. The rotation angle of the shading is set to 0.</p>
+
+              <figure class="example">
+                <div class="example-image">
+                  <p>
+                    <span
+                      class="lateximagesource"
+                      id="lateximage-pgfmanual-2554"
+                      ><!--
+   -->
+                      <img
+                        alt="(-tikz-&nbsp;diagram)"
+                        class="lateximage"
+                        height="40.993"
+                        loading="lazy"
+                        src="pgfmanual-images/image-2554.png"
+                        style
+                        width="78.789"
+                    /></span>
+                  </p>
+                </div>
+
+                <div class="example-code">
+                  <button class="clipboardButton" type="button">copy</button>
+                  <code>
+                    <span class="c- preamble">\usepgflibrary {shadings} </span
+                    ><br />
+                    <span class="textcolor" style="color: #0000b2"
+                      ><a href="tikz-scopes#pgf.back/tikz">\tikz</a></span
+                    >&numsp;<span class="textcolor" style="color: #0000b2"
+                      ><a href="tikz-actions#pgf.back/draw">\draw</a></span
+                    >[<span class="textcolor" style="color: #008000"
+                      ><a href="library-shadings#pgf.top:color"
+                        >top color</a
+                      ></span
+                    >=<span class="textcolor" style="color: #008000">red</span
+                    >]&numsp;<span class="textcolor" style="color: #800080"
+                      >(0,0)</span
+                    >&numsp;<span class="textcolor" style="color: #000000"
+                      ><a href="tikz-paths#pgf.rectangle">rectangle</a></span
+                    >
+                    <span class="textcolor" style="color: #800080">(2,1)</span
+                    >;<br />
+                  </code>
+                </div>
+              </figure>
+            </div>
+
+            <div class="manualentry">
+              <div class="entryheadline">
+                <p>
+                  <a id="pgf./tikz/bottom:color"></a
+                  ><a id="pgf.bottom:color"></a>
+                  <span class="hl-def"
+                    ><kbd
+                      ><span class="keyname"
+                        ><span class="textcolor" style="color: #bf0000"
+                          >/tikz/bottom color</span
+                        ></span
+                      >=</kbd
+                    ><span class="angle">&langle;</span><i>color</i
+                    ><span class="angle">&rangle;</span></span
+                  ><span class="hl-default">(no default)</span>
+                  <a class="anchor-link" href="#pgf./tikz/bottom:color"
+                    >&para;</a
+                  >
+                </p>
+              </div>
+              <p>
+                This option works like <span class="texttt">top color</span>,
+                only for the bottom color.
+              </p>
+            </div>
+
+            <div class="manualentry">
+              <div class="entryheadline">
+                <p>
+                  <a id="pgf./tikz/middle:color"></a
+                  ><a id="pgf.middle:color"></a>
+                  <span class="hl-def"
+                    ><kbd
+                      ><span class="keyname"
+                        ><span class="textcolor" style="color: #bf0000"
+                          >/tikz/middle color</span
+                        ></span
+                      >=</kbd
+                    ><span class="angle">&langle;</span><i>color</i
+                    ><span class="angle">&rangle;</span></span
+                  ><span class="hl-default">(no default)</span>
+                  <a class="anchor-link" href="#pgf./tikz/middle:color"
+                    >&para;</a
+                  >
+                </p>
+              </div>
+              <p>
+                This option specifies the color for the middle of an axis
+                shading. It also sets the <span class="texttt">shade</span> and
+                <span class="texttt">shading=axis</span> options, but it does
+                not change the rotation angle.
+              </p>
+              <p>
+                <em>Note:</em> Since both
+                <span class="texttt">top color</span> and
+                <span class="texttt">bottom color</span> change the middle
+                color, this option should be given <em>last</em> if all of these
+                options need to be given:
+              </p>
+
+              <figure class="example">
+                <div class="example-image">
+                  <p>
+                    <span
+                      class="lateximagesource"
+                      id="lateximage-pgfmanual-2555"
+                      ><!--
+   -->
+                      <img
+                        alt="(-tikz-&nbsp;diagram)"
+                        class="lateximage"
+                        height="40.993"
+                        loading="lazy"
+                        src="pgfmanual-images/image-2555.png"
+                        style
+                        width="78.789"
+                    /></span>
+                  </p>
+                </div>
+
+                <div class="example-code">
+                  <button class="clipboardButton" type="button">copy</button>
+                  <code>
+                    <span class="c- preamble">\usepgflibrary {shadings} </span
+                    ><br />
+                    <span class="textcolor" style="color: #0000b2"
+                      ><a href="tikz-scopes#pgf.back/tikz">\tikz</a></span
+                    >&numsp;<span class="textcolor" style="color: #0000b2"
+                      ><a href="tikz-actions#pgf.back/draw">\draw</a></span
+                    >[<span class="textcolor" style="color: #008000"
+                      ><a href="library-shadings#pgf.top:color"
+                        >top color</a
+                      ></span
+                    >=<span class="textcolor" style="color: #008000">white</span
+                    >,<span class="textcolor" style="color: #008000"
+                      ><a href="library-shadings#pgf.bottom:color"
+                        >bottom color</a
+                      ></span
+                    >=<span class="textcolor" style="color: #008000">black</span
+                    >,<span class="textcolor" style="color: #008000"
+                      ><a href="library-shadings#pgf.middle:color"
+                        >middle color</a
+                      ></span
+                    >=<span class="textcolor" style="color: #008000">red</span
+                    >]<br />
+                    &numsp;&numsp;<span class="textcolor" style="color: #800080"
+                      >(0,0)</span
+                    >&numsp;<span class="textcolor" style="color: #000000"
+                      ><a href="tikz-paths#pgf.rectangle">rectangle</a></span
+                    >
+                    <span class="textcolor" style="color: #800080">(2,1)</span
+                    >;<br />
+                  </code>
+                </div>
+              </figure>
+            </div>
+
+            <div class="manualentry">
+              <div class="entryheadline">
+                <p>
+                  <a id="pgf./tikz/left:color"></a><a id="pgf.left:color"></a>
+                  <span class="hl-def"
+                    ><kbd
+                      ><span class="keyname"
+                        ><span class="textcolor" style="color: #bf0000"
+                          >/tikz/left color</span
+                        ></span
+                      >=</kbd
+                    ><span class="angle">&langle;</span><i>color</i
+                    ><span class="angle">&rangle;</span></span
+                  ><span class="hl-default">(no default)</span>
+                  <a class="anchor-link" href="#pgf./tikz/left:color">&para;</a>
+                </p>
+              </div>
+              <p>
+                This option does exactly the same as
+                <span class="texttt">top color</span>, except that the shading
+                angle is set to \(90^\circ \).
+              </p>
+            </div>
+
+            <div class="manualentry">
+              <div class="entryheadline">
+                <p>
+                  <a id="pgf./tikz/right:color"></a
+                  ><a id="pgf.right:color"></a>
+                  <span class="hl-def"
+                    ><kbd
+                      ><span class="keyname"
+                        ><span class="textcolor" style="color: #bf0000"
+                          >/tikz/right color</span
+                        ></span
+                      >=</kbd
+                    ><span class="angle">&langle;</span><i>color</i
+                    ><span class="angle">&rangle;</span></span
+                  ><span class="hl-default">(no default)</span>
+                  <a class="anchor-link" href="#pgf./tikz/right:color"
+                    >&para;</a
+                  >
+                </p>
+              </div>
+              <p>Works like <span class="texttt">left color</span>.</p>
+            </div>
+          </div>
+
+          <div class="manualentry">
+            <div class="entryheadline">
+              <p>
+                <a id="pgf.ball"></a>
+                <span class="hl-def"
+                  ><b>Shading</b>
+                  <kbd
+                    ><span class="textcolor" style="color: #bf0000"
+                      >ball</span
+                    ></kbd
+                  ></span
+                >
+                <a class="anchor-link" href="#pgf.ball">&para;</a>
+              </p>
+            </div>
+            <p>
+              This always-defined shading fills the path with a shading that
+              &ldquo;looks like a ball&rdquo;. The default &ldquo;color&rdquo;
+              of the ball is blue (for no particular reason).
+            </p>
+
+            <div class="manualentry">
+              <div class="entryheadline">
+                <p>
+                  <a id="pgf./tikz/ball:color"></a><a id="pgf.ball:color"></a>
+                  <span class="hl-def"
+                    ><kbd
+                      ><span class="keyname"
+                        ><span class="textcolor" style="color: #bf0000"
+                          >/tikz/ball color</span
+                        ></span
+                      >=</kbd
+                    ><span class="angle">&langle;</span><i>color</i
+                    ><span class="angle">&rangle;</span></span
+                  ><span class="hl-default">(no default)</span>
+                  <a class="anchor-link" href="#pgf./tikz/ball:color">&para;</a>
+                </p>
+              </div>
+              <p>
+                This option sets the color used for the ball shading. It sets
+                the <span class="texttt">shade</span> and
+                <span class="texttt">shading=ball</span> options. Note that the
+                ball will never &ldquo;completely&rdquo; have the color
+                <span class="angle">&langle;</span><i>color</i
+                ><span class="angle">&rangle;</span>. At its
+                &ldquo;highlight&rdquo; spot a certain amount of white is mixed
+                in, at the border a certain amount of black. Because of this, it
+                also makes sense to say
+                <span class="texttt">ball color=white</span> or
+                <span class="texttt">ball color=black</span>
+              </p>
+
+              <figure class="example">
+                <div class="example-image">
+                  <p>
+                    <span
+                      class="lateximagesource"
+                      id="lateximage-pgfmanual-2556"
+                      ><!--
+   -->
+                      <img
+                        alt="(-tikz-&nbsp;diagram)"
+                        class="lateximage"
+                        height="26.283"
+                        loading="lazy"
+                        src="pgfmanual-images/image-2556.png"
+                        style
+                        width="101.858"
+                    /></span>
+                  </p>
+                </div>
+
+                <div class="example-code">
+                  <button class="clipboardButton" type="button">copy</button>
+                  <code>
+                    <span class="c- preamble">\usepgflibrary {shadings} </span
+                    ><br />
+                    <span class="textcolor" style="color: #000000">\begin</span
+                    >{<span class="textcolor" style="color: #0000b2"
+                      ><a href="tikz-scopes#pgf.tikzpicture"
+                        >tikzpicture</a
+                      ></span
+                    >}<br />
+                    &numsp;&numsp;<span class="textcolor" style="color: #0000b2"
+                      ><a href="tikz-actions#pgf.back/shade">\shade</a></span
+                    >[<span class="textcolor" style="color: #008000"
+                      ><a href="library-shadings#pgf.ball:color"
+                        >ball color</a
+                      ></span
+                    >=<span class="textcolor" style="color: #008000">white</span
+                    >]&numsp;<span class="textcolor" style="color: #800080"
+                      >(0,0)</span
+                    >&numsp;<span class="textcolor" style="color: #000000"
+                      ><a href="tikz-paths#pgf.circle">circle</a></span
+                    >
+                    <span class="textcolor" style="color: #800080">(2ex)</span
+                    >;<br />
+                    &numsp;&numsp;<span class="textcolor" style="color: #0000b2"
+                      ><a href="tikz-actions#pgf.back/shade">\shade</a></span
+                    >[<span class="textcolor" style="color: #008000"
+                      ><a href="library-shadings#pgf.ball:color"
+                        >ball color</a
+                      ></span
+                    >=<span class="textcolor" style="color: #008000">red</span
+                    >]&numsp;<span class="textcolor" style="color: #800080"
+                      >(1,0)</span
+                    >&numsp;<span class="textcolor" style="color: #000000"
+                      ><a href="tikz-paths#pgf.circle">circle</a></span
+                    >
+                    <span class="textcolor" style="color: #800080">(2ex)</span
+                    >;<br />
+                    &numsp;&numsp;<span class="textcolor" style="color: #0000b2"
+                      ><a href="tikz-actions#pgf.back/shade">\shade</a></span
+                    >[<span class="textcolor" style="color: #008000"
+                      ><a href="library-shadings#pgf.ball:color"
+                        >ball color</a
+                      ></span
+                    >=<span class="textcolor" style="color: #008000">black</span
+                    >]&numsp;<span class="textcolor" style="color: #800080"
+                      >(2,0)</span
+                    >&numsp;<span class="textcolor" style="color: #000000"
+                      ><a href="tikz-paths#pgf.circle">circle</a></span
+                    >
+                    <span class="textcolor" style="color: #800080">(2ex)</span
+                    >;<br />
+                    <span class="textcolor" style="color: #000000">\end</span
+                    >{<span class="textcolor" style="color: #0000b2"
+                      ><a href="tikz-scopes#pgf.tikzpicture"
+                        >tikzpicture</a
+                      ></span
+                    >}<br />
+                  </code>
+                </div>
+              </figure>
+            </div>
+          </div>
+
+          <div class="manualentry">
+            <div class="entryheadline">
+              <p>
+                <a id="pgf.bilinear:interpolation"></a>
+                <span class="hl-def"
+                  ><b>Shading</b>
+                  <kbd
+                    ><span class="textcolor" style="color: #bf0000"
+                      >bilinear interpolation</span
+                    ></kbd
+                  ></span
+                >
+                <a class="anchor-link" href="#pgf.bilinear:interpolation"
+                  >&para;</a
+                >
+              </p>
+            </div>
+            <p>
+              This shading fills a rectangle with colors that a bilinearly
+              interpolated between the colors in the four corners of the
+              rectangle. These four colors are called
+              <span class="texttt">lower left</span>,
+              <span class="texttt">lower right</span>,
+              <span class="texttt">upper left</span>, and
+              <span class="texttt">upper right</span>. By changing these color,
+              you can change the way the shading looks. The library also defines
+              four options, called the same way, that can be used to set these
+              colors and select the shading implicitly.
+            </p>
+
+            <figure class="example">
+              <div class="example-image">
+                <p>
+                  <span class="lateximagesource" id="lateximage-pgfmanual-2557"
+                    ><!--
+   -->
+                    <img
+                      alt="(-tikz-&nbsp;diagram)"
+                      class="lateximage"
+                      height="78.266"
+                      loading="lazy"
+                      src="pgfmanual-images/image-2557.png"
+                      style
+                      width="116.078"
+                  /></span>
+                </p>
+              </div>
+
+              <div class="example-code">
+                <button class="clipboardButton" type="button">copy</button>
+                <code>
+                  <span class="c- preamble">\usepgflibrary {shadings} </span
+                  ><br />
+                  <span class="textcolor" style="color: #0000b2"
+                    ><a href="tikz-scopes#pgf.back/tikz">\tikz</a></span
+                  ><br />
+                  &numsp;&numsp;<span class="textcolor" style="color: #0000b2"
+                    ><a href="tikz-actions#pgf.back/shade">\shade</a></span
+                  >[<span class="textcolor" style="color: #008000"
+                    ><a href="library-shadings#pgf.upper:left"
+                      >upper left</a
+                    ></span
+                  >=<span class="textcolor" style="color: #008000">red</span
+                  >,<span class="textcolor" style="color: #008000"
+                    ><a href="library-shadings#pgf.upper:right"
+                      >upper right</a
+                    ></span
+                  >=<span class="textcolor" style="color: #008000">green</span
+                  >,<br />
+                  &numsp;&numsp;&numsp;&numsp;&numsp;&numsp;&numsp;&numsp;&numsp;<span
+                    class="textcolor"
+                    style="color: #008000"
+                    ><a href="library-shadings#pgf.lower:left"
+                      >lower left</a
+                    ></span
+                  >=<span class="textcolor" style="color: #008000">blue</span
+                  >,<span class="textcolor" style="color: #008000"
+                    ><a href="library-shadings#pgf.lower:right"
+                      >lower right</a
+                    ></span
+                  >=<span class="textcolor" style="color: #008000">yellow</span
+                  >]<br />
+                  &numsp;&numsp;&numsp;&numsp;<span
+                    class="textcolor"
+                    style="color: #800080"
+                    >(0,0)</span
+                  >&numsp;<span class="textcolor" style="color: #000000"
+                    ><a href="tikz-paths#pgf.rectangle">rectangle</a></span
+                  >
+                  <span class="textcolor" style="color: #800080">(3,2)</span
+                  >;<br />
+                </code>
+              </div>
+            </figure>
+
+            <div class="manualentry">
+              <div class="entryheadline">
+                <p>
+                  <a id="pgf./tikz/lower:left"></a><a id="pgf.lower:left"></a>
+                  <span class="hl-def"
+                    ><kbd
+                      ><span class="keyname"
+                        ><span class="textcolor" style="color: #bf0000"
+                          >/tikz/lower left</span
+                        ></span
+                      >=</kbd
+                    ><span class="angle">&langle;</span><i>color</i
+                    ><span class="angle">&rangle;</span> </span
+                  ><span class="hl-default"
+                    >(no default, initially <kbd>white</kbd>)</span
+                  >
+                  <a class="anchor-link" href="#pgf./tikz/lower:left">&para;</a>
+                </p>
+              </div>
+              <p>
+                Sets the color to be used in a
+                <span class="texttt">bilinear interpolation</span> shading for
+                the lower left corner. Also, this options selects this shading
+                and sets the <span class="texttt">shade</span> option.
+              </p>
+            </div>
+
+            <div class="manualentry">
+              <div class="entryheadline">
+                <p>
+                  <a id="pgf./tikz/upper:left"></a><a id="pgf.upper:left"></a>
+                  <span class="hl-def"
+                    ><kbd
+                      ><span class="keyname"
+                        ><span class="textcolor" style="color: #bf0000"
+                          >/tikz/upper left</span
+                        ></span
+                      >=</kbd
+                    ><span class="angle">&langle;</span><i>color</i
+                    ><span class="angle">&rangle;</span> </span
+                  ><span class="hl-default"
+                    >(no default, initially <kbd>white</kbd>)</span
+                  >
+                  <a class="anchor-link" href="#pgf./tikz/upper:left">&para;</a>
+                </p>
+              </div>
+              <p>Works like <span class="texttt">lower left</span>.</p>
+            </div>
+
+            <div class="manualentry">
+              <div class="entryheadline">
+                <p>
+                  <a id="pgf./tikz/upper:right"></a
+                  ><a id="pgf.upper:right"></a>
+                  <span class="hl-def"
+                    ><kbd
+                      ><span class="keyname"
+                        ><span class="textcolor" style="color: #bf0000"
+                          >/tikz/upper right</span
+                        ></span
+                      >=</kbd
+                    ><span class="angle">&langle;</span><i>color</i
+                    ><span class="angle">&rangle;</span> </span
+                  ><span class="hl-default"
+                    >(no default, initially <kbd>white</kbd>)</span
+                  >
+                  <a class="anchor-link" href="#pgf./tikz/upper:right"
+                    >&para;</a
+                  >
+                </p>
+              </div>
+              <p>Works like <span class="texttt">lower left</span>.</p>
+            </div>
+
+            <div class="manualentry">
+              <div class="entryheadline">
+                <p>
+                  <a id="pgf./tikz/lower:right"></a
+                  ><a id="pgf.lower:right"></a>
+                  <span class="hl-def"
+                    ><kbd
+                      ><span class="keyname"
+                        ><span class="textcolor" style="color: #bf0000"
+                          >/tikz/lower right</span
+                        ></span
+                      >=</kbd
+                    ><span class="angle">&langle;</span><i>color</i
+                    ><span class="angle">&rangle;</span> </span
+                  ><span class="hl-default"
+                    >(no default, initially <kbd>white</kbd>)</span
+                  >
+                  <a class="anchor-link" href="#pgf./tikz/lower:right"
+                    >&para;</a
+                  >
+                </p>
+              </div>
+              <p>Works like <span class="texttt">lower left</span>.</p>
+            </div>
+          </div>
+
+          <div class="manualentry">
+            <div class="entryheadline">
+              <p>
+                <a id="pgf.color:wheel"></a>
+                <span class="hl-def"
+                  ><b>Shading</b>
+                  <kbd
+                    ><span class="textcolor" style="color: #bf0000"
+                      >color wheel</span
+                    ></kbd
+                  ></span
+                >
+                <a class="anchor-link" href="#pgf.color:wheel">&para;</a>
+              </p>
+            </div>
+            <a id="shading-color-wheel"></a>
+            <p>This shading fills the path with a color wheel.</p>
+
+            <figure class="example">
+              <div class="example-image">
+                <p>
+                  <span class="lateximagesource" id="lateximage-pgfmanual-2558"
+                    ><!--
+-->
+                    <img
+                      alt="(-tikz-&nbsp;diagram)"
+                      class="lateximage"
+                      height="116.090"
+                      loading="lazy"
+                      src="pgfmanual-images/image-2558.png"
+                      style
+                      width="116.090"
+                  /></span>
+                </p>
+              </div>
+
+              <div class="example-code">
+                <button class="clipboardButton" type="button">copy</button>
+                <code>
+                  <span class="c- preamble">\usepgflibrary {shadings} </span
+                  ><br />
+                  <span class="textcolor" style="color: #0000b2"
+                    ><a href="tikz-scopes#pgf.back/tikz">\tikz</a></span
+                  >&numsp;<span class="textcolor" style="color: #0000b2"
+                    ><a href="tikz-actions#pgf.back/shade">\shade</a></span
+                  >[<span class="textcolor" style="color: #008000"
+                    ><a href="tikz-actions#pgf.shading">shading</a></span
+                  >=<span class="textcolor" style="color: #008000"
+                    ><a href="tikz-actions#pgf.color">color</a> wheel</span
+                  >]&numsp;<span class="textcolor" style="color: #800080"
+                    >(0,0)</span
+                  >&numsp;<span class="textcolor" style="color: #000000"
+                    ><a href="tikz-paths#pgf.circle">circle</a></span
+                  >
+                  <span class="textcolor" style="color: #800080">(1.5)</span
+                  >;<br />
+                </code>
+              </div>
+            </figure>
+            <p>
+              To produce a color ring, cut out a circle from the color wheel:
+            </p>
+
+            <figure class="example">
+              <div class="example-image">
+                <p>
+                  <span class="lateximagesource" id="lateximage-pgfmanual-2559"
+                    ><!--
+   -->
+                    <img
+                      alt="(-tikz-&nbsp;diagram)"
+                      class="lateximage"
+                      height="116.090"
+                      loading="lazy"
+                      src="pgfmanual-images/image-2559.png"
+                      style
+                      width="116.090"
+                  /></span>
+                </p>
+              </div>
+
+              <div class="example-code">
+                <button class="clipboardButton" type="button">copy</button>
+                <code>
+                  <span class="c- preamble">\usepgflibrary {shadings} </span
+                  ><br />
+                  <span class="textcolor" style="color: #0000b2"
+                    ><a href="tikz-scopes#pgf.back/tikz">\tikz</a></span
+                  >&numsp;<span class="textcolor" style="color: #0000b2"
+                    ><a href="tikz-actions#pgf.back/shade">\shade</a></span
+                  >[<span class="textcolor" style="color: #008000"
+                    ><a href="tikz-actions#pgf.shading">shading</a></span
+                  >=<span class="textcolor" style="color: #008000"
+                    ><a href="tikz-actions#pgf.color">color</a> wheel</span
+                  >]&numsp;[<span class="textcolor" style="color: #008000"
+                    ><a href="tikz-actions#pgf.even:odd:rule"
+                      >even odd rule</a
+                    ></span
+                  >]<br />
+                  &numsp;&numsp;<span class="textcolor" style="color: #800080"
+                    >(0,0)</span
+                  >&numsp;<span class="textcolor" style="color: #000000"
+                    ><a href="tikz-paths#pgf.circle">circle</a></span
+                  >
+                  <span class="textcolor" style="color: #800080">(1.5)</span
+                  ><br />
+                  &numsp;&numsp;<span class="textcolor" style="color: #800080"
+                    >(0,0)</span
+                  >&numsp;<span class="textcolor" style="color: #000000"
+                    ><a href="tikz-paths#pgf.circle">circle</a></span
+                  >
+                  <span class="textcolor" style="color: #800080">(1)</span
+                  >;<br />
+                </code>
+              </div>
+            </figure>
+          </div>
+
+          <div class="manualentry">
+            <div class="entryheadline">
+              <p>
+                <a id="pgf.color:wheel:black:center"></a>
+                <span class="hl-def"
+                  ><b>Shading</b>
+                  <kbd
+                    ><span class="textcolor" style="color: #bf0000"
+                      >color wheel black center</span
+                    ></kbd
+                  ></span
+                >
+                <a class="anchor-link" href="#pgf.color:wheel:black:center"
+                  >&para;</a
+                >
+              </p>
+            </div>
+            <p>
+              This shading looks like a color wheel, but the brightness drops to
+              zero in the center.
+            </p>
+
+            <figure class="example">
+              <div class="example-image">
+                <p>
+                  <span class="lateximagesource" id="lateximage-pgfmanual-2560"
+                    ><!--
+   -->
+                    <img
+                      alt="(-tikz-&nbsp;diagram)"
+                      class="lateximage"
+                      height="116.090"
+                      loading="lazy"
+                      src="pgfmanual-images/image-2560.png"
+                      style
+                      width="116.090"
+                  /></span>
+                </p>
+              </div>
+
+              <div class="example-code">
+                <button class="clipboardButton" type="button">copy</button>
+                <code>
+                  <span class="c- preamble">\usepgflibrary {shadings} </span
+                  ><br />
+                  <span class="textcolor" style="color: #0000b2"
+                    ><a href="tikz-scopes#pgf.back/tikz">\tikz</a></span
+                  >&numsp;<span class="textcolor" style="color: #0000b2"
+                    ><a href="tikz-actions#pgf.back/shade">\shade</a></span
+                  >[<span class="textcolor" style="color: #008000"
+                    ><a href="tikz-actions#pgf.shading">shading</a></span
+                  >=<span class="textcolor" style="color: #008000"
+                    ><a href="tikz-actions#pgf.color">color</a> wheel black
+                    center</span
+                  >]&numsp;<span class="textcolor" style="color: #800080"
+                    >(0,0)</span
+                  >&numsp;<span class="textcolor" style="color: #000000"
+                    ><a href="tikz-paths#pgf.circle">circle</a></span
+                  >
+                  <span class="textcolor" style="color: #800080">(1.5)</span
+                  >;<br />
+                </code>
+              </div>
+            </figure>
+          </div>
+
+          <div class="manualentry">
+            <div class="entryheadline">
+              <p>
+                <a id="pgf.color:wheel:white:center"></a>
+                <span class="hl-def"
+                  ><b>Shading</b>
+                  <kbd
+                    ><span class="textcolor" style="color: #bf0000"
+                      >color wheel white center</span
+                    ></kbd
+                  ></span
+                >
+                <a class="anchor-link" href="#pgf.color:wheel:white:center"
+                  >&para;</a
+                >
+              </p>
+            </div>
+            <p>
+              This shading looks like a color wheel, but the saturation drops to
+              zero in the center.
+            </p>
+
+            <figure class="example">
+              <div class="example-image">
+                <p>
+                  <span class="lateximagesource" id="lateximage-pgfmanual-2561"
+                    ><!--
+   -->
+                    <img
+                      alt="(-tikz-&nbsp;diagram)"
+                      class="lateximage"
+                      height="116.090"
+                      loading="lazy"
+                      src="pgfmanual-images/image-2561.png"
+                      style
+                      width="116.090"
+                  /></span>
+                </p>
+              </div>
+
+              <div class="example-code">
+                <button class="clipboardButton" type="button">copy</button>
+                <code>
+                  <span class="c- preamble">\usepgflibrary {shadings} </span
+                  ><br />
+                  <span class="textcolor" style="color: #0000b2"
+                    ><a href="tikz-scopes#pgf.back/tikz">\tikz</a></span
+                  >&numsp;<span class="textcolor" style="color: #0000b2"
+                    ><a href="tikz-actions#pgf.back/shade">\shade</a></span
+                  >[<span class="textcolor" style="color: #008000"
+                    ><a href="tikz-actions#pgf.shading">shading</a></span
+                  >=<span class="textcolor" style="color: #008000"
+                    ><a href="tikz-actions#pgf.color">color</a> wheel white
+                    center</span
+                  >]&numsp;<span class="textcolor" style="color: #800080"
+                    >(0,0)</span
+                  >&numsp;<span class="textcolor" style="color: #000000"
+                    ><a href="tikz-paths#pgf.circle">circle</a></span
+                  >
+                  <span class="textcolor" style="color: #800080">(1.5)</span
+                  >;<br />
+                </code>
+              </div>
+            </figure>
+          </div>
+
+          <div class="manualentry">
+            <div class="entryheadline">
+              <p>
+                <a id="pgf.Mandelbrot:set"></a>
+                <span class="hl-def"
+                  ><b>Shading</b>
+                  <kbd
+                    ><span class="textcolor" style="color: #bf0000"
+                      >Mandelbrot set</span
+                    ></kbd
+                  ></span
+                >
+                <a class="anchor-link" href="#pgf.Mandelbrot:set">&para;</a>
+              </p>
+            </div>
+            <p>
+              This shading is just for fun. It fills the path with a zoomable
+              Mandelbrot set. Note that this is <em>not</em> a bitmap graphic.
+              Rather, the Mandelbrot set is
+              <em>computed by the <span class="textsc">pdf</span> renderer</em>
+              and can be zoomed arbitrarily (give it a try, if you have a fast
+              computer).
+            </p>
+
+            <figure class="example">
+              <div class="example-image">
+                <p>
+                  <span class="lateximagesource" id="lateximage-pgfmanual-2562"
+                    ><!--
+   -->
+                    <img
+                      alt="(-tikz-&nbsp;diagram)"
+                      class="lateximage"
+                      height="78.266"
+                      loading="lazy"
+                      src="pgfmanual-images/image-2562.png"
+                      style
+                      width="78.282"
+                  /></span>
+                </p>
+              </div>
+
+              <div class="example-code">
+                <button class="clipboardButton" type="button">copy</button>
+                <code>
+                  <span class="c- preamble">\usepgflibrary {shadings} </span
+                  ><br />
+                  <span class="textcolor" style="color: #0000b2"
+                    ><a href="tikz-scopes#pgf.back/tikz">\tikz</a></span
+                  >&numsp;<span class="textcolor" style="color: #0000b2"
+                    ><a href="tikz-actions#pgf.back/shade">\shade</a></span
+                  >[<span class="textcolor" style="color: #008000"
+                    ><a href="tikz-actions#pgf.shading">shading</a></span
+                  >=<span class="textcolor" style="color: #008000"
+                    >Mandelbrot <a href="tikz-graphs#pgf.set">set</a></span
+                  >]&numsp;<span class="textcolor" style="color: #800080"
+                    >(0,0)</span
+                  >&numsp;<span class="textcolor" style="color: #000000"
+                    ><a href="tikz-paths#pgf.rectangle">rectangle</a></span
+                  >
+                  <span class="textcolor" style="color: #800080">(2,2)</span
+                  >;<br />
+                </code>
+              </div>
+            </figure>
+          </div>
+
+          <div class="manualentry">
+            <div class="entryheadline">
+              <p>
+                <a id="pgf.radial"></a>
+                <span class="hl-def"
+                  ><b>Shading</b>
+                  <kbd
+                    ><span class="textcolor" style="color: #bf0000"
+                      >radial</span
+                    ></kbd
+                  ></span
+                >
+                <a class="anchor-link" href="#pgf.radial">&para;</a>
+              </p>
+            </div>
+            <p>
+              This always-defined shading fills the path with a gradual sweep
+              from a certain color in the middle to another color at the border.
+              If the path is a circle, the outer color will be reached exactly
+              at the border. If the shading is not a circle, the outer color
+              will continue a bit towards the corners. The default inner color
+              is gray, the default outer color is white.
+            </p>
+
+            <div class="manualentry">
+              <div class="entryheadline">
+                <p>
+                  <a id="pgf./tikz/inner:color"></a
+                  ><a id="pgf.inner:color"></a>
+                  <span class="hl-def"
+                    ><kbd
+                      ><span class="keyname"
+                        ><span class="textcolor" style="color: #bf0000"
+                          >/tikz/inner color</span
+                        ></span
+                      >=</kbd
+                    ><span class="angle">&langle;</span><i>color</i
+                    ><span class="angle">&rangle;</span></span
+                  ><span class="hl-default">(no default)</span>
+                  <a class="anchor-link" href="#pgf./tikz/inner:color"
+                    >&para;</a
+                  >
+                </p>
+              </div>
+              <p>
+                This option sets the color used at the center of a
+                <span class="texttt">radial</span> shading. When this option is
+                used, the <span class="texttt">shade</span> and
+                <span class="texttt">shading=radial</span> options are set.
+              </p>
+
+              <figure class="example">
+                <div class="example-image">
+                  <p>
+                    <span
+                      class="lateximagesource"
+                      id="lateximage-pgfmanual-2563"
+                      ><!--
+   -->
+                      <img
+                        alt="(-tikz-&nbsp;diagram)"
+                        class="lateximage"
+                        height="40.993"
+                        loading="lazy"
+                        src="pgfmanual-images/image-2563.png"
+                        style
+                        width="78.789"
+                    /></span>
+                  </p>
+                </div>
+
+                <div class="example-code">
+                  <button class="clipboardButton" type="button">copy</button>
+                  <code>
+                    <span class="c- preamble">\usepgflibrary {shadings} </span
+                    ><br />
+                    <span class="textcolor" style="color: #0000b2"
+                      ><a href="tikz-scopes#pgf.back/tikz">\tikz</a></span
+                    >&numsp;<span class="textcolor" style="color: #0000b2"
+                      ><a href="tikz-actions#pgf.back/draw">\draw</a></span
+                    >[<span class="textcolor" style="color: #008000"
+                      ><a href="library-shadings#pgf.inner:color"
+                        >inner color</a
+                      ></span
+                    >=<span class="textcolor" style="color: #008000">red</span
+                    >]&numsp;<span class="textcolor" style="color: #800080"
+                      >(0,0)</span
+                    >&numsp;<span class="textcolor" style="color: #000000"
+                      ><a href="tikz-paths#pgf.rectangle">rectangle</a></span
+                    >
+                    <span class="textcolor" style="color: #800080">(2,1)</span
+                    >;<br />
+                  </code>
+                </div>
+              </figure>
+            </div>
+
+            <div class="manualentry">
+              <div class="entryheadline">
+                <p>
+                  <a id="pgf./tikz/outer:color"></a
+                  ><a id="pgf.outer:color"></a>
+                  <span class="hl-def"
+                    ><kbd
+                      ><span class="keyname"
+                        ><span class="textcolor" style="color: #bf0000"
+                          >/tikz/outer color</span
+                        ></span
+                      >=</kbd
+                    ><span class="angle">&langle;</span><i>color</i
+                    ><span class="angle">&rangle;</span></span
+                  ><span class="hl-default">(no default)</span>
+                  <a class="anchor-link" href="#pgf./tikz/outer:color"
+                    >&para;</a
+                  >
+                </p>
+              </div>
+              <p>
+                This option sets the color used at the border and outside of a
+                <span class="texttt">radial</span> shading.
+              </p>
+
+              <figure class="example">
+                <div class="example-image">
+                  <p>
+                    <span
+                      class="lateximagesource"
+                      id="lateximage-pgfmanual-2564"
+                      ><!--
+-->
+                      <img
+                        alt="(-tikz-&nbsp;diagram)"
+                        class="lateximage"
+                        height="40.993"
+                        loading="lazy"
+                        src="pgfmanual-images/image-2564.png"
+                        style
+                        width="78.789"
+                    /></span>
+                  </p>
+                </div>
+
+                <div class="example-code">
+                  <button class="clipboardButton" type="button">copy</button>
+                  <code>
+                    <span class="c- preamble">\usepgflibrary {shadings} </span
+                    ><br />
+                    <span class="textcolor" style="color: #0000b2"
+                      ><a href="tikz-scopes#pgf.back/tikz">\tikz</a></span
+                    >&numsp;<span class="textcolor" style="color: #0000b2"
+                      ><a href="tikz-actions#pgf.back/draw">\draw</a></span
+                    >[<span class="textcolor" style="color: #008000"
+                      ><a href="library-shadings#pgf.outer:color"
+                        >outer color</a
+                      ></span
+                    >=<span class="textcolor" style="color: #008000">red</span
+                    >,<span class="textcolor" style="color: #008000"
+                      ><a href="library-shadings#pgf.inner:color"
+                        >inner color</a
+                      ></span
+                    >=<span class="textcolor" style="color: #008000">white</span
+                    >]<br />
+                    &numsp;&numsp;<span class="textcolor" style="color: #800080"
+                      >(0,0)</span
+                    >&numsp;<span class="textcolor" style="color: #000000"
+                      ><a href="tikz-paths#pgf.rectangle">rectangle</a></span
+                    >
+                    <span class="textcolor" style="color: #800080">(2,1)</span
+                    >;<br />
+                  </code>
+                </div>
+              </figure>
+            </div>
+          </div>
+        </section>
+      </main>
+
+      <footer>
+        <div class_="footer-left">
+          <a href="https://github.com/pgf-tikz/pgf">Github</a> &middot;
+          <a href="/license">License</a> &middot;
+          <a href="https://ctan.org/pkg/pgf">CTAN</a> &middot;
+          <a href="https://pgf-tikz.github.io/pgf/pgfmanual.pdf">PDF version</a>
+          &middot;
+          <a href="https://github.com/DominikPeters/pgf-tikz-html-manual"
+            >About this HTML version</a
+          >
+        </div>
+        <div class_="footer-right">
+          <em>Manual last updated: 2022-04-23</em>
+        </div>
+      </footer>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/@docsearch/js@alpha"></script>
+    <script>
+      docsearch({
+        apiKey: "ae66ec3fc9df4b52b4d6f24fc8508fd3",
+        indexName: "tikz.dev",
+        appId: "Q70NNMA9GC",
+        container: "#search",
+      });
+    </script>
+  </body>
+</html>

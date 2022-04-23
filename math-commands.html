@@ -1,0 +1,1697 @@
+<!DOCTYPE html>
+<html lang="en-US">
+  <head>
+    <meta charset="utf-8" />
+    <meta content="LaTeX Lwarp package" name="generator" />
+    <meta content="width=device-width, initial-scale=1.0" name="viewport" />
+    <!--[if lt IE 9]>
+      <script src="http://html5shiv.googlecode.com/svn/trunk/html5.js"></script>
+    <![endif]-->
+    <title>Additional Mathematical Commands - PGF/TikZ Manual</title>
+    <link href="style.css" rel="stylesheet" type="text/css" />
+
+    <script>
+      // Lwarp MathJax emulation code
+      //
+      // Based on code by Davide P. Cervone.
+      // Equation numbering: https://github.com/mathjax/MathJax/issues/2427
+      // Starred and ifnextchar macros: https://github.com/mathjax/MathJax/issues/2428
+      // \left, \right delimiters: https://github.com/mathjax/MathJax/issues/2535
+      //
+      // Modified by Brian Dunn to adjust equation numbering and add subequations.
+      //
+      // LaTeX can use \seteqnumber{subequations?}{section}{number} before each equation.
+      // subequations? is 0 usually, 1 if inside subequations.
+      // section is a string printed as-is, or empty.
+      // number is auto-incremented by MathJax between equations.
+      //
+      MathJax = {
+        subequations: "0",
+        section: "",
+        loader: {
+          load: ["[tex]/tagformat", "[tex]/textmacros"],
+        },
+        startup: {
+          ready() {
+            // These would be replaced by import commands if you wanted to make
+            // a proper extension.
+            const Configuration =
+              MathJax._.input.tex.Configuration.Configuration;
+            const CommandMap = MathJax._.input.tex.SymbolMap.CommandMap;
+            const Macro = MathJax._.input.tex.Symbol.Macro;
+            const TexError = MathJax._.input.tex.TexError.default;
+            const ParseUtil = MathJax._.input.tex.ParseUtil.default;
+            const expandable = MathJax._.util.Options.expandable;
+
+            // Insert the replacement string into the TeX string, and check
+            // that there haven't been too many maxro substitutions (prevents
+            // infinite loops).
+            const useArgument = (parser, text) => {
+              parser.string = ParseUtil.addArgs(
+                parser,
+                text,
+                parser.string.slice(parser.i)
+              );
+              parser.i = 0;
+              if (
+                ++parser.macroCount > parser.configuration.options.maxMacros
+              ) {
+                throw new TexError(
+                  "MaxMacroSub1",
+                  "MathJax maximum macro substitution count exceeded; " +
+                    "is there a recursive macro call?"
+                );
+              }
+            };
+
+            // Create the command map for:
+            // \ifstar, \ifnextchar, \ifblank, \ifstrequal, \seteqnumber
+            new CommandMap(
+              "Lwarp-macros",
+              {
+                ifstar: "IfstarFunction",
+                ifnextchar: "IfnextcharFunction",
+                ifblank: "IfblankFunction",
+                ifstrequal: "IfstrequalFunction",
+                seteqnumber: "SeteqnumberFunction",
+              },
+              {
+                // This function implements an ifstar macro.
+                IfstarFunction(parser, name) {
+                  const resultstar = parser.GetArgument(name);
+                  const resultnostar = parser.GetArgument(name);
+                  const star = parser.GetStar(); // true if there is a *
+                  useArgument(parser, star ? resultstar : resultnostar);
+                },
+
+                // This function implements an ifnextchar macro.
+                IfnextcharFunction(parser, name) {
+                  let whichchar = parser.GetArgument(name);
+                  if (whichchar.match(/^(?:0x[0-9A-F]+|[0-9]+)$/i)) {
+                    // $ syntax highlighting
+                    whichchar = String.fromCodePoint(parseInt(whichchar));
+                  }
+                  const resultnextchar = parser.GetArgument(name);
+                  const resultnotnextchar = parser.GetArgument(name);
+                  const gotchar = parser.GetNext() === whichchar;
+                  useArgument(
+                    parser,
+                    gotchar ? resultnextchar : resultnotnextchar
+                  );
+                },
+
+                // This function implements an ifblank macro.
+                IfblankFunction(parser, name) {
+                  const blankarg = parser.GetArgument(name);
+                  const resultblank = parser.GetArgument(name);
+                  const resultnotblank = parser.GetArgument(name);
+                  const isblank = blankarg.trim() == "";
+                  useArgument(parser, isblank ? resultblank : resultnotblank);
+                },
+
+                // This function implements an ifstrequal macro.
+                IfstrequalFunction(parser, name) {
+                  const strequalfirst = parser.GetArgument(name);
+                  const strequalsecond = parser.GetArgument(name);
+                  const resultequal = parser.GetArgument(name);
+                  const resultnotequal = parser.GetArgument(name);
+                  const isequal = strequalfirst == strequalsecond;
+                  useArgument(parser, isequal ? resultequal : resultnotequal);
+                },
+
+                // This function modifies the equation numbers.
+                SeteqnumberFunction(parser, name) {
+                  // Get the macro parameters
+                  const star = parser.GetStar(); // true if there is a *
+                  const optBrackets = parser.GetBrackets(name); // contents of optional brackets
+                  const newsubequations = parser.GetArgument(name); // the subequations argument
+                  const neweqsection = parser.GetArgument(name); // the eq section argument
+                  const neweqnumber = parser.GetArgument(name); // the eq number argument
+                  MathJax.config.subequations = newsubequations; // a string with boolean meaning
+                  MathJax.config.section = neweqsection; // a string with numeric meaning
+                  parser.tags.counter = parser.tags.allCounter = neweqnumber;
+                },
+              }
+            );
+
+            // Create the Lwarp-macros package
+            Configuration.create("Lwarp-macros", {
+              handler: { macro: ["Lwarp-macros"] },
+            });
+
+            MathJax.startup.defaultReady();
+
+            // For forward references:
+            MathJax.startup.input[0].preFilters.add(({ math }) => {
+              if (math.inputData.recompile) {
+                MathJax.config.subequations =
+                  math.inputData.recompile.subequations;
+                MathJax.config.section = math.inputData.recompile.section;
+              }
+            });
+            MathJax.startup.input[0].postFilters.add(({ math }) => {
+              if (math.inputData.recompile) {
+                math.inputData.recompile.subequations =
+                  MathJax.config.subequations;
+                math.inputData.recompile.section = MathJax.config.section;
+              }
+            });
+
+            // For \left, \right with unicode-math:
+            const { DelimiterMap } = MathJax._.input.tex.SymbolMap;
+            const { Symbol } = MathJax._.input.tex.Symbol;
+            const { MapHandler } = MathJax._.input.tex.MapHandler;
+            const delimiter = MapHandler.getMap("delimiter");
+            delimiter.add("\\lBrack", new Symbol("\\lBrack", "\u27E6"));
+            delimiter.add("\\rBrack", new Symbol("\\rBrack", "\u27E7"));
+            delimiter.add("\\lAngle", new Symbol("\\lAngle", "\u27EA"));
+            delimiter.add("\\rAngle", new Symbol("\\rAngle", "\u27EB"));
+            delimiter.add("\\lbrbrak", new Symbol("\\lbrbrak", "\u2772"));
+            delimiter.add("\\rbrbrak", new Symbol("\\rbrbrak", "\u2773"));
+            delimiter.add("\\lbag", new Symbol("\\lbag", "\u27C5"));
+            delimiter.add("\\rbag", new Symbol("\\rbag", "\u27C6"));
+            delimiter.add(
+              "\\llparenthesis",
+              new Symbol("\\llparenthesis", "\u2987")
+            );
+            delimiter.add(
+              "\\rrparenthesis",
+              new Symbol("\\rrparenthesis", "\u2988")
+            );
+            delimiter.add("\\llangle", new Symbol("\\llangle", "\u2989"));
+            delimiter.add("\\rrangle", new Symbol("\\rrangle", "\u298A"));
+            delimiter.add("\\Lbrbrak", new Symbol("\\Lbrbrak", "\u27EC"));
+            delimiter.add("\\Rbrbrak", new Symbol("\\Rbrbrak", "\u27ED"));
+            delimiter.add("\\lBrace", new Symbol("\\lBrace", "\u2983"));
+            delimiter.add("\\rBrace", new Symbol("\\rBrace", "\u2984"));
+            delimiter.add("\\lParen", new Symbol("\\lParen", "\u2985"));
+            delimiter.add("\\rParen", new Symbol("\\rParen", "\u2986"));
+            delimiter.add("\\lbrackubar", new Symbol("\\lbrackubar", "\u298B"));
+            delimiter.add("\\rbrackubar", new Symbol("\\rbrackubar", "\u298C"));
+            delimiter.add(
+              "\\lbrackultick",
+              new Symbol("\\lbrackultick", "\u298D")
+            );
+            delimiter.add(
+              "\\rbracklrtick",
+              new Symbol("\\rbracklrtick", "\u298E")
+            );
+            delimiter.add(
+              "\\lbracklltick",
+              new Symbol("\\lbracklltick", "\u298F")
+            );
+            delimiter.add(
+              "\\rbrackurtick",
+              new Symbol("\\rbrackurtick", "\u2990")
+            );
+            delimiter.add("\\langledot", new Symbol("\\langledot", "\u2991"));
+            delimiter.add("\\rangledot", new Symbol("\\rangledot", "\u2992"));
+            delimiter.add("\\lparenless", new Symbol("\\lparenless", "\u2993"));
+            delimiter.add("\\rparengtr", new Symbol("\\rparengtr", "\u2994"));
+            delimiter.add("\\Lparengtr", new Symbol("\\Lparengtr", "\u2995"));
+            delimiter.add("\\Rparenless", new Symbol("\\Rparenless", "\u2996"));
+            delimiter.add("\\lblkbrbrak", new Symbol("\\lblkbrbrak", "\u2997"));
+            delimiter.add("\\rblkbrbrak", new Symbol("\\rblkbrbrak", "\u2998"));
+            delimiter.add("\\lvzigzag", new Symbol("\\lvzigzag", "\u29D8"));
+            delimiter.add("\\rvzigzag", new Symbol("\\rvzigzag", "\u29D9"));
+            delimiter.add("\\Lvzigzag", new Symbol("\\Lvzigzag", "\u29DA"));
+            delimiter.add("\\Rvzigzag", new Symbol("\\Rvzigzag", "\u29DB"));
+            delimiter.add(
+              "\\lcurvyangle",
+              new Symbol("\\lcurvyangle", "\u29FC")
+            );
+            delimiter.add(
+              "\\rcurvyangle",
+              new Symbol("\\rcurvyangle", "\u29FD")
+            );
+            delimiter.add("\\Vvert", new Symbol("\\Vvert", "\u2980"));
+          }, // ready
+        }, // startup
+
+        tex: {
+          packages: { "[+]": ["tagformat", "Lwarp-macros", "textmacros"] },
+          tags: "ams",
+          tagformat: {
+            number: function (n) {
+              if (MathJax.config.subequations == 0)
+                return MathJax.config.section + n;
+              else return MathJax.config.section + String.fromCharCode(96 + n);
+            },
+          },
+        },
+      };
+    </script>
+
+    <script
+      async
+      id="MathJax-script"
+      src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-chtml.js"
+    ></script>
+
+    <script src="pgfmanual.js"></script>
+
+    <link href="https://unpkg.com/@docsearch/css@alpha" rel="stylesheet" />
+    <link href="/favicon-16x16.png" rel="icon" sizes="16x16" type="image/png" />
+    <link href="/favicon-32x32.png" rel="icon" sizes="32x32" type="image/png" />
+    <link
+      href="/apple-touch-icon.png"
+      rel="apple-touch-icon"
+      sizes="180x180"
+      type="image/png"
+    />
+    <link href="/site.webmanifest" rel="manifest" />
+  </head>
+  <body>
+    <a id="pgfmanual-autopage-7628"></a>
+
+    <div class="bodyandsidetoc grid-container">
+      <header>
+        <strong><a href="/">PGF/Ti<i>k</i>Z Manual</a></strong>
+        <div id="search"></div>
+      </header>
+      <div class="sidetoccontainer" id="local-toc-container">
+        <nav class="sidetoc">
+          <div class="sidetoctitle"><p>On this page</p></div>
+          <div class="sidetoccontents">
+            <p>
+              <a class="tocsubsection" href="#sec-94.1"
+                >Basic arithmetic functions</a
+              >
+            </p>
+            <p>
+              <a class="tocsubsection" href="#sec-94.2"
+                >Comparison and logical functions</a
+              >
+            </p>
+            <p>
+              <a class="tocsubsection" href="#sec-94.3"
+                >Pseudo-Random Numbers</a
+              >
+            </p>
+            <p><a class="tocsubsection" href="#sec-94.4">Base Conversion</a></p>
+            <p>
+              <a class="tocsubsection" href="#sec-94.5">Angle Computations</a>
+            </p>
+          </div>
+        </nav>
+      </div>
+      <div class="sidetoccontainer" id="chapter-toc-container">
+        <nav class="sidetoc">
+          <div class="sidetoctitle">
+            <p>
+              <span class="sidetocthetitle"
+                >The <span class="tikzname">TikZ</span> and PGF Packages<br />
+                Manual for version 3.1.9a</span
+              >
+            </p>
+
+            <p>Contents</p>
+          </div>
+
+          <div class="sidetoccontents">
+            <p></p>
+
+            <p>
+              <a class="linkintro" href="/">Introduction</a>
+            </p>
+
+            <p>
+              <a class="tocpart" href="tutorials-guidelines"
+                >Tutorials and Guidelines</a
+              >
+            </p>
+
+            <p>
+              <a class="tocpart" href="install"
+                >Installation and Configuration</a
+              >
+            </p>
+
+            <p>
+              <a class="tocpart" href="tikz">Ti<em>k</em>Z</a>
+            </p>
+
+            <p>
+              <a class="tocpart" href="gd">Graph Drawing</a>
+            </p>
+
+            <p>
+              <a class="tocpart" href="libraries">Libraries</a>
+            </p>
+
+            <p>
+              <a class="tocpart" href="dv">Data Visualization</a>
+            </p>
+
+            <p>
+              <a class="tocpart" href="utilities">Utilities</a>
+            </p>
+
+            <p class="current-part">
+              <a class="tocpart" href="math"
+                >Mathematical and Object-Oriented Engines</a
+              >
+            </p>
+
+            <p class="current-part">
+              <a class="tocsection" href="math-design">Design Principles</a>
+            </p>
+
+            <p class="current-part">
+              <a class="tocsection" href="math-parsing"
+                >Mathematical Expressions</a
+              >
+            </p>
+
+            <p class="current current-part">
+              <a class="tocsection" href="math-commands"
+                >Additional Mathematical Commands</a
+              >
+            </p>
+
+            <p class="current-part">
+              <a class="tocsection" href="math-algorithms"
+                >Customizing the Mathematical Engine</a
+              >
+            </p>
+
+            <p class="current-part">
+              <a class="tocsection" href="math-numberprinting"
+                >Number Printing</a
+              >
+            </p>
+
+            <p class="current-part">
+              <a class="tocsection" href="oo">Object-Oriented Programming</a>
+            </p>
+
+            <p>
+              <a class="tocpart" href="base">The Basic Layer</a>
+            </p>
+
+            <p>
+              <a class="tocpart" href="pgfsys">The System Layer</a>
+            </p>
+          </div>
+        </nav>
+      </div>
+
+      <main class="bodycontainer">
+        <section class="textbody">
+          <h1>
+            The <span class="tikzname">TikZ</span> and PGF Packages<br />
+            Manual for version 3.1.9a
+          </h1>
+          <h2 class="inserted">Mathematical and Object-Oriented Engines</h2>
+
+          <!--MathJax customizations:-->
+
+          <div class="hidden">
+            \(\newcommand{\footnotename}{footnote}\) \(\def \LWRfootnote {1}\)
+            \(\newcommand {\footnote }[2][\LWRfootnote ]{{}^{\mathrm {#1}}}\)
+            \(\newcommand {\footnotemark }[1][\LWRfootnote ]{{}^{\mathrm
+            {#1}}}\) \(\let \LWRorighspace \hspace \) \(\renewcommand {\hspace
+            }{\ifstar \LWRorighspace \LWRorighspace }\) \(\newcommand
+            {\mathnormal }[1]{{#1}}\) \(\newcommand \ensuremath [1]{#1}\)
+            \(\newcommand {\LWRframebox }[2][]{\fbox {#2}} \newcommand
+            {\framebox }[1][]{\LWRframebox } \) \(\newcommand {\setlength
+            }[2]{}\) \(\newcommand {\addtolength }[2]{}\) \(\newcommand
+            {\setcounter }[2]{}\) \(\newcommand {\addtocounter }[2]{}\)
+            \(\newcommand {\arabic }[1]{}\) \(\newcommand {\number }[1]{}\)
+            \(\newcommand {\noalign }[1]{\text {#1}\notag \\}\) \(\newcommand
+            {\cline }[1]{}\) \(\newcommand {\directlua }[1]{\text
+            {(directlua)}}\) \(\newcommand {\luatexdirectlua }[1]{\text
+            {(directlua)}}\) \(\newcommand {\protect }{}\) \(\def
+            \LWRabsorbnumber #1 {}\) \(\def \LWRabsorbquotenumber "#1 {}\)
+            \(\newcommand {\LWRabsorboption }[1][]{}\) \(\newcommand
+            {\LWRabsorbtwooptions }[1][]{\LWRabsorboption }\) \(\def \mathchar
+            {\ifnextchar "\LWRabsorbquotenumber \LWRabsorbnumber }\) \(\def
+            \mathcode #1={\mathchar }\) \(\let \delcode \mathcode \) \(\let
+            \delimiter \mathchar \) \(\def \oe {\unicode {x0153}}\) \(\def \OE
+            {\unicode {x0152}}\) \(\def \ae {\unicode {x00E6}}\) \(\def \AE
+            {\unicode {x00C6}}\) \(\def \aa {\unicode {x00E5}}\) \(\def \AA
+            {\unicode {x00C5}}\) \(\def \o {\unicode {x00F8}}\) \(\def \O
+            {\unicode {x00D8}}\) \(\def \l {\unicode {x0142}}\) \(\def \L
+            {\unicode {x0141}}\) \(\def \ss {\unicode {x00DF}}\) \(\def \SS
+            {\unicode {x1E9E}}\) \(\def \dag {\unicode {x2020}}\) \(\def \ddag
+            {\unicode {x2021}}\) \(\def \P {\unicode {x00B6}}\) \(\def
+            \copyright {\unicode {x00A9}}\) \(\def \pounds {\unicode {x00A3}}\)
+            \(\let \LWRref \ref \) \(\renewcommand {\ref }{\ifstar \LWRref
+            \LWRref }\) \( \newcommand {\multicolumn }[3]{#3}\) \(\require
+            {textcomp}\) \( \newcommand {\meta }[1]{\langle \textit {#1}\rangle
+            } \) \(\newcommand {\intertext }[1]{\text {#1}\notag \\}\) \(\let
+            \Hat \hat \) \(\let \Check \check \) \(\let \Tilde \tilde \) \(\let
+            \Acute \acute \) \(\let \Grave \grave \) \(\let \Dot \dot \) \(\let
+            \Ddot \ddot \) \(\let \Breve \breve \) \(\let \Bar \bar \) \(\let
+            \Vec \vec \)
+          </div>
+
+          <p></p>
+          <h4 id="autosec-7629">
+            <a id="pgfmath-commands"></a
+            ><span class="sectionnumber">94&emsp;</span>Additional Mathematical
+            Commands
+          </h4>
+          <a id="pgfmanual-autopage-7629"></a>
+          <a id="pgfmanual-autofile-102"></a>
+
+          <p>
+            Instead of parsing and evaluating complex expressions, you can also
+            use the mathematical engine to evaluate a single mathematical
+            operation. The macros used for many of these computations are listed
+            above in Section&nbsp;<a href="math-parsing#pgfmath-functions"
+              >93.3</a
+            >. <span class="textsc">pgf</span> also provides some additional
+            commands which are shown below:
+          </p>
+          <h5 id="autosec-7630">
+            <a id="pgfmath-commands-basic"></a
+            ><span class="sectionnumber" id="sec-94.1">94.1&emsp;</span>Basic
+            arithmetic functions<a class="anchor-link" href="#sec-94.1"
+              >&para;</a
+            >
+          </h5>
+          <a id="pgfmanual-autopage-7630"></a>
+
+          <p>
+            In addition to the commands described in Section&nbsp;<a
+              href="math-parsing#pgfmath-functions-basic"
+              >93.3.1</a
+            >, the following command is provided:
+          </p>
+
+          <div class="manualentry">
+            <div class="entryheadline">
+              <p>
+                <a id="pgf.back/pgfmathreciprocal"></a>
+                <span class="hl-def"
+                  ><span class="textcolor" style="color: #bf0000"
+                    ><kbd>\pgfmathreciprocal</kbd></span
+                  >{<span class="angle">&langle;</span><i>x</i
+                  ><span class="angle">&rangle;</span>}</span
+                >
+                <a class="anchor-link" href="#pgf.back/pgfmathreciprocal"
+                  >&para;</a
+                >
+              </p>
+            </div>
+            <p>
+              Defines <span class="texttt">\pgfmathresult</span> as \(1\div
+              \meta {x}\). This provides greatest accuracy when <i>x</i> is
+              small.
+            </p>
+          </div>
+          <h5 id="autosec-7631">
+            <span class="sectionnumber" id="sec-94.2">94.2&emsp;</span
+            >Comparison and logical functions<a
+              class="anchor-link"
+              href="#sec-94.2"
+              >&para;</a
+            >
+          </h5>
+          <a id="pgfmanual-autopage-7631"></a>
+
+          <p>
+            In addition to the commands described in Section&nbsp;<a
+              href="math-parsing#pgfmath-functions-comparison"
+              >93.3.5</a
+            >, the following command was provided by Christian Feuers&auml;nger:
+          </p>
+
+          <div class="manualentry">
+            <div class="entryheadline">
+              <p>
+                <a id="pgf.back/pgfmathapproxequalto"></a>
+                <span class="hl-def"
+                  ><span class="textcolor" style="color: #bf0000"
+                    ><kbd>\pgfmathapproxequalto</kbd></span
+                  >{<span class="angle">&langle;</span><i>x</i
+                  ><span class="angle">&rangle;</span>}{<span class="angle"
+                    >&langle;</span
+                  ><i>y</i><span class="angle">&rangle;</span>}</span
+                >
+                <a class="anchor-link" href="#pgf.back/pgfmathapproxequalto"
+                  >&para;</a
+                >
+              </p>
+            </div>
+            <p>
+              Defines <span class="texttt">\pgfmathresult</span> 1.0 if \(\rvert
+              \meta {x} - \meta {y} \lvert &lt; 0.0001\), but 0.0 otherwise. As
+              a side-effect, the global boolean
+              <span class="texttt">\ifpgfmathcomparison</span> will be set
+              accordingly.
+            </p>
+          </div>
+          <h5 id="autosec-7632">
+            <a id="pgfmath-random"></a
+            ><span class="sectionnumber" id="sec-94.3">94.3&emsp;</span
+            >Pseudo-Random Numbers<a class="anchor-link" href="#sec-94.3"
+              >&para;</a
+            >
+          </h5>
+          <a id="pgfmanual-autopage-7632"></a>
+
+          <p>
+            In addition to the commands described in Section&nbsp;<a
+              href="math-parsing#pgfmath-functions-random"
+              >93.3.6</a
+            >, the following commands are provided:
+          </p>
+
+          <div class="manualentry">
+            <div class="entryheadline">
+              <p>
+                <a id="pgf.back/pgfmathgeneratepseudorandomnumber"></a>
+                <span class="hl-def"
+                  ><span class="textcolor" style="color: #bf0000"
+                    ><kbd>\pgfmathgeneratepseudorandomnumber</kbd></span
+                  ></span
+                >
+                <a
+                  class="anchor-link"
+                  href="#pgf.back/pgfmathgeneratepseudorandomnumber"
+                  >&para;</a
+                >
+              </p>
+            </div>
+            <p>
+              Defines <span class="texttt">\pgfmathresult</span> as a
+              pseudo-random integer between 1 and \(2^{31}-1\). This uses a
+              linear congruency generator, based on ideas of Erich Janka.
+            </p>
+          </div>
+
+          <div class="manualentry">
+            <div class="entryheadline">
+              <p>
+                <a id="pgf.back/pgfmathrandominteger"></a>
+                <span class="hl-def"
+                  ><span class="textcolor" style="color: #bf0000"
+                    ><kbd>\pgfmathrandominteger</kbd></span
+                  >{<span class="angle">&langle;</span><i>macro</i
+                  ><span class="angle">&rangle;</span>}{<span class="angle"
+                    >&langle;</span
+                  ><i>minimum</i><span class="angle">&rangle;</span>}{<span
+                    class="angle"
+                    >&langle;</span
+                  ><i>maximum</i><span class="angle">&rangle;</span>}</span
+                >
+                <a class="anchor-link" href="#pgf.back/pgfmathrandominteger"
+                  >&para;</a
+                >
+              </p>
+            </div>
+            <p>
+              This defines <span class="angle">&langle;</span><i>macro</i
+              ><span class="angle">&rangle;</span> as a pseudo-randomly
+              generated integer from the range
+              <span class="angle">&langle;</span><i>minimum</i
+              ><span class="angle">&rangle;</span> to
+              <span class="angle">&langle;</span><i>maximum</i
+              ><span class="angle">&rangle;</span> (inclusive).
+            </p>
+
+            <figure class="example">
+              <div class="example-image">
+                <p>
+                  <span class="lateximagesource" id="lateximage-pgfmanual-3107"
+                    ><!--
+   -->
+                    <img
+                      alt="(-tikz-&nbsp;diagram)"
+                      class="lateximage"
+                      height="73.634"
+                      loading="lazy"
+                      src="pgfmanual-images/image-3107.png"
+                      style
+                      width="70.962"
+                  /></span>
+                </p>
+              </div>
+
+              <div class="example-code">
+                <button class="clipboardButton" type="button">copy</button>
+                <code>
+                  <br />
+                  <span class="textcolor" style="color: #000000">\begin</span
+                  >{<span class="textcolor" style="color: #0000b2"
+                    ><a href="base-scopes#pgf.pgfpicture">pgfpicture</a></span
+                  >}<br />
+                  &numsp;&numsp;&numsp;<span
+                    class="textcolor"
+                    style="color: #0000b2"
+                    ><a href="pgffor#pgf.back/foreach">\foreach</a></span
+                  >&numsp;<span class="textcolor" style="color: #0000b2"
+                    ><a href="tikz-paths#pgf.back/x">\x</a></span
+                  >&numsp;<span class="textcolor" style="color: #000000"
+                    ><a href="library-edges#pgf.in">in</a></span
+                  >
+                  {<span class="textcolor" style="color: #000000">1</span
+                  >,...,<span class="textcolor" style="color: #000000">50</span
+                  >}{<br />
+                  &numsp;&numsp;&numsp;&numsp;&numsp;&numsp;<span
+                    class="textcolor"
+                    style="color: #0000b2"
+                    ><a href="math-commands#pgf.back/pgfmathrandominteger"
+                      >\pgfmathrandominteger</a
+                    ></span
+                  >{<span class="textcolor" style="color: #0000b2">\a</span
+                  >}{<span class="textcolor" style="color: #000000">1</span
+                  >}{<span class="textcolor" style="color: #000000">50</span
+                  >}<br />
+                  &numsp;&numsp;&numsp;&numsp;&numsp;&numsp;<span
+                    class="textcolor"
+                    style="color: #0000b2"
+                    ><a href="math-commands#pgf.back/pgfmathrandominteger"
+                      >\pgfmathrandominteger</a
+                    ></span
+                  >{<span class="textcolor" style="color: #0000b2">\b</span
+                  >}{<span class="textcolor" style="color: #000000">1</span
+                  >}{<span class="textcolor" style="color: #000000">50</span
+                  >}<br />
+                  &numsp;&numsp;&numsp;&numsp;&numsp;&numsp;<span
+                    class="textcolor"
+                    style="color: #0000b2"
+                    ><a href="base-paths#pgf.back/pgfpathcircle"
+                      >\pgfpathcircle</a
+                    ></span
+                  >{<span class="textcolor" style="color: #0000b2"
+                    ><a href="base-points#pgf.back/pgfpoint">\pgfpoint</a></span
+                  >{<span class="textcolor" style="color: #000000">+</span
+                  ><span class="textcolor" style="color: #0000b2">\a</span
+                  >&numsp;<span class="textcolor" style="color: #000000"
+                    >pt</span
+                  >}{<span class="textcolor" style="color: #000000">+</span
+                  ><span class="textcolor" style="color: #0000b2">\b</span
+                  >&numsp;<span class="textcolor" style="color: #000000"
+                    >pt</span
+                  >}}{<span class="textcolor" style="color: #000000">+2pt</span
+                  >}<br />
+                  &numsp;&numsp;&numsp;&numsp;&numsp;&numsp;<span
+                    class="textcolor"
+                    style="color: #0000b2"
+                    >\color</span
+                  >{<span class="textcolor" style="color: #000000"
+                    >blue!40!white</span
+                  >}<br />
+                  &numsp;&numsp;&numsp;&numsp;&numsp;&numsp;<span
+                    class="textcolor"
+                    style="color: #0000b2"
+                    ><a href="base-actions#pgf.back/pgfsetstrokecolor"
+                      >\pgfsetstrokecolor</a
+                    ></span
+                  >{<span class="textcolor" style="color: #000000"
+                    >blue!80!black</span
+                  >}<br />
+                  &numsp;&numsp;&numsp;&numsp;&numsp;&numsp;<span
+                    class="textcolor"
+                    style="color: #0000b2"
+                    ><a href="base-actions#pgf.back/pgfusepath"
+                      >\pgfusepath</a
+                    ></span
+                  >{<span class="textcolor" style="color: #000000">stroke</span
+                  >,&numsp;<span class="textcolor" style="color: #000000"
+                    ><a href="tikz-actions#pgf.fill">fill</a></span
+                  >}<br />
+                  &numsp;&numsp;&numsp;}<br />
+                  <span class="textcolor" style="color: #000000">\end</span
+                  >{<span class="textcolor" style="color: #0000b2"
+                    ><a href="base-scopes#pgf.pgfpicture">pgfpicture</a></span
+                  >}<br />
+                </code>
+              </div>
+            </figure>
+          </div>
+
+          <div class="manualentry">
+            <div class="entryheadline">
+              <p>
+                <a id="pgf.back/pgfmathdeclarerandomlist"></a>
+                <span class="hl-def"
+                  ><span class="textcolor" style="color: #bf0000"
+                    ><kbd>\pgfmathdeclarerandomlist</kbd></span
+                  >{<span class="angle">&langle;</span><i>list name</i
+                  ><span class="angle">&rangle;</span>}{{<span class="angle"
+                    >&langle;</span
+                  ><i>item-1</i><span class="angle">&rangle;</span>}{<span
+                    class="angle"
+                    >&langle;</span
+                  ><i>item-2</i><span class="angle">&rangle;</span>}...}</span
+                >
+                <a class="anchor-link" href="#pgf.back/pgfmathdeclarerandomlist"
+                  >&para;</a
+                >
+              </p>
+            </div>
+            <p>
+              This creates a list of items with the name
+              <span class="angle">&langle;</span><i>list name</i
+              ><span class="angle">&rangle;</span>.
+            </p>
+          </div>
+
+          <div class="manualentry">
+            <div class="entryheadline">
+              <p>
+                <a id="pgf.back/pgfmathrandomitem"></a>
+                <span class="hl-def"
+                  ><span class="textcolor" style="color: #bf0000"
+                    ><kbd>\pgfmathrandomitem</kbd></span
+                  >{<span class="angle">&langle;</span><i>macro</i
+                  ><span class="angle">&rangle;</span>}{<span class="angle"
+                    >&langle;</span
+                  ><i>list name</i><span class="angle">&rangle;</span>}</span
+                >
+                <a class="anchor-link" href="#pgf.back/pgfmathrandomitem"
+                  >&para;</a
+                >
+              </p>
+            </div>
+            <p>
+              Select an item from a random list
+              <span class="angle">&langle;</span><i>list name</i
+              ><span class="angle">&rangle;</span>. The selected item is placed
+              in <span class="angle">&langle;</span><i>macro</i
+              ><span class="angle">&rangle;</span>.
+            </p>
+          </div>
+
+          <figure class="example">
+            <div class="example-image">
+              <p>
+                <span class="lateximagesource" id="lateximage-pgfmanual-3108"
+                  ><!--
+   -->
+                  <img
+                    alt="(-tikz-&nbsp;diagram)"
+                    class="lateximage"
+                    height="130.754"
+                    loading="lazy"
+                    src="pgfmanual-images/image-3108.png"
+                    style
+                    width="132.073"
+                /></span>
+              </p>
+            </div>
+
+            <div class="example-code">
+              <button class="clipboardButton" type="button">copy</button>
+
+              <code>
+                <br />
+                <span class="textcolor" style="color: #000000">\begin</span
+                >{<span class="textcolor" style="color: #0000b2"
+                  ><a href="base-scopes#pgf.pgfpicture">pgfpicture</a></span
+                >}<br />
+                &numsp;&numsp;&numsp;<span
+                  class="textcolor"
+                  style="color: #0000b2"
+                  ><a href="math-commands#pgf.back/pgfmathdeclarerandomlist"
+                    >\pgfmathdeclarerandomlist</a
+                  ></span
+                >{<span class="textcolor" style="color: #000000"
+                  ><a href="tikz-actions#pgf.color">color</a></span
+                >}{{<span class="textcolor" style="color: #000000">red</span
+                >}{<span class="textcolor" style="color: #000000">blue</span
+                >}{<span class="textcolor" style="color: #000000">green</span
+                >}{<span class="textcolor" style="color: #000000">yellow</span
+                >}{<span class="textcolor" style="color: #000000">white</span
+                >}}<br />
+                &numsp;&numsp;&numsp;<span
+                  class="textcolor"
+                  style="color: #0000b2"
+                  ><a href="pgffor#pgf.back/foreach">\foreach</a></span
+                >&numsp;<span class="textcolor" style="color: #0000b2">\a</span
+                >&numsp;<span class="textcolor" style="color: #000000"
+                  ><a href="library-edges#pgf.in">in</a></span
+                >
+                {<span class="textcolor" style="color: #000000">1</span
+                >,...,<span class="textcolor" style="color: #000000">50</span
+                >}{<br />
+                &numsp;&numsp;&numsp;&numsp;&numsp;&numsp;<span
+                  class="textcolor"
+                  style="color: #0000b2"
+                  ><a href="math-commands#pgf.back/pgfmathrandominteger"
+                    >\pgfmathrandominteger</a
+                  ></span
+                >{<span class="textcolor" style="color: #0000b2"
+                  ><a href="tikz-paths#pgf.back/x">\x</a></span
+                >}{<span class="textcolor" style="color: #000000">1</span
+                >}{<span class="textcolor" style="color: #000000">85</span
+                >}<br />
+                &numsp;&numsp;&numsp;&numsp;&numsp;&numsp;<span
+                  class="textcolor"
+                  style="color: #0000b2"
+                  ><a href="math-commands#pgf.back/pgfmathrandominteger"
+                    >\pgfmathrandominteger</a
+                  ></span
+                >{<span class="textcolor" style="color: #0000b2"
+                  ><a href="tikz-paths#pgf.back/y">\y</a></span
+                >}{<span class="textcolor" style="color: #000000">1</span
+                >}{<span class="textcolor" style="color: #000000">85</span
+                >}<br />
+                &numsp;&numsp;&numsp;&numsp;&numsp;&numsp;<span
+                  class="textcolor"
+                  style="color: #0000b2"
+                  ><a href="math-commands#pgf.back/pgfmathrandominteger"
+                    >\pgfmathrandominteger</a
+                  ></span
+                >{<span class="textcolor" style="color: #0000b2">\r</span
+                >}{<span class="textcolor" style="color: #000000">5</span
+                >}{<span class="textcolor" style="color: #000000">10</span
+                >}<br />
+                &numsp;&numsp;&numsp;&numsp;&numsp;&numsp;<span
+                  class="textcolor"
+                  style="color: #0000b2"
+                  ><a href="math-commands#pgf.back/pgfmathrandomitem"
+                    >\pgfmathrandomitem</a
+                  ></span
+                >{<span class="textcolor" style="color: #0000b2">\c</span
+                >}{<span class="textcolor" style="color: #000000"
+                  ><a href="tikz-actions#pgf.color">color</a></span
+                >}<br />
+                &numsp;&numsp;&numsp;&numsp;&numsp;&numsp;<span
+                  class="textcolor"
+                  style="color: #0000b2"
+                  ><a href="base-paths#pgf.back/pgfpathcircle"
+                    >\pgfpathcircle</a
+                  ></span
+                >{<span class="textcolor" style="color: #0000b2"
+                  ><a href="base-points#pgf.back/pgfpoint">\pgfpoint</a></span
+                >{<span class="textcolor" style="color: #000000">+</span
+                ><span class="textcolor" style="color: #0000b2"
+                  ><a href="tikz-paths#pgf.back/x">\x</a></span
+                >&numsp;<span class="textcolor" style="color: #000000">pt</span
+                >}{<span class="textcolor" style="color: #000000">+</span
+                ><span class="textcolor" style="color: #0000b2"
+                  ><a href="tikz-paths#pgf.back/y">\y</a></span
+                >&numsp;<span class="textcolor" style="color: #000000">pt</span
+                >}}{<span class="textcolor" style="color: #000000">+</span
+                ><span class="textcolor" style="color: #0000b2">\r</span
+                >&numsp;<span class="textcolor" style="color: #000000">pt</span
+                >}<br />
+                &numsp;&numsp;&numsp;&numsp;&numsp;&numsp;<span
+                  class="textcolor"
+                  style="color: #0000b2"
+                  >\color</span
+                >{<span class="textcolor" style="color: #0000b2">\c</span
+                ><span class="textcolor" style="color: #000000">!40!white</span
+                >}<br />
+                &numsp;&numsp;&numsp;&numsp;&numsp;&numsp;<span
+                  class="textcolor"
+                  style="color: #0000b2"
+                  ><a href="base-actions#pgf.back/pgfsetstrokecolor"
+                    >\pgfsetstrokecolor</a
+                  ></span
+                >{<span class="textcolor" style="color: #0000b2">\c</span
+                ><span class="textcolor" style="color: #000000">!80!black</span
+                >}<br />
+                &numsp;&numsp;&numsp;&numsp;&numsp;&numsp;<span
+                  class="textcolor"
+                  style="color: #0000b2"
+                  ><a href="base-actions#pgf.back/pgfusepath"
+                    >\pgfusepath</a
+                  ></span
+                >{<span class="textcolor" style="color: #000000">stroke</span
+                >,&numsp;<span class="textcolor" style="color: #000000"
+                  ><a href="tikz-actions#pgf.fill">fill</a></span
+                >}<br />
+                &numsp;&numsp;&numsp;}<br />
+                <span class="textcolor" style="color: #000000">\end</span>{<span
+                  class="textcolor"
+                  style="color: #0000b2"
+                  ><a href="base-scopes#pgf.pgfpicture">pgfpicture</a></span
+                >}<br />
+              </code>
+            </div>
+          </figure>
+
+          <div class="manualentry">
+            <div class="entryheadline">
+              <p>
+                <a id="pgf.back/pgfmathsetseed"></a>
+                <span class="hl-def"
+                  ><span class="textcolor" style="color: #bf0000"
+                    ><kbd>\pgfmathsetseed</kbd></span
+                  >{<span class="angle">&langle;</span><i>integer</i
+                  ><span class="angle">&rangle;</span>}</span
+                >
+                <a class="anchor-link" href="#pgf.back/pgfmathsetseed"
+                  >&para;</a
+                >
+              </p>
+            </div>
+            <p>
+              Explicitly sets the seed for the pseudo-random number generator.
+              By default it is set to the value of
+              <span class="texttt">\time</span>\(\times \)<span class="texttt"
+                >\year</span
+              >.
+            </p>
+          </div>
+          <h5 id="autosec-7637">
+            <a id="pgfmath-bases"></a
+            ><span class="sectionnumber" id="sec-94.4">94.4&emsp;</span>Base
+            Conversion<a class="anchor-link" href="#sec-94.4">&para;</a>
+          </h5>
+          <a id="pgfmanual-autopage-7637"></a>
+
+          <p>
+            <span class="textsc">pgf</span> provides limited support for
+            conversion between <em>representations</em> of numbers. Currently
+            the numbers must be positive integers in the range \(0\) to
+            \(2^{31}-1\), and the bases in the range \(2\) to \(36\). All digits
+            representing numbers greater than 9 (in base ten), are alphabetic,
+            but may be upper or lower case.
+          </p>
+
+          <p>
+            In addition to the commands described in Section&nbsp;<a
+              href="math-parsing#pgfmath-functions-base"
+              >93.3.7</a
+            >, the following commands are provided:
+          </p>
+
+          <div class="manualentry">
+            <div class="entryheadline">
+              <p>
+                <a id="pgf.back/pgfmathbasetodec"></a>
+                <span class="hl-def"
+                  ><span class="textcolor" style="color: #bf0000"
+                    ><kbd>\pgfmathbasetodec</kbd></span
+                  >{<span class="angle">&langle;</span><i>macro</i
+                  ><span class="angle">&rangle;</span>}{<span class="angle"
+                    >&langle;</span
+                  ><i>number</i><span class="angle">&rangle;</span>}{<span
+                    class="angle"
+                    >&langle;</span
+                  ><i>base</i><span class="angle">&rangle;</span>}</span
+                >
+                <a class="anchor-link" href="#pgf.back/pgfmathbasetodec"
+                  >&para;</a
+                >
+              </p>
+            </div>
+            <p>
+              Defines <span class="angle">&langle;</span><i>macro</i
+              ><span class="angle">&rangle;</span> as the result of converting
+              <span class="angle">&langle;</span><i>number</i
+              ><span class="angle">&rangle;</span> from base
+              <span class="angle">&langle;</span><i>base</i
+              ><span class="angle">&rangle;</span> to base 10. Alphabetic digits
+              can be upper or lower case.
+            </p>
+
+            <figure class="example">
+              <div class="example-image">
+                <p>4223</p>
+              </div>
+
+              <div class="example-code">
+                <button class="clipboardButton" type="button">copy</button>
+                <code>
+                  <br />
+                  <span class="textcolor" style="color: #0000b2"
+                    ><a href="math-commands#pgf.back/pgfmathbasetodec"
+                      >\pgfmathbasetodec</a
+                    ></span
+                  ><span class="textcolor" style="color: #0000b2"
+                    >\mynumber</span
+                  >{<span class="textcolor" style="color: #000000">107f</span
+                  >}{<span class="textcolor" style="color: #000000">16</span
+                  >}&numsp;<span class="textcolor" style="color: #0000b2"
+                    >\mynumber</span
+                  ><br />
+                </code>
+              </div>
+            </figure>
+            <p>
+              Note that, as usual in
+              <span class="latexlogofont"
+                ><span class="latexlogo"
+                  >T<span class="latexlogosub">e</span>X</span
+                ></span
+              >, the braces around an argument can be omitted if the argument is
+              just a single token (a macro name is a single token).
+            </p>
+
+            <figure class="example">
+              <div class="example-image">
+                <p>25512</p>
+              </div>
+
+              <div class="example-code">
+                <button class="clipboardButton" type="button">copy</button>
+                <code>
+                  <br />
+                  <span class="textcolor" style="color: #0000b2"
+                    ><a href="math-commands#pgf.back/pgfmathbasetodec"
+                      >\pgfmathbasetodec</a
+                    ></span
+                  ><span class="textcolor" style="color: #0000b2"
+                    >\mynumber</span
+                  >{<span class="textcolor" style="color: #000000">33FC</span
+                  >}{<span class="textcolor" style="color: #000000">20</span
+                  >}&numsp;<span class="textcolor" style="color: #0000b2"
+                    >\mynumber</span
+                  ><br />
+                </code>
+              </div>
+            </figure>
+          </div>
+
+          <div class="manualentry">
+            <div class="entryheadline">
+              <p>
+                <a id="pgf.back/pgfmathdectobase"></a>
+                <span class="hl-def"
+                  ><span class="textcolor" style="color: #bf0000"
+                    ><kbd>\pgfmathdectobase</kbd></span
+                  >{<span class="angle">&langle;</span><i>macro</i
+                  ><span class="angle">&rangle;</span>}{<span class="angle"
+                    >&langle;</span
+                  ><i>number</i><span class="angle">&rangle;</span>}{<span
+                    class="angle"
+                    >&langle;</span
+                  ><i>base</i><span class="angle">&rangle;</span>}</span
+                >
+                <a class="anchor-link" href="#pgf.back/pgfmathdectobase"
+                  >&para;</a
+                >
+              </p>
+            </div>
+            <p>
+              Defines <span class="angle">&langle;</span><i>macro</i
+              ><span class="angle">&rangle;</span> as the result of converting
+              <span class="angle">&langle;</span><i>number</i
+              ><span class="angle">&rangle;</span> from base 10 to base
+              <span class="angle">&langle;</span><i>base</i
+              ><span class="angle">&rangle;</span>. Any resulting alphabetic
+              digits are in <em>lower case</em>.
+            </p>
+
+            <figure class="example">
+              <div class="example-image">
+                <p>ffff</p>
+              </div>
+
+              <div class="example-code">
+                <button class="clipboardButton" type="button">copy</button>
+                <code>
+                  <br />
+                  <span class="textcolor" style="color: #0000b2"
+                    ><a href="math-commands#pgf.back/pgfmathdectobase"
+                      >\pgfmathdectobase</a
+                    ></span
+                  ><span class="textcolor" style="color: #0000b2"
+                    >\mynumber</span
+                  >{<span class="textcolor" style="color: #000000">65535</span
+                  >}{<span class="textcolor" style="color: #000000">16</span
+                  >}&numsp;<span class="textcolor" style="color: #0000b2"
+                    >\mynumber</span
+                  ><br />
+                </code>
+              </div>
+            </figure>
+          </div>
+
+          <div class="manualentry">
+            <div class="entryheadline">
+              <p>
+                <a id="pgf.back/pgfmathdectoBase"></a>
+                <span class="hl-def"
+                  ><span class="textcolor" style="color: #bf0000"
+                    ><kbd>\pgfmathdectoBase</kbd></span
+                  >{<span class="angle">&langle;</span><i>macro</i
+                  ><span class="angle">&rangle;</span>}{<span class="angle"
+                    >&langle;</span
+                  ><i>number</i><span class="angle">&rangle;</span>}{<span
+                    class="angle"
+                    >&langle;</span
+                  ><i>base</i><span class="angle">&rangle;</span>}</span
+                >
+                <a class="anchor-link" href="#pgf.back/pgfmathdectoBase"
+                  >&para;</a
+                >
+              </p>
+            </div>
+            <p>
+              Defines <span class="angle">&langle;</span><i>macro</i
+              ><span class="angle">&rangle;</span> as the result of converting
+              <span class="angle">&langle;</span><i>number</i
+              ><span class="angle">&rangle;</span> from base 10 to base
+              <span class="angle">&langle;</span><i>base</i
+              ><span class="angle">&rangle;</span>. Any resulting alphabetic
+              digits are in <em>upper case</em>.
+            </p>
+
+            <figure class="example">
+              <div class="example-image">
+                <p>FFFF</p>
+              </div>
+
+              <div class="example-code">
+                <button class="clipboardButton" type="button">copy</button>
+                <code>
+                  <br />
+                  <span class="textcolor" style="color: #0000b2"
+                    ><a href="math-commands#pgf.back/pgfmathdectoBase"
+                      >\pgfmathdectoBase</a
+                    ></span
+                  ><span class="textcolor" style="color: #0000b2"
+                    >\mynumber</span
+                  >{<span class="textcolor" style="color: #000000">65535</span
+                  >}{<span class="textcolor" style="color: #000000">16</span
+                  >}&numsp;<span class="textcolor" style="color: #0000b2"
+                    >\mynumber</span
+                  ><br />
+                </code>
+              </div>
+            </figure>
+          </div>
+
+          <div class="manualentry">
+            <div class="entryheadline">
+              <p>
+                <a id="pgf.back/pgfmathbasetobase"></a>
+                <span class="hl-def"
+                  ><span class="textcolor" style="color: #bf0000"
+                    ><kbd>\pgfmathbasetobase</kbd></span
+                  >{<span class="angle">&langle;</span><i>macro</i
+                  ><span class="angle">&rangle;</span>}{<span class="angle"
+                    >&langle;</span
+                  ><i>number</i><span class="angle">&rangle;</span>}{<span
+                    class="angle"
+                    >&langle;</span
+                  ><i>base-1</i><span class="angle">&rangle;</span>}{<span
+                    class="angle"
+                    >&langle;</span
+                  ><i>base-2</i><span class="angle">&rangle;</span>}</span
+                >
+                <a class="anchor-link" href="#pgf.back/pgfmathbasetobase"
+                  >&para;</a
+                >
+              </p>
+            </div>
+            <p>
+              Defines <span class="angle">&langle;</span><i>macro</i
+              ><span class="angle">&rangle;</span> as the result of converting
+              <span class="angle">&langle;</span><i>number</i
+              ><span class="angle">&rangle;</span> from base
+              <span class="angle">&langle;</span><i>base-1</i
+              ><span class="angle">&rangle;</span> to base
+              <span class="angle">&langle;</span><i>base-2</i
+              ><span class="angle">&rangle;</span>. Alphabetic digits in
+              <span class="angle">&langle;</span><i>number</i
+              ><span class="angle">&rangle;</span> can be upper or lower case,
+              but any resulting alphabetic digits are in <em>lower case</em>.
+            </p>
+
+            <figure class="example">
+              <div class="example-image">
+                <p>db</p>
+              </div>
+
+              <div class="example-code">
+                <button class="clipboardButton" type="button">copy</button>
+                <code>
+                  <br />
+                  <span class="textcolor" style="color: #0000b2"
+                    ><a href="math-commands#pgf.back/pgfmathbasetobase"
+                      >\pgfmathbasetobase</a
+                    ></span
+                  ><span class="textcolor" style="color: #0000b2"
+                    >\mynumber</span
+                  >{<span class="textcolor" style="color: #000000"
+                    >11011011</span
+                  >}{<span class="textcolor" style="color: #000000">2</span
+                  >}{<span class="textcolor" style="color: #000000">16</span
+                  >}&numsp;<span class="textcolor" style="color: #0000b2"
+                    >\mynumber</span
+                  ><br />
+                </code>
+              </div>
+            </figure>
+          </div>
+
+          <div class="manualentry">
+            <div class="entryheadline">
+              <p>
+                <a id="pgf.back/pgfmathbasetoBase"></a>
+                <span class="hl-def"
+                  ><span class="textcolor" style="color: #bf0000"
+                    ><kbd>\pgfmathbasetoBase</kbd></span
+                  >{<span class="angle">&langle;</span><i>macro</i
+                  ><span class="angle">&rangle;</span>}{<span class="angle"
+                    >&langle;</span
+                  ><i>number</i><span class="angle">&rangle;</span>}{<span
+                    class="angle"
+                    >&langle;</span
+                  ><i>base-1</i><span class="angle">&rangle;</span>}{<span
+                    class="angle"
+                    >&langle;</span
+                  ><i>base-2</i><span class="angle">&rangle;</span>}</span
+                >
+                <a class="anchor-link" href="#pgf.back/pgfmathbasetoBase"
+                  >&para;</a
+                >
+              </p>
+            </div>
+            <p>
+              Defines <span class="angle">&langle;</span><i>macro</i
+              ><span class="angle">&rangle;</span> as the result of converting
+              <span class="angle">&langle;</span><i>number</i
+              ><span class="angle">&rangle;</span> from base
+              <span class="angle">&langle;</span><i>base-1</i
+              ><span class="angle">&rangle;</span> to base
+              <span class="angle">&langle;</span><i>base-2</i
+              ><span class="angle">&rangle;</span>. Alphabetic digits in
+              <span class="angle">&langle;</span><i>number</i
+              ><span class="angle">&rangle;</span> can be upper or lower case,
+              but any resulting alphabetic digits are in <em>upper case</em>.
+            </p>
+
+            <figure class="example">
+              <div class="example-image">
+                <p>31B</p>
+              </div>
+
+              <div class="example-code">
+                <button class="clipboardButton" type="button">copy</button>
+                <code>
+                  <br />
+                  <span class="textcolor" style="color: #0000b2"
+                    ><a href="math-commands#pgf.back/pgfmathbasetoBase"
+                      >\pgfmathbasetoBase</a
+                    ></span
+                  ><span class="textcolor" style="color: #0000b2"
+                    >\mynumber</span
+                  >{<span class="textcolor" style="color: #000000">121212</span
+                  >}{<span class="textcolor" style="color: #000000">3</span
+                  >}{<span class="textcolor" style="color: #000000">12</span
+                  >}&numsp;<span class="textcolor" style="color: #0000b2"
+                    >\mynumber</span
+                  ><br />
+                </code>
+              </div>
+            </figure>
+          </div>
+
+          <div class="manualentry">
+            <div class="entryheadline">
+              <p>
+                <a id="pgf.back/pgfmathsetbasenumberlength"></a>
+                <span class="hl-def"
+                  ><span class="textcolor" style="color: #bf0000"
+                    ><kbd>\pgfmathsetbasenumberlength</kbd></span
+                  >{<span class="angle">&langle;</span><i>integer</i
+                  ><span class="angle">&rangle;</span>}</span
+                >
+                <a
+                  class="anchor-link"
+                  href="#pgf.back/pgfmathsetbasenumberlength"
+                  >&para;</a
+                >
+              </p>
+            </div>
+            <p>
+              Sets the number of digits in the result of a base conversion to
+              <span class="angle">&langle;</span><i>integer</i
+              ><span class="angle">&rangle;</span>. If the result of a
+              conversion has less digits than this number, it is prefixed with
+              zeros.
+            </p>
+
+            <figure class="example">
+              <div class="example-image">
+                <p>00001111</p>
+              </div>
+
+              <div class="example-code">
+                <button class="clipboardButton" type="button">copy</button>
+                <code>
+                  <br />
+                  <span class="textcolor" style="color: #0000b2"
+                    ><a href="math-commands#pgf.back/pgfmathsetbasenumberlength"
+                      >\pgfmathsetbasenumberlength</a
+                    ></span
+                  >{<span class="textcolor" style="color: #000000">8</span
+                  >}<br />
+                  <span class="textcolor" style="color: #0000b2"
+                    ><a href="math-commands#pgf.back/pgfmathdectobase"
+                      >\pgfmathdectobase</a
+                    ></span
+                  ><span class="textcolor" style="color: #0000b2"
+                    >\mynumber</span
+                  >{<span class="textcolor" style="color: #000000">15</span
+                  >}{<span class="textcolor" style="color: #000000">2</span
+                  >}&numsp;<span class="textcolor" style="color: #0000b2"
+                    >\mynumber</span
+                  ><br />
+                </code>
+              </div>
+            </figure>
+          </div>
+
+          <div class="manualentry">
+            <div class="entryheadline">
+              <p>
+                <a id="pgf.back/pgfmathtodigitlist"></a>
+                <span class="hl-def"
+                  ><span class="textcolor" style="color: #bf0000"
+                    ><kbd>\pgfmathtodigitlist</kbd></span
+                  >{<span class="angle">&langle;</span><i>macro</i
+                  ><span class="angle">&rangle;</span>}{<span class="angle"
+                    >&langle;</span
+                  ><i>number</i><span class="angle">&rangle;</span>}</span
+                >
+                <a class="anchor-link" href="#pgf.back/pgfmathtodigitlist"
+                  >&para;</a
+                >
+              </p>
+            </div>
+            <p>
+              This command converts <span class="angle">&langle;</span
+              ><i>number</i><span class="angle">&rangle;</span> into a
+              comma-separated list of digits and stores the result in
+              <span class="angle">&langle;</span><i>macro</i
+              ><span class="angle">&rangle;</span>. The {<span class="angle"
+                >&langle;</span
+              ><i>number</i><span class="angle">&rangle;</span>} is
+              <em>not</em> parsed before processing.
+            </p>
+
+            <figure class="example">
+              <div class="example-image">
+                <p>
+                  <span class="lateximagesource" id="lateximage-pgfmanual-3109"
+                    ><!--
+-->
+                    <img
+                      alt="(-tikz-&nbsp;diagram)"
+                      class="lateximage"
+                      height="87.722"
+                      loading="lazy"
+                      src="pgfmanual-images/image-3109.png"
+                      style
+                      width="78.293"
+                  /></span>
+                </p>
+              </div>
+
+              <div class="example-code">
+                <button class="clipboardButton" type="button">copy</button>
+                <code>
+                  <br />
+                  <span class="textcolor" style="color: #0000b2"
+                    ><a href="math-commands#pgf.back/pgfmathsetbasenumberlength"
+                      >\pgfmathsetbasenumberlength</a
+                    ></span
+                  >{<span class="textcolor" style="color: #000000">8</span
+                  >}<br />
+                  <span class="textcolor" style="color: #000000">\begin</span
+                  >{<span class="textcolor" style="color: #0000b2"
+                    ><a href="tikz-scopes#pgf.tikzpicture">tikzpicture</a></span
+                  >}[<span class="textcolor" style="color: #008000"
+                    ><a href="tikz-coordinates#pgf.x">x</a></span
+                  >=<span class="textcolor" style="color: #008000">0.25cm</span
+                  >,&numsp;<span class="textcolor" style="color: #008000"
+                    ><a href="tikz-coordinates#pgf.y">y</a></span
+                  >=<span class="textcolor" style="color: #008000">0.25cm</span
+                  >]<br />
+                  &numsp;&numsp;<span class="textcolor" style="color: #0000b2"
+                    ><a href="pgffor#pgf.back/foreach">\foreach</a></span
+                  >&numsp;<span class="textcolor" style="color: #0000b2"
+                    ><a href="tikz-paths#pgf.back/n">\n</a></span
+                  >&numsp;[<span class="textcolor" style="color: #008000"
+                    ><a href="pgffor#pgf.count">count</a></span
+                  >=<span class="textcolor" style="color: #008000"
+                    ><span class="textcolor" style="color: #0000b2"
+                      ><a href="tikz-paths#pgf.back/y">\y</a></span
+                    ></span
+                  >]&numsp;<span class="textcolor" style="color: #000000"
+                    ><a href="library-edges#pgf.in">in</a></span
+                  >
+                  {<span class="textcolor" style="color: #000000">0</span
+                  >,&numsp;<span class="textcolor" style="color: #000000"
+                    >60</span
+                  >,&numsp;<span class="textcolor" style="color: #000000"
+                    >102</span
+                  >,&numsp;<span class="textcolor" style="color: #000000"
+                    >102</span
+                  >,&numsp;<span class="textcolor" style="color: #000000"
+                    >126</span
+                  >,&numsp;<span class="textcolor" style="color: #000000"
+                    >102</span
+                  >,&numsp;<span class="textcolor" style="color: #000000"
+                    >102</span
+                  >,&numsp;<span class="textcolor" style="color: #000000"
+                    >102</span
+                  >,&numsp;<span class="textcolor" style="color: #000000"
+                    >0</span
+                  >}{<br />
+                  &numsp;&numsp;&numsp;&numsp;<span
+                    class="textcolor"
+                    style="color: #0000b2"
+                    ><a href="math-commands#pgf.back/pgfmathdectobase"
+                      >\pgfmathdectobase</a
+                    ></span
+                  >{<span class="textcolor" style="color: #0000b2">\binary</span
+                  >}{<span class="textcolor" style="color: #0000b2"
+                    ><a href="tikz-paths#pgf.back/n">\n</a></span
+                  >}{<span class="textcolor" style="color: #000000">2</span
+                  >}<br />
+                  &numsp;&numsp;&numsp;&numsp;<span
+                    class="textcolor"
+                    style="color: #0000b2"
+                    ><a href="math-commands#pgf.back/pgfmathtodigitlist"
+                      >\pgfmathtodigitlist</a
+                    ></span
+                  >{<span class="textcolor" style="color: #0000b2"
+                    >\digitlist</span
+                  >}{<span class="textcolor" style="color: #0000b2"
+                    >\binary</span
+                  >}<br />
+                  &numsp;&numsp;&numsp;&numsp;<span
+                    class="textcolor"
+                    style="color: #0000b2"
+                    ><a href="pgffor#pgf.back/foreach">\foreach</a></span
+                  >&numsp;<span class="textcolor" style="color: #0000b2"
+                    >\digit</span
+                  >&numsp;[<span class="textcolor" style="color: #008000"
+                    ><a href="pgffor#pgf.count">count</a></span
+                  >=<span class="textcolor" style="color: #008000"
+                    ><span class="textcolor" style="color: #0000b2"
+                      ><a href="tikz-paths#pgf.back/x">\x</a></span
+                    ></span
+                  >,&numsp;<span class="textcolor" style="color: #008000"
+                    ><a href="library-math#pgf.evaluate">evaluate</a></span
+                  >=<span class="textcolor" style="color: #008000"
+                    >{<span class="textcolor" style="color: #0000b2">\c</span
+                    >=<span class="textcolor" style="color: #0000b2"
+                      >\digit</span
+                    >*50+15;}</span
+                  >]&numsp;<span class="textcolor" style="color: #000000"
+                    ><a href="library-edges#pgf.in">in</a></span
+                  >
+                  <span class="textcolor" style="color: #0000b2"
+                    >\digitlist</span
+                  ><br />
+                  &numsp;&numsp;&numsp;&numsp;&numsp;&numsp;<span
+                    class="textcolor"
+                    style="color: #0000b2"
+                    ><a href="tikz-actions#pgf.back/fill">\fill</a></span
+                  >&numsp;[<span class="textcolor" style="color: #008000"
+                    ><a href="tikz-actions#pgf.fill">fill</a></span
+                  >=<span class="textcolor" style="color: #008000"
+                    >black!<span class="textcolor" style="color: #0000b2"
+                      >\c</span
+                    ></span
+                  >]&numsp;<span class="textcolor" style="color: #800080"
+                    >(\x, -\y)</span
+                  >&numsp;<span class="textcolor" style="color: #000000"
+                    ><a href="tikz-paths#pgf.rectangle">rectangle</a></span
+                  >
+                  <span class="textcolor" style="color: #000000">++</span
+                  ><span class="textcolor" style="color: #800080">(1,1)</span
+                  >;<br />
+                  &numsp;&numsp;}<br />
+                  <span class="textcolor" style="color: #000000">\end</span
+                  >{<span class="textcolor" style="color: #0000b2"
+                    ><a href="tikz-scopes#pgf.tikzpicture">tikzpicture</a></span
+                  >}<br />
+                </code>
+              </div>
+            </figure>
+          </div>
+          <h5 id="autosec-7640">
+            <span class="sectionnumber" id="sec-94.5">94.5&emsp;</span>Angle
+            Computations<a class="anchor-link" href="#sec-94.5">&para;</a>
+          </h5>
+          <a id="pgfmanual-autopage-7640"></a>
+
+          <p>
+            Unlike the rest of the math engine, which is a
+            &ldquo;standalone&rdquo; package, the following commands only work
+            in conjunction with the core of <span class="textsc">pgf</span>.
+          </p>
+
+          <div class="manualentry">
+            <div class="entryheadline">
+              <p>
+                <a id="pgf.back/pgfmathanglebetweenpoints"></a>
+                <span class="hl-def"
+                  ><span class="textcolor" style="color: #bf0000"
+                    ><kbd>\pgfmathanglebetweenpoints</kbd></span
+                  >{<span class="angle">&langle;</span><i>p</i
+                  ><span class="angle">&rangle;</span>}{<span class="angle"
+                    >&langle;</span
+                  ><i>q</i><span class="angle">&rangle;</span>}</span
+                >
+                <a
+                  class="anchor-link"
+                  href="#pgf.back/pgfmathanglebetweenpoints"
+                  >&para;</a
+                >
+              </p>
+            </div>
+            <p>
+              Returns the angle of a line from
+              <span class="angle">&langle;</span><i>p</i
+              ><span class="angle">&rangle;</span> to
+              <span class="angle">&langle;</span><i>q</i
+              ><span class="angle">&rangle;</span> relative to a line going
+              straight right from <span class="angle">&langle;</span><i>p</i
+              ><span class="angle">&rangle;</span>.
+            </p>
+
+            <figure class="example">
+              <div class="example-image">
+                <p>45.0</p>
+              </div>
+
+              <div class="example-code">
+                <button class="clipboardButton" type="button">copy</button>
+                <code>
+                  <br />
+                  <span class="textcolor" style="color: #0000b2"
+                    ><a href="math-commands#pgf.back/pgfmathanglebetweenpoints"
+                      >\pgfmathanglebetweenpoints</a
+                    ></span
+                  >{<span class="textcolor" style="color: #0000b2"
+                    ><a href="base-points#pgf.back/pgfpoint">\pgfpoint</a></span
+                  >{<span class="textcolor" style="color: #000000">1cm</span
+                  >}{<span class="textcolor" style="color: #000000">3cm</span
+                  >}}{<span class="textcolor" style="color: #0000b2"
+                    ><a href="base-points#pgf.back/pgfpoint">\pgfpoint</a></span
+                  >{<span class="textcolor" style="color: #000000">2cm</span
+                  >}{<span class="textcolor" style="color: #000000">4cm</span
+                  >}}<br />
+                  <span class="textcolor" style="color: #0000b2"
+                    >\pgfmathresult</span
+                  ><br />
+                </code>
+              </div>
+            </figure>
+          </div>
+
+          <div class="manualentry">
+            <div class="entryheadline">
+              <p>
+                <a id="pgf.back/pgfmathanglebetweenlines"></a>
+                <span class="hl-def"
+                  ><span class="textcolor" style="color: #bf0000"
+                    ><kbd>\pgfmathanglebetweenlines</kbd></span
+                  >{<span class="angle">&langle;</span><i>\(p_1\)</i
+                  ><span class="angle">&rangle;</span>}{<span class="angle"
+                    >&langle;</span
+                  ><i>\(q_1\)</i><span class="angle">&rangle;</span>}{<span
+                    class="angle"
+                    >&langle;</span
+                  ><i>\(p_2\)</i><span class="angle">&rangle;</span>}{<span
+                    class="angle"
+                    >&langle;</span
+                  ><i>\(q_2\)</i><span class="angle">&rangle;</span>}</span
+                >
+                <a class="anchor-link" href="#pgf.back/pgfmathanglebetweenlines"
+                  >&para;</a
+                >
+              </p>
+            </div>
+            <p>
+              Returns the clockwise angle between a line going through \(p_1\)
+              and \(q_1\) and a line going through \(p_2\) and \(q_2\).
+            </p>
+
+            <figure class="example">
+              <div class="example-image">
+                <p>270.0</p>
+              </div>
+
+              <div class="example-code">
+                <button class="clipboardButton" type="button">copy</button>
+                <code>
+                  <br />
+                  <span class="textcolor" style="color: #0000b2"
+                    ><a href="math-commands#pgf.back/pgfmathanglebetweenlines"
+                      >\pgfmathanglebetweenlines</a
+                    ></span
+                  >{<span class="textcolor" style="color: #0000b2"
+                    ><a href="base-points#pgf.back/pgfpoint">\pgfpoint</a></span
+                  >{<span class="textcolor" style="color: #000000">1cm</span
+                  >}{<span class="textcolor" style="color: #000000">3cm</span
+                  >}}{<span class="textcolor" style="color: #0000b2"
+                    ><a href="base-points#pgf.back/pgfpoint">\pgfpoint</a></span
+                  >{<span class="textcolor" style="color: #000000">2cm</span
+                  >}{<span class="textcolor" style="color: #000000">4cm</span
+                  >}}<br />
+                  &numsp;&numsp;&numsp;&numsp;&numsp;&numsp;&numsp;&numsp;&numsp;&numsp;&numsp;&numsp;&numsp;&numsp;&numsp;&numsp;&numsp;&numsp;&numsp;&numsp;&numsp;&numsp;&numsp;&numsp;&numsp;{<span
+                    class="textcolor"
+                    style="color: #0000b2"
+                    ><a href="base-points#pgf.back/pgfpoint">\pgfpoint</a></span
+                  >{<span class="textcolor" style="color: #000000">0cm</span
+                  >}{<span class="textcolor" style="color: #000000">1cm</span
+                  >}}{<span class="textcolor" style="color: #0000b2"
+                    ><a href="base-points#pgf.back/pgfpoint">\pgfpoint</a></span
+                  >{<span class="textcolor" style="color: #000000">1cm</span
+                  >}{<span class="textcolor" style="color: #000000">0cm</span
+                  >}}<br />
+                  <span class="textcolor" style="color: #0000b2"
+                    >\pgfmathresult</span
+                  ><br />
+                </code>
+              </div>
+            </figure>
+          </div>
+        </section>
+      </main>
+
+      <footer>
+        <div class_="footer-left">
+          <a href="https://github.com/pgf-tikz/pgf">Github</a> &middot;
+          <a href="/license">License</a> &middot;
+          <a href="https://ctan.org/pkg/pgf">CTAN</a> &middot;
+          <a href="https://pgf-tikz.github.io/pgf/pgfmanual.pdf">PDF version</a>
+          &middot;
+          <a href="https://github.com/DominikPeters/pgf-tikz-html-manual"
+            >About this HTML version</a
+          >
+        </div>
+        <div class_="footer-right">
+          <em>Manual last updated: 2022-04-23</em>
+        </div>
+      </footer>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/@docsearch/js@alpha"></script>
+    <script>
+      docsearch({
+        apiKey: "ae66ec3fc9df4b52b4d6f24fc8508fd3",
+        indexName: "tikz.dev",
+        appId: "Q70NNMA9GC",
+        container: "#search",
+      });
+    </script>
+  </body>
+</html>

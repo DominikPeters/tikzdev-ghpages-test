@@ -1,0 +1,1367 @@
+<!DOCTYPE html>
+<html lang="en-US">
+  <head>
+    <meta charset="utf-8" />
+    <meta content="LaTeX Lwarp package" name="generator" />
+    <meta content="width=device-width, initial-scale=1.0" name="viewport" />
+    <!--[if lt IE 9]>
+      <script src="http://html5shiv.googlecode.com/svn/trunk/html5.js"></script>
+    <![endif]-->
+    <title>Plot Mark Library - PGF/TikZ Manual</title>
+    <link href="style.css" rel="stylesheet" type="text/css" />
+
+    <script src="pgfmanual.js"></script>
+
+    <link href="https://unpkg.com/@docsearch/css@alpha" rel="stylesheet" />
+    <link href="/favicon-16x16.png" rel="icon" sizes="16x16" type="image/png" />
+    <link href="/favicon-32x32.png" rel="icon" sizes="32x32" type="image/png" />
+    <link
+      href="/apple-touch-icon.png"
+      rel="apple-touch-icon"
+      sizes="180x180"
+      type="image/png"
+    />
+    <link href="/site.webmanifest" rel="manifest" />
+  </head>
+  <body>
+    <a id="pgfmanual-autopage-6146"></a>
+
+    <div class="bodyandsidetoc grid-container">
+      <header>
+        <strong><a href="/">PGF/Ti<i>k</i>Z Manual</a></strong>
+        <div id="search"></div>
+      </header>
+      <div class="sidetoccontainer" id="local-toc-container">
+        <nav class="sidetoc">
+          <div class="sidetoctitle"><p>On this page</p></div>
+          <div class="sidetoccontents"></div>
+        </nav>
+      </div>
+      <div class="sidetoccontainer" id="chapter-toc-container">
+        <nav class="sidetoc">
+          <div class="sidetoctitle">
+            <p>
+              <span class="sidetocthetitle"
+                >The <span class="tikzname">TikZ</span> and PGF Packages<br />
+                Manual for version 3.1.9a</span
+              >
+            </p>
+
+            <p>Contents</p>
+          </div>
+
+          <div class="sidetoccontents">
+            <p></p>
+
+            <p>
+              <a class="linkintro" href="/">Introduction</a>
+            </p>
+
+            <p>
+              <a class="tocpart" href="tutorials-guidelines"
+                >Tutorials and Guidelines</a
+              >
+            </p>
+
+            <p>
+              <a class="tocpart" href="install"
+                >Installation and Configuration</a
+              >
+            </p>
+
+            <p>
+              <a class="tocpart" href="tikz">Ti<em>k</em>Z</a>
+            </p>
+
+            <p>
+              <a class="tocpart" href="gd">Graph Drawing</a>
+            </p>
+
+            <p class="current-part">
+              <a class="tocpart" href="libraries">Libraries</a>
+            </p>
+
+            <p class="current-part">
+              <a class="tocsection" href="library-3d"
+                >Three Dimensional Drawing Library</a
+              >
+            </p>
+
+            <p class="current-part">
+              <a class="tocsection" href="library-angle">Angle Library</a>
+            </p>
+
+            <p class="current-part">
+              <a class="tocsection" href="library-arrows">Arrow Tip Library</a>
+            </p>
+
+            <p class="current-part">
+              <a class="tocsection" href="library-automata"
+                >Automata Drawing Library</a
+              >
+            </p>
+
+            <p class="current-part">
+              <a class="tocsection" href="library-babel">Babel Library</a>
+            </p>
+
+            <p class="current-part">
+              <a class="tocsection" href="library-backgrounds"
+                >Background Library</a
+              >
+            </p>
+
+            <p class="current-part">
+              <a class="tocsection" href="library-calc">Calc Library</a>
+            </p>
+
+            <p class="current-part">
+              <a class="tocsection" href="library-calender">Calendar Library</a>
+            </p>
+
+            <p class="current-part">
+              <a class="tocsection" href="library-chains">Chains</a>
+            </p>
+
+            <p class="current-part">
+              <a class="tocsection" href="library-circuits"
+                >Circuit Libraries</a
+              >
+            </p>
+
+            <p class="current-part">
+              <a class="tocsection" href="library-decorations"
+                >Decoration Library</a
+              >
+            </p>
+
+            <p class="current-part">
+              <a class="tocsection" href="library-er"
+                >Entity-Relationship Diagram Drawing Library</a
+              >
+            </p>
+
+            <p class="current-part">
+              <a class="tocsection" href="library-external"
+                >Externalization Library</a
+              >
+            </p>
+
+            <p class="current-part">
+              <a class="tocsection" href="library-fadings">Fading Library</a>
+            </p>
+
+            <p class="current-part">
+              <a class="tocsection" href="library-fit">Fitting Library</a>
+            </p>
+
+            <p class="current-part">
+              <a class="tocsection" href="library-fixedpoint"
+                >Fixed Point Arithmetic Library</a
+              >
+            </p>
+
+            <p class="current-part">
+              <a class="tocsection" href="library-fpu"
+                >Floating Point Unit Library</a
+              >
+            </p>
+
+            <p class="current-part">
+              <a class="tocsection" href="library-lsystems"
+                >Lindenmayer System Drawing Library</a
+              >
+            </p>
+
+            <p class="current-part">
+              <a class="tocsection" href="library-math">Math Library</a>
+            </p>
+
+            <p class="current-part">
+              <a class="tocsection" href="library-matrix">Matrix Library</a>
+            </p>
+
+            <p class="current-part">
+              <a class="tocsection" href="library-mindmaps"
+                >Mindmap Drawing Library</a
+              >
+            </p>
+
+            <p class="current-part">
+              <a class="tocsection" href="library-folding"
+                >Paper-Folding Diagrams Library</a
+              >
+            </p>
+
+            <p class="current-part">
+              <a class="tocsection" href="library-patterns">Pattern Library</a>
+            </p>
+
+            <p class="current-part">
+              <a class="tocsection" href="library-perspective"
+                >Three Point Perspective Drawing Library</a
+              >
+            </p>
+
+            <p class="current-part">
+              <a class="tocsection" href="library-petri"
+                >Petri-Net Drawing Library</a
+              >
+            </p>
+
+            <p class="current-part">
+              <a class="tocsection" href="library-plot-handlers"
+                >Plot Handler Library</a
+              >
+            </p>
+
+            <p class="current current-part">
+              <a class="tocsection" href="library-plot-marks"
+                >Plot Mark Library</a
+              >
+            </p>
+
+            <p class="current-part">
+              <a class="tocsection" href="library-profiler">Profiler Library</a>
+            </p>
+
+            <p class="current-part">
+              <a class="tocsection" href="library-shadings">Shadings Library</a>
+            </p>
+
+            <p class="current-part">
+              <a class="tocsection" href="library-shadows">Shadows Library</a>
+            </p>
+
+            <p class="current-part">
+              <a class="tocsection" href="library-shapes">Shape Library</a>
+            </p>
+
+            <p class="current-part">
+              <a class="tocsection" href="library-spy"
+                >Spy Library: Magnifying Parts of Pictures</a
+              >
+            </p>
+
+            <p class="current-part">
+              <a class="tocsection" href="library-svg-path">SVG-Path Library</a>
+            </p>
+
+            <p class="current-part">
+              <a class="tocsection" href="library-edges">To Path Library</a>
+            </p>
+
+            <p class="current-part">
+              <a class="tocsection" href="library-through">Through Library</a>
+            </p>
+
+            <p class="current-part">
+              <a class="tocsection" href="library-trees">Tree Library</a>
+            </p>
+
+            <p class="current-part">
+              <a class="tocsection" href="library-turtle"
+                >Turtle Graphics Library</a
+              >
+            </p>
+
+            <p class="current-part">
+              <a class="tocsection" href="library-views">Views Library</a>
+            </p>
+
+            <p>
+              <a class="tocpart" href="dv">Data Visualization</a>
+            </p>
+
+            <p>
+              <a class="tocpart" href="utilities">Utilities</a>
+            </p>
+
+            <p>
+              <a class="tocpart" href="math"
+                >Mathematical and Object-Oriented Engines</a
+              >
+            </p>
+
+            <p>
+              <a class="tocpart" href="base">The Basic Layer</a>
+            </p>
+
+            <p>
+              <a class="tocpart" href="pgfsys">The System Layer</a>
+            </p>
+          </div>
+        </nav>
+      </div>
+
+      <main class="bodycontainer">
+        <section class="textbody">
+          <h1>
+            The <span class="tikzname">TikZ</span> and PGF Packages<br />
+            Manual for version 3.1.9a
+          </h1>
+          <h2 class="inserted">Libraries</h2>
+
+          <!--MathJax customizations:-->
+
+          <p></p>
+          <h4 id="autosec-6147">
+            <span class="sectionnumber">66&emsp;</span>Plot Mark Library
+          </h4>
+          <a id="pgfmanual-autopage-6147"></a>
+          <a id="pgfmanual-autofile-71"></a>
+
+          <div class="manualentry">
+            <div class="entryheadline">
+              <p>
+                <a id="pgf.plotmarks"></a>
+                <span class="hl-def"
+                  ><b><span class="tikzname">TikZ</span> Library</b>
+                  <kbd
+                    ><span class="textcolor" style="color: #bf0000"
+                      >plotmarks</span
+                    ></kbd
+                  ></span
+                >
+                <a class="anchor-link" href="#pgf.plotmarks">&para;</a>
+              </p>
+            </div>
+            <p>
+              <kbd
+                >\usepgflibrary{<span class="textcolor" style="color: #bf0000"
+                  >plotmarks</span
+                >} %
+                <span class="latexlogofont"
+                  ><span class="latexlogo"
+                    >L<span class="latexlogosup">a</span>T<span
+                      class="latexlogosub"
+                      >e</span
+                    >X</span
+                  ></span
+                >
+                and plain
+                <span class="latexlogofont"
+                  ><span class="latexlogo"
+                    >T<span class="latexlogosub">e</span>X</span
+                  ></span
+                >
+                and pure pgf</kbd
+              ><br />
+              <kbd
+                >\usepgflibrary[<span class="textcolor" style="color: #bf0000"
+                  >plotmarks</span
+                >] % Con<span class="latexlogofont"
+                  ><span class="latexlogo"
+                    >T<span class="latexlogosub">e</span>X</span
+                  ></span
+                >t and pure pgf</kbd
+              ><br />
+              <kbd
+                >\usetikzlibrary{<span class="textcolor" style="color: #bf0000"
+                  >plotmarks</span
+                >} %
+                <span class="latexlogofont"
+                  ><span class="latexlogo"
+                    >L<span class="latexlogosup">a</span>T<span
+                      class="latexlogosub"
+                      >e</span
+                    >X</span
+                  ></span
+                >
+                and plain
+                <span class="latexlogofont"
+                  ><span class="latexlogo"
+                    >T<span class="latexlogosub">e</span>X</span
+                  ></span
+                >
+                when using <span class="tikzname">TikZ</span></kbd
+              ><br />
+              <kbd
+                >\usetikzlibrary[<span class="textcolor" style="color: #bf0000"
+                  >plotmarks</span
+                >] % Con<span class="latexlogofont"
+                  ><span class="latexlogo"
+                    >T<span class="latexlogosub">e</span>X</span
+                  ></span
+                >t when using <span class="tikzname">TikZ</span></kbd
+              ><br />
+              <br />
+              This library defines a number of plot marks.
+            </p>
+          </div>
+
+          <p>
+            This library defines the following plot marks in addition to
+            <span class="texttt">*</span>, <span class="texttt">x</span>, and
+            <span class="texttt">+</span> (the filling color has been set to a
+            dark yellow):
+          </p>
+          <table>
+            <tbody>
+              <tr>
+                <td class="tdl">
+                  <kbd
+                    >\pgfuseplotmark{<span
+                      class="textcolor"
+                      style="color: #bf0000"
+                      >-</span
+                    >}</kbd
+                  >
+                </td>
+                <td class="tdc">
+                  <span class="lateximagesource" id="lateximage-pgfmanual-2524"
+                    ><!--
+-->
+                    <img
+                      alt="(-tikz-&nbsp;diagram)"
+                      class="lateximage"
+                      height="10.827"
+                      loading="lazy"
+                      src="pgfmanual-images/image-2524.png"
+                      style
+                      width="64.697"
+                  /></span>
+                </td>
+              </tr>
+
+              <tr>
+                <td class="tdl">
+                  <kbd
+                    >\pgfuseplotmark{<span
+                      class="textcolor"
+                      style="color: #bf0000"
+                      >|</span
+                    >}</kbd
+                  >
+                </td>
+                <td class="tdc">
+                  <span class="lateximagesource" id="lateximage-pgfmanual-2525"
+                    ><!--
+-->
+                    <img
+                      alt="(-tikz-&nbsp;diagram)"
+                      class="lateximage"
+                      height="15.555"
+                      loading="lazy"
+                      src="pgfmanual-images/image-2525.png"
+                      style
+                      width="59.931"
+                  /></span>
+                </td>
+              </tr>
+
+              <tr>
+                <td class="tdl">
+                  <kbd
+                    >\pgfuseplotmark{<span
+                      class="textcolor"
+                      style="color: #bf0000"
+                      >o</span
+                    >}</kbd
+                  >
+                </td>
+                <td class="tdc">
+                  <span class="lateximagesource" id="lateximage-pgfmanual-2526"
+                    ><!--
+-->
+                    <img
+                      alt="(-tikz-&nbsp;diagram)"
+                      class="lateximage"
+                      height="16.107"
+                      loading="lazy"
+                      src="pgfmanual-images/image-2526.png"
+                      style
+                      width="65.240"
+                  /></span>
+                </td>
+              </tr>
+
+              <tr>
+                <td class="tdl">
+                  <kbd
+                    >\pgfuseplotmark{<span
+                      class="textcolor"
+                      style="color: #bf0000"
+                      >asterisk</span
+                    >}</kbd
+                  >
+                </td>
+                <td class="tdc">
+                  <span class="lateximagesource" id="lateximage-pgfmanual-2527"
+                    ><!--
+-->
+                    <img
+                      alt="(-tikz-&nbsp;diagram)"
+                      class="lateximage"
+                      height="15.555"
+                      loading="lazy"
+                      src="pgfmanual-images/image-2527.png"
+                      style
+                      width="64.251"
+                  /></span>
+                </td>
+              </tr>
+
+              <tr>
+                <td class="tdl">
+                  <kbd
+                    >\pgfuseplotmark{<span
+                      class="textcolor"
+                      style="color: #bf0000"
+                      >star</span
+                    >}</kbd
+                  >
+                </td>
+                <td class="tdc">
+                  <span class="lateximagesource" id="lateximage-pgfmanual-2528"
+                    ><!--
+-->
+                    <img
+                      alt="(-tikz-&nbsp;diagram)"
+                      class="lateximage"
+                      height="15.195"
+                      loading="lazy"
+                      src="pgfmanual-images/image-2528.png"
+                      style
+                      width="64.611"
+                  /></span>
+                </td>
+              </tr>
+
+              <tr>
+                <td class="tdl">
+                  <kbd
+                    >\pgfuseplotmark{<span
+                      class="textcolor"
+                      style="color: #bf0000"
+                      >10-pointed star</span
+                    >}</kbd
+                  >
+                </td>
+                <td class="tdc">
+                  <span class="lateximagesource" id="lateximage-pgfmanual-2529"
+                    ><!--
+-->
+                    <img
+                      alt="(-tikz-&nbsp;diagram)"
+                      class="lateximage"
+                      height="15.555"
+                      loading="lazy"
+                      src="pgfmanual-images/image-2529.png"
+                      style
+                      width="64.611"
+                  /></span>
+                </td>
+              </tr>
+
+              <tr>
+                <td class="tdl">
+                  <kbd
+                    >\pgfuseplotmark{<span
+                      class="textcolor"
+                      style="color: #bf0000"
+                      >oplus</span
+                    >}</kbd
+                  >
+                </td>
+                <td class="tdc">
+                  <span class="lateximagesource" id="lateximage-pgfmanual-2530"
+                    ><!--
+-->
+                    <img
+                      alt="(-tikz-&nbsp;diagram)"
+                      class="lateximage"
+                      height="16.107"
+                      loading="lazy"
+                      src="pgfmanual-images/image-2530.png"
+                      style
+                      width="65.240"
+                  /></span>
+                </td>
+              </tr>
+
+              <tr>
+                <td class="tdl">
+                  <kbd
+                    >\pgfuseplotmark{<span
+                      class="textcolor"
+                      style="color: #bf0000"
+                      >oplus*</span
+                    >}</kbd
+                  >
+                </td>
+                <td class="tdc">
+                  <span class="lateximagesource" id="lateximage-pgfmanual-2531"
+                    ><!--
+-->
+                    <img
+                      alt="(-tikz-&nbsp;diagram)"
+                      class="lateximage"
+                      height="16.107"
+                      loading="lazy"
+                      src="pgfmanual-images/image-2531.png"
+                      style
+                      width="65.240"
+                  /></span>
+                </td>
+              </tr>
+
+              <tr>
+                <td class="tdl">
+                  <kbd
+                    >\pgfuseplotmark{<span
+                      class="textcolor"
+                      style="color: #bf0000"
+                      >otimes</span
+                    >}</kbd
+                  >
+                </td>
+                <td class="tdc">
+                  <span class="lateximagesource" id="lateximage-pgfmanual-2532"
+                    ><!--
+-->
+                    <img
+                      alt="(-tikz-&nbsp;diagram)"
+                      class="lateximage"
+                      height="16.107"
+                      loading="lazy"
+                      src="pgfmanual-images/image-2532.png"
+                      style
+                      width="65.240"
+                  /></span>
+                </td>
+              </tr>
+
+              <tr>
+                <td class="tdl">
+                  <kbd
+                    >\pgfuseplotmark{<span
+                      class="textcolor"
+                      style="color: #bf0000"
+                      >otimes*</span
+                    >}</kbd
+                  >
+                </td>
+                <td class="tdc">
+                  <span class="lateximagesource" id="lateximage-pgfmanual-2533"
+                    ><!--
+-->
+                    <img
+                      alt="(-tikz-&nbsp;diagram)"
+                      class="lateximage"
+                      height="16.107"
+                      loading="lazy"
+                      src="pgfmanual-images/image-2533.png"
+                      style
+                      width="65.240"
+                  /></span>
+                </td>
+              </tr>
+
+              <tr>
+                <td class="tdl">
+                  <kbd
+                    >\pgfuseplotmark{<span
+                      class="textcolor"
+                      style="color: #bf0000"
+                      >square</span
+                    >}</kbd
+                  >
+                </td>
+                <td class="tdc">
+                  <span class="lateximagesource" id="lateximage-pgfmanual-2534"
+                    ><!--
+-->
+                    <img
+                      alt="(-tikz-&nbsp;diagram)"
+                      class="lateximage"
+                      height="16.069"
+                      loading="lazy"
+                      src="pgfmanual-images/image-2534.png"
+                      style
+                      width="65.205"
+                  /></span>
+                </td>
+              </tr>
+
+              <tr>
+                <td class="tdl">
+                  <kbd
+                    >\pgfuseplotmark{<span
+                      class="textcolor"
+                      style="color: #bf0000"
+                      >square*</span
+                    >}</kbd
+                  >
+                </td>
+                <td class="tdc">
+                  <span class="lateximagesource" id="lateximage-pgfmanual-2535"
+                    ><!--
+-->
+                    <img
+                      alt="(-tikz-&nbsp;diagram)"
+                      class="lateximage"
+                      height="16.069"
+                      loading="lazy"
+                      src="pgfmanual-images/image-2535.png"
+                      style
+                      width="65.205"
+                  /></span>
+                </td>
+              </tr>
+
+              <tr>
+                <td class="tdl">
+                  <kbd
+                    >\pgfuseplotmark{<span
+                      class="textcolor"
+                      style="color: #bf0000"
+                      >triangle</span
+                    >}</kbd
+                  >
+                </td>
+                <td class="tdc">
+                  <span class="lateximagesource" id="lateximage-pgfmanual-2536"
+                    ><!--
+-->
+                    <img
+                      alt="(-tikz-&nbsp;diagram)"
+                      class="lateximage"
+                      height="15.027"
+                      loading="lazy"
+                      src="pgfmanual-images/image-2536.png"
+                      style
+                      width="64.923"
+                  /></span>
+                </td>
+              </tr>
+
+              <tr>
+                <td class="tdl">
+                  <kbd
+                    >\pgfuseplotmark{<span
+                      class="textcolor"
+                      style="color: #bf0000"
+                      >triangle*</span
+                    >}</kbd
+                  >
+                </td>
+                <td class="tdc">
+                  <span class="lateximagesource" id="lateximage-pgfmanual-2537"
+                    ><!--
+-->
+                    <img
+                      alt="(-tikz-&nbsp;diagram)"
+                      class="lateximage"
+                      height="15.027"
+                      loading="lazy"
+                      src="pgfmanual-images/image-2537.png"
+                      style
+                      width="64.923"
+                  /></span>
+                </td>
+              </tr>
+
+              <tr>
+                <td class="tdl">
+                  <kbd
+                    >\pgfuseplotmark{<span
+                      class="textcolor"
+                      style="color: #bf0000"
+                      >diamond</span
+                    >}</kbd
+                  >
+                </td>
+                <td class="tdc">
+                  <span class="lateximagesource" id="lateximage-pgfmanual-2538"
+                    ><!--
+-->
+                    <img
+                      alt="(-tikz-&nbsp;diagram)"
+                      class="lateximage"
+                      height="16.443"
+                      loading="lazy"
+                      src="pgfmanual-images/image-2538.png"
+                      style
+                      width="64.035"
+                  /></span>
+                </td>
+              </tr>
+
+              <tr>
+                <td class="tdl">
+                  <kbd
+                    >\pgfuseplotmark{<span
+                      class="textcolor"
+                      style="color: #bf0000"
+                      >diamond*</span
+                    >}</kbd
+                  >
+                </td>
+                <td class="tdc">
+                  <span class="lateximagesource" id="lateximage-pgfmanual-2539"
+                    ><!--
+-->
+                    <img
+                      alt="(-tikz-&nbsp;diagram)"
+                      class="lateximage"
+                      height="16.443"
+                      loading="lazy"
+                      src="pgfmanual-images/image-2539.png"
+                      style
+                      width="64.035"
+                  /></span>
+                </td>
+              </tr>
+
+              <tr>
+                <td class="tdl">
+                  <kbd
+                    >\pgfuseplotmark{<span
+                      class="textcolor"
+                      style="color: #bf0000"
+                      >halfdiamond*</span
+                    >}</kbd
+                  >
+                </td>
+                <td class="tdc">
+                  <span class="lateximagesource" id="lateximage-pgfmanual-2540"
+                    ><!--
+-->
+                    <img
+                      alt="(-tikz-&nbsp;diagram)"
+                      class="lateximage"
+                      height="16.443"
+                      loading="lazy"
+                      src="pgfmanual-images/image-2540.png"
+                      style
+                      width="64.039"
+                  /></span>
+                </td>
+              </tr>
+
+              <tr>
+                <td class="tdl">
+                  <kbd
+                    >\pgfuseplotmark{<span
+                      class="textcolor"
+                      style="color: #bf0000"
+                      >halfsquare*</span
+                    >}</kbd
+                  >
+                </td>
+                <td class="tdc">
+                  <span class="lateximagesource" id="lateximage-pgfmanual-2541"
+                    ><!--
+-->
+                    <img
+                      alt="(-tikz-&nbsp;diagram)"
+                      class="lateximage"
+                      height="16.323"
+                      loading="lazy"
+                      src="pgfmanual-images/image-2541.png"
+                      style
+                      width="65.451"
+                  /></span>
+                </td>
+              </tr>
+
+              <tr>
+                <td class="tdl">
+                  <kbd
+                    >\pgfuseplotmark{<span
+                      class="textcolor"
+                      style="color: #bf0000"
+                      >halfsquare right*</span
+                    >}</kbd
+                  >
+                </td>
+                <td class="tdc">
+                  <span class="lateximagesource" id="lateximage-pgfmanual-2542"
+                    ><!--
+-->
+                    <img
+                      alt="(-tikz-&nbsp;diagram)"
+                      class="lateximage"
+                      height="16.323"
+                      loading="lazy"
+                      src="pgfmanual-images/image-2542.png"
+                      style
+                      width="65.451"
+                  /></span>
+                </td>
+              </tr>
+
+              <tr>
+                <td class="tdl">
+                  <kbd
+                    >\pgfuseplotmark{<span
+                      class="textcolor"
+                      style="color: #bf0000"
+                      >halfsquare left*</span
+                    >}</kbd
+                  >
+                </td>
+                <td class="tdc">
+                  <span class="lateximagesource" id="lateximage-pgfmanual-2543"
+                    ><!--
+-->
+                    <img
+                      alt="(-tikz-&nbsp;diagram)"
+                      class="lateximage"
+                      height="16.323"
+                      loading="lazy"
+                      src="pgfmanual-images/image-2543.png"
+                      style
+                      width="65.451"
+                  /></span>
+                </td>
+              </tr>
+
+              <tr>
+                <td class="tdl">
+                  <kbd
+                    >\pgfuseplotmark{<span
+                      class="textcolor"
+                      style="color: #bf0000"
+                      >pentagon</span
+                    >}</kbd
+                  >
+                </td>
+                <td class="tdc">
+                  <span class="lateximagesource" id="lateximage-pgfmanual-2544"
+                    ><!--
+-->
+                    <img
+                      alt="(-tikz-&nbsp;diagram)"
+                      class="lateximage"
+                      height="15.651"
+                      loading="lazy"
+                      src="pgfmanual-images/image-2544.png"
+                      style
+                      width="65.069"
+                  /></span>
+                </td>
+              </tr>
+
+              <tr>
+                <td class="tdl">
+                  <kbd
+                    >\pgfuseplotmark{<span
+                      class="textcolor"
+                      style="color: #bf0000"
+                      >pentagon*</span
+                    >}</kbd
+                  >
+                </td>
+                <td class="tdc">
+                  <span class="lateximagesource" id="lateximage-pgfmanual-2545"
+                    ><!--
+-->
+                    <img
+                      alt="(-tikz-&nbsp;diagram)"
+                      class="lateximage"
+                      height="15.651"
+                      loading="lazy"
+                      src="pgfmanual-images/image-2545.png"
+                      style
+                      width="65.069"
+                  /></span>
+                </td>
+              </tr>
+
+              <tr>
+                <td class="tdl">
+                  <kbd
+                    >\pgfuseplotmark{<span
+                      class="textcolor"
+                      style="color: #bf0000"
+                      >Mercedes star</span
+                    >}</kbd
+                  >
+                </td>
+                <td class="tdc">
+                  <span class="lateximagesource" id="lateximage-pgfmanual-2546"
+                    ><!--
+-->
+                    <img
+                      alt="(-tikz-&nbsp;diagram)"
+                      class="lateximage"
+                      height="14.451"
+                      loading="lazy"
+                      src="pgfmanual-images/image-2546.png"
+                      style
+                      width="64.251"
+                  /></span>
+                </td>
+              </tr>
+
+              <tr>
+                <td class="tdl">
+                  <kbd
+                    >\pgfuseplotmark{<span
+                      class="textcolor"
+                      style="color: #bf0000"
+                      >Mercedes star flipped</span
+                    >}</kbd
+                  >
+                </td>
+                <td class="tdc">
+                  <span class="lateximagesource" id="lateximage-pgfmanual-2547"
+                    ><!--
+-->
+                    <img
+                      alt="(-tikz-&nbsp;diagram)"
+                      class="lateximage"
+                      height="14.475"
+                      loading="lazy"
+                      src="pgfmanual-images/image-2547.png"
+                      style
+                      width="64.251"
+                  /></span>
+                </td>
+              </tr>
+
+              <tr>
+                <td class="tdl">
+                  <kbd
+                    >\pgfuseplotmark{<span
+                      class="textcolor"
+                      style="color: #bf0000"
+                      >halfcircle</span
+                    >}</kbd
+                  >
+                </td>
+                <td class="tdc">
+                  <span class="lateximagesource" id="lateximage-pgfmanual-2548"
+                    ><!--
+-->
+                    <img
+                      alt="(-tikz-&nbsp;diagram)"
+                      class="lateximage"
+                      height="16.107"
+                      loading="lazy"
+                      src="pgfmanual-images/image-2548.png"
+                      style
+                      width="65.240"
+                  /></span>
+                </td>
+              </tr>
+
+              <tr>
+                <td class="tdl">
+                  <kbd
+                    >\pgfuseplotmark{<span
+                      class="textcolor"
+                      style="color: #bf0000"
+                      >halfcircle*</span
+                    >}</kbd
+                  >
+                </td>
+                <td class="tdc">
+                  <span class="lateximagesource" id="lateximage-pgfmanual-2549"
+                    ><!--
+-->
+                    <img
+                      alt="(-tikz-&nbsp;diagram)"
+                      class="lateximage"
+                      height="16.107"
+                      loading="lazy"
+                      src="pgfmanual-images/image-2549.png"
+                      style
+                      width="65.240"
+                  /></span>
+                </td>
+              </tr>
+
+              <tr>
+                <td class="tdl">
+                  <kbd
+                    >\pgfuseplotmark{<span
+                      class="textcolor"
+                      style="color: #bf0000"
+                      >heart</span
+                    >}</kbd
+                  >
+                </td>
+                <td class="tdc">
+                  <span class="lateximagesource" id="lateximage-pgfmanual-2550"
+                    ><!--
+-->
+                    <img
+                      alt="(-tikz-&nbsp;diagram)"
+                      class="lateximage"
+                      height="16.779"
+                      loading="lazy"
+                      src="pgfmanual-images/image-2550.png"
+                      style
+                      width="65.237"
+                  /></span>
+                </td>
+              </tr>
+
+              <tr>
+                <td class="tdl">
+                  <kbd
+                    >\pgfuseplotmark{<span
+                      class="textcolor"
+                      style="color: #bf0000"
+                      >text</span
+                    >}</kbd
+                  >
+                </td>
+                <td class="tdc">
+                  <span class="lateximagesource" id="lateximage-pgfmanual-2551"
+                    ><!--
+    p p
+p p
+   -->
+                    <img
+                      alt="(-tikz-&nbsp;diagram)"
+                      class="lateximage"
+                      height="18.747"
+                      loading="lazy"
+                      src="pgfmanual-images/image-2551.png"
+                      style
+                      width="66.842"
+                  /></span>
+                </td>
+              </tr>
+
+              <tr>
+                <td class="tdl"></td>
+                <td class="tdc"></td>
+              </tr>
+            </tbody>
+          </table>
+
+          <p>
+            Note that each of the provided marks can be rotated freely by means
+            of <span class="texttt">mark options={rotate=90}</span> or
+            <span class="texttt">every mark/.append style={rotate=90}</span>.
+          </p>
+
+          <div class="manualentry">
+            <div class="entryheadline">
+              <p>
+                <a id="pgf./pgf/mark:color"></a><a id="pgf.mark:color"></a>
+                <span class="hl-def"
+                  ><kbd
+                    ><span class="keyname"
+                      ><span class="textcolor" style="color: #bf0000"
+                        >/pgf/mark color</span
+                      ></span
+                    >=</kbd
+                  >{<span class="angle">&langle;</span><i>color</i
+                  ><span class="angle">&rangle;</span>} </span
+                ><span class="hl-default"
+                  >(no default, initially <kbd>empty</kbd>)</span
+                >
+                <a class="anchor-link" href="#pgf./pgf/mark:color">&para;</a>
+              </p>
+            </div>
+            <p>
+              Defines the additional fill color for the
+              <span class="texttt">halfcircle</span>,
+              <span class="texttt">halfcircle*</span>,
+              <span class="texttt">halfdiamond*</span> and
+              <span class="texttt">halfsquare*</span> markers. An empty value
+              uses <span class="texttt">white</span> (which is the initial
+              configuration). The special value
+              <span class="texttt">none</span> disables filling of the
+              respective parts.
+            </p>
+            <p>
+              Note that <span class="texttt">halfsquare</span> will be filled
+              with <span class="texttt">mark color</span>, and the starred
+              variant <span class="texttt">halfsquare*</span> will be filled
+              half with <span class="texttt">mark color</span> and half with the
+              actual <span class="texttt">fill</span> color.
+            </p>
+          </div>
+
+          <div class="manualentry">
+            <div class="entryheadline">
+              <p>
+                <a id="pgf./pgf/text:mark"></a><a id="pgf.text:mark"></a>
+                <span class="hl-def"
+                  ><kbd
+                    ><span class="keyname"
+                      ><span class="textcolor" style="color: #bf0000"
+                        >/pgf/text mark</span
+                      ></span
+                    >=</kbd
+                  >{<span class="angle">&langle;</span><i>text</i
+                  ><span class="angle">&rangle;</span>} </span
+                ><span class="hl-default"
+                  >(no default, initially <kbd>p</kbd>)</span
+                >
+                <a class="anchor-link" href="#pgf./pgf/text:mark">&para;</a>
+              </p>
+            </div>
+            <p>
+              Changes the text shown by <span class="texttt">mark=text</span>.
+            </p>
+            <p>
+              With <span class="texttt">/pgf/text mark=m</span>:
+              <span class="lateximagesource" id="lateximage-pgfmanual-2552"
+                ><!--
+    m m
+m m
+-->
+                <img
+                  alt="(-tikz-&nbsp;diagram)"
+                  class="lateximage"
+                  height="16.179"
+                  loading="lazy"
+                  src="pgfmanual-images/image-2552.png"
+                  style
+                  width="71.186"
+              /></span>
+            </p>
+            <p>
+              With <span class="texttt">/pgf/text mark=A</span>:
+              <span class="lateximagesource" id="lateximage-pgfmanual-2553"
+                ><!--
+    A A
+A A
+   -->
+                <img
+                  alt="(-tikz-&nbsp;diagram)"
+                  class="lateximage"
+                  height="19.467"
+                  loading="lazy"
+                  src="pgfmanual-images/image-2553.png"
+                  style
+                  width="69.794"
+              /></span>
+            </p>
+            <p>
+              There is no limitation about the number of characters or whatever.
+              In fact, any
+              <span class="latexlogofont"
+                ><span class="latexlogo"
+                  >T<span class="latexlogosub">e</span>X</span
+                ></span
+              >
+              material can be inserted as {<span class="angle">&langle;</span
+              ><i>text</i><span class="angle">&rangle;</span>}, including
+              images.
+            </p>
+          </div>
+
+          <div class="manualentry">
+            <div class="entryheadline">
+              <p>
+                <a id="pgf./pgf/text:mark:as:node"></a
+                ><a id="pgf.text:mark:as:node"></a>
+                <span class="hl-def"
+                  ><kbd
+                    ><span class="keyname"
+                      ><span class="textcolor" style="color: #bf0000"
+                        >/pgf/text mark as node</span
+                      ></span
+                    >=</kbd
+                  >{<span class="angle">&langle;</span><i>boolean</i
+                  ><span class="angle">&rangle;</span>} </span
+                ><span class="hl-default"
+                  >(no default, initially <kbd>false</kbd>)</span
+                >
+                <a class="anchor-link" href="#pgf./pgf/text:mark:as:node"
+                  >&para;</a
+                >
+              </p>
+            </div>
+            <p>
+              Configures how <span class="texttt">mark=text</span> will be
+              drawn: either as <span class="texttt">\node</span> or as
+              <span class="texttt">\pgftext</span>.
+            </p>
+            <p>
+              The first choice is highly flexible and possibly slow, the second
+              is very fast and usually enough.
+            </p>
+          </div>
+
+          <div class="manualentry">
+            <div class="entryheadline">
+              <p>
+                <a id="pgf./pgf/text:mark:style"></a
+                ><a id="pgf.text:mark:style"></a>
+                <span class="hl-def"
+                  ><kbd
+                    ><span class="keyname"
+                      ><span class="textcolor" style="color: #bf0000"
+                        >/pgf/text mark style</span
+                      ></span
+                    >=</kbd
+                  >{<span class="angle">&langle;</span
+                  ><i>options for <kbd>mark=text</kbd></i
+                  ><span class="angle">&rangle;</span>}</span
+                ><span class="hl-default">(no default)</span>
+                <a class="anchor-link" href="#pgf./pgf/text:mark:style"
+                  >&para;</a
+                >
+              </p>
+            </div>
+            <p>
+              Defines a set of options which control the appearance of
+              <span class="texttt">mark=text</span>.
+            </p>
+            <p>
+              If <span class="texttt">/pgf/text mark as node=false</span> (the
+              default), {<span class="angle">&langle;</span><i>options</i
+              ><span class="angle">&rangle;</span>} is provided as argument to
+              <span class="texttt">\pgftext</span> &ndash; which provides only
+              some basic keys like <span class="texttt">left</span>,
+              <span class="texttt">right</span>,
+              <span class="texttt">top</span>,
+              <span class="texttt">bottom</span>,
+              <span class="texttt">base</span> and
+              <span class="texttt">rotate</span>.
+            </p>
+            <p>
+              If <span class="texttt">/pgf/text mark as node=true</span>, {<span
+                class="angle"
+                >&langle;</span
+              ><i>options</i><span class="angle">&rangle;</span>} is provided as
+              argument to <span class="texttt">\node</span>. This means you can
+              provide a very powerful set of options including
+              <span class="texttt">anchor</span>,
+              <span class="texttt">scale</span>,
+              <span class="texttt">fill</span>,
+              <span class="texttt">draw</span>,
+              <span class="texttt">rounded corners</span> etc.
+            </p>
+          </div>
+        </section>
+      </main>
+
+      <footer>
+        <div class_="footer-left">
+          <a href="https://github.com/pgf-tikz/pgf">Github</a> &middot;
+          <a href="/license">License</a> &middot;
+          <a href="https://ctan.org/pkg/pgf">CTAN</a> &middot;
+          <a href="https://pgf-tikz.github.io/pgf/pgfmanual.pdf">PDF version</a>
+          &middot;
+          <a href="https://github.com/DominikPeters/pgf-tikz-html-manual"
+            >About this HTML version</a
+          >
+        </div>
+        <div class_="footer-right">
+          <em>Manual last updated: 2022-04-23</em>
+        </div>
+      </footer>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/@docsearch/js@alpha"></script>
+    <script>
+      docsearch({
+        apiKey: "ae66ec3fc9df4b52b4d6f24fc8508fd3",
+        indexName: "tikz.dev",
+        appId: "Q70NNMA9GC",
+        container: "#search",
+      });
+    </script>
+  </body>
+</html>

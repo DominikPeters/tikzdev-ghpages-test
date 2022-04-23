@@ -1,0 +1,473 @@
+<!DOCTYPE html>
+<html lang="en-US">
+  <head>
+    <meta charset="utf-8" />
+    <meta content="LaTeX Lwarp package" name="generator" />
+    <meta content="width=device-width, initial-scale=1.0" name="viewport" />
+    <!--[if lt IE 9]>
+      <script src="http://html5shiv.googlecode.com/svn/trunk/html5.js"></script>
+    <![endif]-->
+    <title>Utilities - PGF/TikZ Manual</title>
+    <link href="style.css" rel="stylesheet" type="text/css" />
+
+    <script src="pgfmanual.js"></script>
+
+    <link href="https://unpkg.com/@docsearch/css@alpha" rel="stylesheet" />
+    <link href="/favicon-16x16.png" rel="icon" sizes="16x16" type="image/png" />
+    <link href="/favicon-32x32.png" rel="icon" sizes="32x32" type="image/png" />
+    <link
+      href="/apple-touch-icon.png"
+      rel="apple-touch-icon"
+      sizes="180x180"
+      type="image/png"
+    />
+    <link href="/site.webmanifest" rel="manifest" />
+  </head>
+  <body>
+    <a id="pgfmanual-autopage-7449"></a>
+
+    <div class="bodyandsidetoc grid-container">
+      <header>
+        <strong><a href="/">PGF/Ti<i>k</i>Z Manual</a></strong>
+        <div id="search"></div>
+      </header>
+      <div class="sidetoccontainer" id="local-toc-container">
+        <nav class="sidetoc">
+          <div class="sidetoctitle"><p>On this page</p></div>
+          <div class="sidetoccontents"></div>
+        </nav>
+      </div>
+      <div class="sidetoccontainer" id="chapter-toc-container">
+        <nav class="sidetoc">
+          <div class="sidetoctitle">
+            <p>
+              <span class="sidetocthetitle"
+                >The <span class="tikzname">TikZ</span> and PGF Packages<br />
+                Manual for version 3.1.9a</span
+              >
+            </p>
+
+            <p>Contents</p>
+          </div>
+
+          <div class="sidetoccontents">
+            <p></p>
+
+            <p>
+              <a class="linkintro" href="/">Introduction</a>
+            </p>
+
+            <p>
+              <a class="tocpart" href="tutorials-guidelines"
+                >Tutorials and Guidelines</a
+              >
+            </p>
+
+            <p>
+              <a class="tocpart" href="install"
+                >Installation and Configuration</a
+              >
+            </p>
+
+            <p>
+              <a class="tocpart" href="tikz">Ti<em>k</em>Z</a>
+            </p>
+
+            <p>
+              <a class="tocpart" href="gd">Graph Drawing</a>
+            </p>
+
+            <p>
+              <a class="tocpart" href="libraries">Libraries</a>
+            </p>
+
+            <p>
+              <a class="tocpart" href="dv">Data Visualization</a>
+            </p>
+
+            <p class="current current-part">
+              <a class="tocpart" href="utilities">Utilities</a>
+            </p>
+
+            <p class="current-part">
+              <a class="tocsection" href="pgfkeys">Key Management</a>
+            </p>
+
+            <p class="current-part">
+              <a class="tocsection" href="pgffor"
+                >Repeating Things: The Foreach Statement</a
+              >
+            </p>
+
+            <p class="current-part">
+              <a class="tocsection" href="pgfcalendar"
+                >Date and Calendar Utility Macros</a
+              >
+            </p>
+
+            <p class="current-part">
+              <a class="tocsection" href="pages">Page Management</a>
+            </p>
+
+            <p class="current-part">
+              <a class="tocsection" href="xxcolor">Extended Color Support</a>
+            </p>
+
+            <p class="current-part">
+              <a class="tocsection" href="module-parser">Parser Module</a>
+            </p>
+
+            <p>
+              <a class="tocpart" href="math"
+                >Mathematical and Object-Oriented Engines</a
+              >
+            </p>
+
+            <p>
+              <a class="tocpart" href="base">The Basic Layer</a>
+            </p>
+
+            <p>
+              <a class="tocpart" href="pgfsys">The System Layer</a>
+            </p>
+          </div>
+        </nav>
+      </div>
+
+      <main class="bodycontainer">
+        <section class="textbody">
+          <h1>
+            The <span class="tikzname">TikZ</span> and PGF Packages<br />
+            Manual for version 3.1.9a
+          </h1>
+
+          <!--MathJax customizations:-->
+
+          <p></p>
+          <h2 id="autosec-7450">
+            Part&nbsp;<span class="sectionnumber">VII&emsp;</span>Utilities
+          </h2>
+          <a id="pgfmanual-autopage-7450"></a>
+          <a id="pgfmanual-autofile-92"></a>
+
+          <a id="part-utilities"></a>
+
+          <p>
+            <em>by Till Tantau</em>
+          </p>
+
+          <p>
+            The utility packages are not directly involved in creating graphics,
+            but you may find them useful nonetheless. All of them either
+            directly depend on <span class="textsc">pgf</span> or they are
+            designed to work well together with
+            <span class="textsc">pgf</span> even though they can be used in a
+            stand-alone way.
+          </p>
+          <p></p>
+
+          <figure class="example">
+            <div class="example-image">
+              <p>
+                <span class="lateximagesource" id="lateximage-pgfmanual-3072"
+                  ><!--
+   f (x)
+                               x2
+
+
+
+  3
+
+
+
+2 14
+   2
+
+
+
+
+  1
+
+           Z 3/2
+                x2 dx
+            0
+                                        x
+                1 1 12 2 3
+-->
+                  <img
+                    alt="(-tikz-&nbsp;diagram)"
+                    class="lateximage"
+                    height="348.770"
+                    loading="lazy"
+                    src="pgfmanual-images/image-3072.png"
+                    style
+                    width="354.698"
+                /></span>
+              </p>
+            </div>
+
+            <div class="example-code">
+              <button class="clipboardButton" type="button">copy</button>
+
+              <code>
+                <br />
+                <span class="textcolor" style="color: #000000">\begin</span
+                >{<span class="textcolor" style="color: #0000b2"
+                  ><a href="tikz-scopes#pgf.tikzpicture">tikzpicture</a></span
+                >}[<span class="textcolor" style="color: #008000"
+                  ><a href="tikz-arrows#pgf.scale">scale</a></span
+                >=<span class="textcolor" style="color: #008000">2</span>]<br />
+                &numsp;&numsp;<span class="textcolor" style="color: #0000b2"
+                  ><a href="tikz-actions#pgf.back/shade">\shade</a></span
+                >[<span class="textcolor" style="color: #008000"
+                  ><a href="library-shadings#pgf.top:color">top color</a></span
+                >=<span class="textcolor" style="color: #008000">blue</span
+                >,<span class="textcolor" style="color: #008000"
+                  ><a href="library-shadings#pgf.bottom:color"
+                    >bottom color</a
+                  ></span
+                >=<span class="textcolor" style="color: #008000">gray!50</span
+                >]&numsp;<span class="textcolor" style="color: #800080"
+                  >(0,0)</span
+                >&numsp;<span class="textcolor" style="color: #000000"
+                  ><a href="tikz-paths#pgf.parabola">parabola</a></span
+                >
+                <span class="textcolor" style="color: #800080">(1.5,2.25)</span
+                >&numsp;<span class="textcolor" style="color: #000000">|-</span>
+                <span class="textcolor" style="color: #800080">(0,0)</span
+                >;<br />
+                &numsp;&numsp;<span class="textcolor" style="color: #0000b2"
+                  ><a href="tikz-actions#pgf.back/draw">\draw</a></span
+                >&numsp;<span class="textcolor" style="color: #800080"
+                  >(1.05cm,2pt)</span
+                >&numsp;<span class="textcolor" style="color: #000000"
+                  ><a href="tikz-coordinates#pgf.node">node</a></span
+                >[<span class="textcolor" style="color: #008000"
+                  ><a href="tikz-shapes#pgf.above">above</a></span
+                >]&numsp;{<span class="textcolor" style="color: #000000">$</span
+                ><span class="textcolor" style="color: #0000b2"
+                  >\displaystyle</span
+                ><span class="textcolor" style="color: #0000b2">\int</span
+                ><span class="textcolor" style="color: #000000">_0^</span>{<span
+                  class="textcolor"
+                  style="color: #000000"
+                  >3/2</span
+                >}&numsp;<span class="textcolor" style="color: #0000b2">\</span
+                ><span class="textcolor" style="color: #000000">!</span
+                ><span class="textcolor" style="color: #0000b2">\</span
+                ><span class="textcolor" style="color: #000000">!x^2</span
+                ><span class="textcolor" style="color: #0000b2">\mathrm</span
+                >{<span class="textcolor" style="color: #000000">d</span>}<span
+                  class="textcolor"
+                  style="color: #000000"
+                  >x$</span
+                >};<br />
+                <br />
+                &numsp;&numsp;<span class="textcolor" style="color: #0000b2"
+                  ><a href="tikz-actions#pgf.back/draw">\draw</a></span
+                >[<span class="textcolor" style="color: #008000"
+                  ><a href="tikz-paths#pgf.help:lines">help lines</a></span
+                >]&numsp;<span class="textcolor" style="color: #800080"
+                  >(0,0)</span
+                >&numsp;<span class="textcolor" style="color: #000000"
+                  ><a href="tikz-paths#pgf.grid">grid</a></span
+                >
+                <span class="textcolor" style="color: #800080">(3.9,3.9)</span
+                ><br />
+                &numsp;&numsp;&numsp;&numsp;&numsp;&numsp;&numsp;[<span
+                  class="textcolor"
+                  style="color: #008000"
+                  ><a href="tikz-paths#pgf.step">step</a></span
+                >=<span class="textcolor" style="color: #008000">0.25cm</span
+                >]&numsp;&numsp;&numsp;&numsp;&numsp;&numsp;<span
+                  class="textcolor"
+                  style="color: #800080"
+                  >(1,2)</span
+                >&numsp;<span class="textcolor" style="color: #000000"
+                  ><a href="tikz-paths#pgf.grid">grid</a></span
+                >
+                <span class="textcolor" style="color: #000000">+</span
+                ><span class="textcolor" style="color: #800080">(1,1)</span
+                >;<br />
+                <br />
+                &numsp;&numsp;<span class="textcolor" style="color: #0000b2"
+                  ><a href="tikz-actions#pgf.back/draw">\draw</a></span
+                >[<span class="textcolor" style="color: #008000"
+                  ><a href="tikz-graphs#pgf.-&gt;">-&gt;</a></span
+                >]&numsp;<span class="textcolor" style="color: #800080"
+                  >(-0.2,0)</span
+                >&numsp;<span class="textcolor" style="color: #000000"
+                  ><a href="tikz-paths#pgf.--">--</a></span
+                >
+                <span class="textcolor" style="color: #800080">(4,0)</span
+                >&numsp;<span class="textcolor" style="color: #000000"
+                  ><a href="tikz-coordinates#pgf.node">node</a></span
+                >[<span class="textcolor" style="color: #008000"
+                  ><a href="tikz-arrows#pgf.right">right</a></span
+                >]&numsp;{<span class="textcolor" style="color: #000000"
+                  >$x$</span
+                >};<br />
+                &numsp;&numsp;<span class="textcolor" style="color: #0000b2"
+                  ><a href="tikz-actions#pgf.back/draw">\draw</a></span
+                >[<span class="textcolor" style="color: #008000"
+                  ><a href="tikz-graphs#pgf.-&gt;">-&gt;</a></span
+                >]&numsp;<span class="textcolor" style="color: #800080"
+                  >(0,-0.2)</span
+                >&numsp;<span class="textcolor" style="color: #000000"
+                  ><a href="tikz-paths#pgf.--">--</a></span
+                >
+                <span class="textcolor" style="color: #800080">(0,4)</span
+                >&numsp;<span class="textcolor" style="color: #000000"
+                  ><a href="tikz-coordinates#pgf.node">node</a></span
+                >[<span class="textcolor" style="color: #008000"
+                  ><a href="tikz-shapes#pgf.above">above</a></span
+                >]&numsp;{<span class="textcolor" style="color: #000000"
+                  >$f</span
+                ><span class="textcolor" style="color: #800080">(x)</span
+                ><span class="textcolor" style="color: #000000">$</span>};<br />
+                <br />
+                &numsp;&numsp;<span class="textcolor" style="color: #0000b2"
+                  ><a href="pgffor#pgf.back/foreach">\foreach</a></span
+                >&numsp;<span class="textcolor" style="color: #0000b2">\x/</span
+                ><span class="textcolor" style="color: #0000b2">\xtext</span
+                >&numsp;<span class="textcolor" style="color: #000000"
+                  ><a href="library-edges#pgf.in">in</a></span
+                >
+                {<span class="textcolor" style="color: #000000">1/1</span
+                >,&numsp;<span class="textcolor" style="color: #000000">1</span
+                >.<span class="textcolor" style="color: #000000">5/1</span
+                ><span class="textcolor" style="color: #0000b2">\frac</span
+                >{<span class="textcolor" style="color: #000000">1</span>}{<span
+                  class="textcolor"
+                  style="color: #000000"
+                  >2</span
+                >},&numsp;<span class="textcolor" style="color: #000000"
+                  >2/2</span
+                >,&numsp;<span class="textcolor" style="color: #000000"
+                  >3/3</span
+                >}<br />
+                &numsp;&numsp;&numsp;&numsp;<span
+                  class="textcolor"
+                  style="color: #0000b2"
+                  ><a href="tikz-actions#pgf.back/draw">\draw</a></span
+                >[<span class="textcolor" style="color: #008000"
+                  ><a href="tikz-transformations#pgf.shift">shift</a></span
+                >=<span class="textcolor" style="color: #008000"
+                  >{<span class="textcolor" style="color: #800080">(\x,0)</span
+                  >}</span
+                >]&numsp;<span class="textcolor" style="color: #800080"
+                  >(0pt,2pt)</span
+                >&numsp;<span class="textcolor" style="color: #000000"
+                  ><a href="tikz-paths#pgf.--">--</a></span
+                >
+                <span class="textcolor" style="color: #800080">(0pt,-2pt)</span
+                >&numsp;<span class="textcolor" style="color: #000000"
+                  ><a href="tikz-coordinates#pgf.node">node</a></span
+                >[<span class="textcolor" style="color: #008000"
+                  ><a href="tikz-shapes#pgf.below">below</a></span
+                >]&numsp;{<span class="textcolor" style="color: #000000">$</span
+                ><span class="textcolor" style="color: #0000b2">\xtext</span
+                ><span class="textcolor" style="color: #000000">$</span>};<br />
+                <br />
+                &numsp;&numsp;<span class="textcolor" style="color: #0000b2"
+                  ><a href="pgffor#pgf.back/foreach">\foreach</a></span
+                >&numsp;<span class="textcolor" style="color: #0000b2">\y/</span
+                ><span class="textcolor" style="color: #0000b2">\ytext</span
+                >&numsp;<span class="textcolor" style="color: #000000"
+                  ><a href="library-edges#pgf.in">in</a></span
+                >
+                {<span class="textcolor" style="color: #000000">1/1</span
+                >,&numsp;<span class="textcolor" style="color: #000000"
+                  >2/2</span
+                >,&numsp;<span class="textcolor" style="color: #000000">2</span
+                >.<span class="textcolor" style="color: #000000">25/2</span
+                ><span class="textcolor" style="color: #0000b2">\frac</span
+                >{<span class="textcolor" style="color: #000000">1</span>}{<span
+                  class="textcolor"
+                  style="color: #000000"
+                  >4</span
+                >},&numsp;<span class="textcolor" style="color: #000000"
+                  >3/3</span
+                >}<br />
+                &numsp;&numsp;&numsp;&numsp;<span
+                  class="textcolor"
+                  style="color: #0000b2"
+                  ><a href="tikz-actions#pgf.back/draw">\draw</a></span
+                >[<span class="textcolor" style="color: #008000"
+                  ><a href="tikz-transformations#pgf.shift">shift</a></span
+                >=<span class="textcolor" style="color: #008000"
+                  >{<span class="textcolor" style="color: #800080">(0,\y)</span
+                  >}</span
+                >]&numsp;<span class="textcolor" style="color: #800080"
+                  >(2pt,0pt)</span
+                >&numsp;<span class="textcolor" style="color: #000000"
+                  ><a href="tikz-paths#pgf.--">--</a></span
+                >
+                <span class="textcolor" style="color: #800080">(-2pt,0pt)</span
+                >&numsp;<span class="textcolor" style="color: #000000"
+                  ><a href="tikz-coordinates#pgf.node">node</a></span
+                >[<span class="textcolor" style="color: #008000"
+                  ><a href="tikz-arrows#pgf.left">left</a></span
+                >]&numsp;{<span class="textcolor" style="color: #000000">$</span
+                ><span class="textcolor" style="color: #0000b2">\ytext</span
+                ><span class="textcolor" style="color: #000000">$</span>};<br />
+                <br />
+                &numsp;&numsp;<span class="textcolor" style="color: #0000b2"
+                  ><a href="tikz-actions#pgf.back/draw">\draw</a></span
+                >&numsp;<span class="textcolor" style="color: #800080"
+                  >(-.5,.25)</span
+                >&numsp;<span class="textcolor" style="color: #000000"
+                  ><a href="tikz-paths#pgf.parabola">parabola</a></span
+                >
+                <span class="textcolor" style="color: #000000"
+                  ><a href="tikz-paths#pgf.bend">bend</a></span
+                >
+                <span class="textcolor" style="color: #800080">(0,0)</span
+                >&numsp;<span class="textcolor" style="color: #800080"
+                  >(2,4)</span
+                >&numsp;<span class="textcolor" style="color: #000000"
+                  ><a href="tikz-coordinates#pgf.node">node</a></span
+                >[<span class="textcolor" style="color: #008000"
+                  ><a href="tikz-shapes#pgf.below:right">below right</a></span
+                >]&numsp;{<span class="textcolor" style="color: #000000"
+                  >$x^2$</span
+                >};<br />
+                <span class="textcolor" style="color: #000000">\end</span>{<span
+                  class="textcolor"
+                  style="color: #0000b2"
+                  ><a href="tikz-scopes#pgf.tikzpicture">tikzpicture</a></span
+                >}<br />
+              </code>
+            </div>
+          </figure>
+        </section>
+      </main>
+
+      <footer>
+        <div class_="footer-left">
+          <a href="https://github.com/pgf-tikz/pgf">Github</a> &middot;
+          <a href="/license">License</a> &middot;
+          <a href="https://ctan.org/pkg/pgf">CTAN</a> &middot;
+          <a href="https://pgf-tikz.github.io/pgf/pgfmanual.pdf">PDF version</a>
+          &middot;
+          <a href="https://github.com/DominikPeters/pgf-tikz-html-manual"
+            >About this HTML version</a
+          >
+        </div>
+        <div class_="footer-right">
+          <em>Manual last updated: 2022-04-23</em>
+        </div>
+      </footer>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/@docsearch/js@alpha"></script>
+    <script>
+      docsearch({
+        apiKey: "ae66ec3fc9df4b52b4d6f24fc8508fd3",
+        indexName: "tikz.dev",
+        appId: "Q70NNMA9GC",
+        container: "#search",
+      });
+    </script>
+  </body>
+</html>

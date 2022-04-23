@@ -1,0 +1,409 @@
+<!DOCTYPE html>
+<html lang="en-US">
+  <head>
+    <meta charset="utf-8" />
+    <meta content="LaTeX Lwarp package" name="generator" />
+    <meta content="width=device-width, initial-scale=1.0" name="viewport" />
+    <!--[if lt IE 9]>
+      <script src="http://html5shiv.googlecode.com/svn/trunk/html5.js"></script>
+    <![endif]-->
+    <title>Design of the System Layer - PGF/TikZ Manual</title>
+    <link href="style.css" rel="stylesheet" type="text/css" />
+
+    <script src="pgfmanual.js"></script>
+
+    <link href="https://unpkg.com/@docsearch/css@alpha" rel="stylesheet" />
+    <link href="/favicon-16x16.png" rel="icon" sizes="16x16" type="image/png" />
+    <link href="/favicon-32x32.png" rel="icon" sizes="32x32" type="image/png" />
+    <link
+      href="/apple-touch-icon.png"
+      rel="apple-touch-icon"
+      sizes="180x180"
+      type="image/png"
+    />
+    <link href="/site.webmanifest" rel="manifest" />
+  </head>
+  <body>
+    <a id="pgfmanual-autopage-8385"></a>
+
+    <div class="bodyandsidetoc grid-container">
+      <header>
+        <strong><a href="/">PGF/Ti<i>k</i>Z Manual</a></strong>
+        <div id="search"></div>
+      </header>
+      <div class="sidetoccontainer" id="local-toc-container">
+        <nav class="sidetoc">
+          <div class="sidetoctitle"><p>On this page</p></div>
+          <div class="sidetoccontents">
+            <p><a class="tocsubsection" href="#sec-118.1">Driver Files</a></p>
+            <p>
+              <a class="tocsubsection" href="#sec-118.2"
+                >Common Definition Files</a
+              >
+            </p>
+          </div>
+        </nav>
+      </div>
+      <div class="sidetoccontainer" id="chapter-toc-container">
+        <nav class="sidetoc">
+          <div class="sidetoctitle">
+            <p>
+              <span class="sidetocthetitle"
+                >The <span class="tikzname">TikZ</span> and PGF Packages<br />
+                Manual for version 3.1.9a</span
+              >
+            </p>
+
+            <p>Contents</p>
+          </div>
+
+          <div class="sidetoccontents">
+            <p></p>
+
+            <p>
+              <a class="linkintro" href="/">Introduction</a>
+            </p>
+
+            <p>
+              <a class="tocpart" href="tutorials-guidelines"
+                >Tutorials and Guidelines</a
+              >
+            </p>
+
+            <p>
+              <a class="tocpart" href="install"
+                >Installation and Configuration</a
+              >
+            </p>
+
+            <p>
+              <a class="tocpart" href="tikz">Ti<em>k</em>Z</a>
+            </p>
+
+            <p>
+              <a class="tocpart" href="gd">Graph Drawing</a>
+            </p>
+
+            <p>
+              <a class="tocpart" href="libraries">Libraries</a>
+            </p>
+
+            <p>
+              <a class="tocpart" href="dv">Data Visualization</a>
+            </p>
+
+            <p>
+              <a class="tocpart" href="utilities">Utilities</a>
+            </p>
+
+            <p>
+              <a class="tocpart" href="math"
+                >Mathematical and Object-Oriented Engines</a
+              >
+            </p>
+
+            <p>
+              <a class="tocpart" href="base">The Basic Layer</a>
+            </p>
+
+            <p class="current-part">
+              <a class="tocpart" href="pgfsys">The System Layer</a>
+            </p>
+
+            <p class="current current-part">
+              <a class="tocsection" href="pgfsys-overview"
+                >Design of the System Layer</a
+              >
+            </p>
+
+            <p class="current-part">
+              <a class="tocsection" href="pgfsys-commands"
+                >Commands of the System Layer</a
+              >
+            </p>
+
+            <p class="current-part">
+              <a class="tocsection" href="pgfsys-paths"
+                >The Soft Path Subsystem</a
+              >
+            </p>
+
+            <p class="current-part">
+              <a class="tocsection" href="pgfsys-protocol"
+                >The Protocol Subsystem</a
+              >
+            </p>
+
+            <p class="current-part">
+              <a class="tocsection" href="pgfsys-animations"
+                >Animation System Layer</a
+              >
+            </p>
+          </div>
+        </nav>
+      </div>
+
+      <main class="bodycontainer">
+        <section class="textbody">
+          <h1>
+            The <span class="tikzname">TikZ</span> and PGF Packages<br />
+            Manual for version 3.1.9a
+          </h1>
+          <h2 class="inserted">The System Layer</h2>
+
+          <!--MathJax customizations:-->
+
+          <p></p>
+          <h4 id="autosec-8386">
+            <span class="sectionnumber">118&emsp;</span>Design of the System
+            Layer
+          </h4>
+          <a id="pgfmanual-autopage-8386"></a>
+          <a id="pgfmanual-autofile-128"></a>
+          <h5 id="autosec-8387">
+            <a id="section-pgfsys"></a
+            ><span class="sectionnumber" id="sec-118.1">118.1&emsp;</span>Driver
+            Files<a class="anchor-link" href="#sec-118.1">&para;</a>
+          </h5>
+          <a id="pgfmanual-autopage-8387"></a>
+
+          <p>
+            The <span class="textsc">pgf</span> system layer mainly consists of
+            a large number of commands starting with
+            <span class="texttt">\pgfsys@</span>. These commands will be called
+            <em>system commands</em> in the following. The higher layers
+            &ldquo;interface&rdquo; with the system layer by calling these
+            commands. The higher layers should never use
+            <span class="texttt">\special</span> commands directly or even check
+            whether <span class="texttt">\pdfoutput</span> is defined. Instead,
+            all drawing requests should be &ldquo;channeled&rdquo; through the
+            system commands.
+          </p>
+
+          <p>The system layer is loaded and set up by the following package:</p>
+
+          <div class="manualentry">
+            <div class="entryheadline">
+              <p>
+                <a id="pgf.pgfsys"></a>
+                <span class="hl-def"
+                  ><kbd
+                    >\usepackage{<span class="textcolor" style="color: #bf0000"
+                      >pgfsys</span
+                    >} %
+                    <span class="latexlogofont"
+                      ><span class="latexlogo"
+                        >L<span class="latexlogosup">a</span>T<span
+                          class="latexlogosub"
+                          >e</span
+                        >X</span
+                      ></span
+                    ></kbd
+                  ></span
+                >
+                <a class="anchor-link" href="#pgf.pgfsys">&para;</a>
+              </p>
+            </div>
+
+            <div class="entryheadline">
+              <p>
+                <span class="hl-def"
+                  ><kbd
+                    >\input
+                    <span class="textcolor" style="color: #bf0000">pgfsys</span
+                    >.tex % plain
+                    <span class="latexlogofont"
+                      ><span class="latexlogo"
+                        >T<span class="latexlogosub">e</span>X</span
+                      ></span
+                    ></kbd
+                  ></span
+                >
+              </p>
+            </div>
+
+            <div class="entryheadline">
+              <p>
+                <span class="hl-def"
+                  ><kbd
+                    >\usemodule[<span class="textcolor" style="color: #bf0000"
+                      >pgfsys</span
+                    >] % Con<span class="latexlogofont"
+                      ><span class="latexlogo"
+                        >T<span class="latexlogosub">e</span>X</span
+                      ></span
+                    >t</kbd
+                  ></span
+                >
+              </p>
+            </div>
+            <p>
+              This file provides &ldquo;default implementations&rdquo; of all
+              system commands, but most simply produce a warning that they are
+              not implemented. The actual implementations of the system commands
+              for a particular driver like, say,
+              <span class="texttt">pdftex</span> reside in files called
+              <span class="texttt">pgfsys-xxxx.sty</span>, where
+              <span class="texttt">xxxx</span> is the driver name. These will be
+              called <em>driver files</em> in the following.
+            </p>
+            <p>
+              When <span class="texttt">pgfsys.sty</span> is loaded, it will try
+              to determine which driver is used by loading
+              <span class="texttt">pgf.cfg</span>. This file should set up the
+              macro <span class="texttt">\pgfsysdriver</span> appropriately. The
+              <span class="texttt">pgfsys.sty</span> will input the appropriate
+              <span class="texttt">pgfsys-</span
+              ><span class="angle">&langle;</span><i>drivername</i
+              ><span class="angle">&rangle;</span
+              ><span class="texttt">.sty</span>.
+            </p>
+          </div>
+
+          <div class="manualentry">
+            <div class="entryheadline">
+              <p>
+                <a id="pgf.back/pgfsysdriver"></a>
+                <span class="hl-def"
+                  ><span class="textcolor" style="color: #bf0000"
+                    ><kbd>\pgfsysdriver</kbd></span
+                  ></span
+                >
+                <a class="anchor-link" href="#pgf.back/pgfsysdriver">&para;</a>
+              </p>
+            </div>
+            <p>
+              This macro should expand to the name of the driver to be used by
+              <span class="texttt">pgfsys</span>. The default from
+              <span class="texttt">pgf.cfg</span> is
+              <span class="texttt">pgfsys-\Gin@driver</span>. This is very
+              likely to be correct if you are using
+              <span class="latexlogofont"
+                ><span class="latexlogo"
+                  >L<span class="latexlogosup">a</span>T<span
+                    class="latexlogosub"
+                    >e</span
+                  >X</span
+                ></span
+              >. For plain
+              <span class="latexlogofont"
+                ><span class="latexlogo"
+                  >T<span class="latexlogosub">e</span>X</span
+                ></span
+              >, the macro will be set to
+              <span class="texttt">pgfsys-pdftex.def</span> if
+              <span class="texttt">pdftex</span> is used and to
+              <span class="texttt">pgfsys-dvips.def</span> otherwise.
+            </p>
+          </div>
+
+          <div class="manualentry">
+            <div class="entryheadline">
+              <p>
+                <span class="hl-def"
+                  >File
+                  <kbd
+                    ><span class="textcolor" style="color: #bf0000"
+                      >pgf.cfg</span
+                    ></kbd
+                  ></span
+                >
+              </p>
+            </div>
+            <p>
+              This file should set up the command
+              <span class="texttt">\pgfsysdriver</span> correctly. If
+              <span class="texttt">\pgfsysdriver</span> is already set to some
+              value, the driver normally should not change it. Otherwise, it
+              should make a &ldquo;good guess&rdquo; at which driver will be
+              appropriate.
+            </p>
+          </div>
+
+          <p>
+            The currently supported backend drivers are discussed in
+            Section&nbsp;<a href="drivers#section-drivers">10.2</a>.
+          </p>
+          <h5 id="autosec-8388">
+            <span class="sectionnumber" id="sec-118.2">118.2&emsp;</span>Common
+            Definition Files<a class="anchor-link" href="#sec-118.2">&para;</a>
+          </h5>
+          <a id="pgfmanual-autopage-8388"></a>
+
+          <p>
+            Some drivers share many
+            <span class="texttt">\pgfsys@</span> commands. For the reason, files
+            defining these &ldquo;common&rdquo; commands are available. These
+            files are <em>not</em> usable alone.
+          </p>
+
+          <div class="manualentry">
+            <div class="entryheadline">
+              <p>
+                <span class="hl-def"
+                  >File
+                  <kbd
+                    ><span class="textcolor" style="color: #bf0000"
+                      >pgfsys-common-postscript</span
+                    ></kbd
+                  ></span
+                >
+              </p>
+            </div>
+            <p>
+              This file defines some
+              <span class="texttt">\pgfsys@</span> commands so that they produce
+              appropriate PostScript code.
+            </p>
+          </div>
+
+          <div class="manualentry">
+            <div class="entryheadline">
+              <p>
+                <span class="hl-def"
+                  >File
+                  <kbd
+                    ><span class="textcolor" style="color: #bf0000"
+                      >pgfsys-common-pdf</span
+                    ></kbd
+                  ></span
+                >
+              </p>
+            </div>
+            <p>
+              This file defines some
+              <span class="texttt">\pgfsys@</span> commands so that they produce
+              appropriate <span class="textsc">pdf</span> code.
+            </p>
+          </div>
+        </section>
+      </main>
+
+      <footer>
+        <div class_="footer-left">
+          <a href="https://github.com/pgf-tikz/pgf">Github</a> &middot;
+          <a href="/license">License</a> &middot;
+          <a href="https://ctan.org/pkg/pgf">CTAN</a> &middot;
+          <a href="https://pgf-tikz.github.io/pgf/pgfmanual.pdf">PDF version</a>
+          &middot;
+          <a href="https://github.com/DominikPeters/pgf-tikz-html-manual"
+            >About this HTML version</a
+          >
+        </div>
+        <div class_="footer-right">
+          <em>Manual last updated: 2022-04-23</em>
+        </div>
+      </footer>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/@docsearch/js@alpha"></script>
+    <script>
+      docsearch({
+        apiKey: "ae66ec3fc9df4b52b4d6f24fc8508fd3",
+        indexName: "tikz.dev",
+        appId: "Q70NNMA9GC",
+        container: "#search",
+      });
+    </script>
+  </body>
+</html>

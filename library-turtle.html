@@ -1,0 +1,930 @@
+<!DOCTYPE html>
+<html lang="en-US">
+  <head>
+    <meta charset="utf-8" />
+    <meta content="LaTeX Lwarp package" name="generator" />
+    <meta content="width=device-width, initial-scale=1.0" name="viewport" />
+    <!--[if lt IE 9]>
+      <script src="http://html5shiv.googlecode.com/svn/trunk/html5.js"></script>
+    <![endif]-->
+    <title>Turtle Graphics Library - PGF/TikZ Manual</title>
+    <link href="style.css" rel="stylesheet" type="text/css" />
+
+    <script src="pgfmanual.js"></script>
+
+    <link href="https://unpkg.com/@docsearch/css@alpha" rel="stylesheet" />
+    <link href="/favicon-16x16.png" rel="icon" sizes="16x16" type="image/png" />
+    <link href="/favicon-32x32.png" rel="icon" sizes="32x32" type="image/png" />
+    <link
+      href="/apple-touch-icon.png"
+      rel="apple-touch-icon"
+      sizes="180x180"
+      type="image/png"
+    />
+    <link href="/site.webmanifest" rel="manifest" />
+  </head>
+  <body>
+    <a id="pgfmanual-autopage-6587"></a>
+
+    <div class="bodyandsidetoc grid-container">
+      <header>
+        <strong><a href="/">PGF/Ti<i>k</i>Z Manual</a></strong>
+        <div id="search"></div>
+      </header>
+      <div class="sidetoccontainer" id="local-toc-container">
+        <nav class="sidetoc">
+          <div class="sidetoctitle"><p>On this page</p></div>
+          <div class="sidetoccontents"></div>
+        </nav>
+      </div>
+      <div class="sidetoccontainer" id="chapter-toc-container">
+        <nav class="sidetoc">
+          <div class="sidetoctitle">
+            <p>
+              <span class="sidetocthetitle"
+                >The <span class="tikzname">TikZ</span> and PGF Packages<br />
+                Manual for version 3.1.9a</span
+              >
+            </p>
+
+            <p>Contents</p>
+          </div>
+
+          <div class="sidetoccontents">
+            <p></p>
+
+            <p>
+              <a class="linkintro" href="/">Introduction</a>
+            </p>
+
+            <p>
+              <a class="tocpart" href="tutorials-guidelines"
+                >Tutorials and Guidelines</a
+              >
+            </p>
+
+            <p>
+              <a class="tocpart" href="install"
+                >Installation and Configuration</a
+              >
+            </p>
+
+            <p>
+              <a class="tocpart" href="tikz">Ti<em>k</em>Z</a>
+            </p>
+
+            <p>
+              <a class="tocpart" href="gd">Graph Drawing</a>
+            </p>
+
+            <p class="current-part">
+              <a class="tocpart" href="libraries">Libraries</a>
+            </p>
+
+            <p class="current-part">
+              <a class="tocsection" href="library-3d"
+                >Three Dimensional Drawing Library</a
+              >
+            </p>
+
+            <p class="current-part">
+              <a class="tocsection" href="library-angle">Angle Library</a>
+            </p>
+
+            <p class="current-part">
+              <a class="tocsection" href="library-arrows">Arrow Tip Library</a>
+            </p>
+
+            <p class="current-part">
+              <a class="tocsection" href="library-automata"
+                >Automata Drawing Library</a
+              >
+            </p>
+
+            <p class="current-part">
+              <a class="tocsection" href="library-babel">Babel Library</a>
+            </p>
+
+            <p class="current-part">
+              <a class="tocsection" href="library-backgrounds"
+                >Background Library</a
+              >
+            </p>
+
+            <p class="current-part">
+              <a class="tocsection" href="library-calc">Calc Library</a>
+            </p>
+
+            <p class="current-part">
+              <a class="tocsection" href="library-calender">Calendar Library</a>
+            </p>
+
+            <p class="current-part">
+              <a class="tocsection" href="library-chains">Chains</a>
+            </p>
+
+            <p class="current-part">
+              <a class="tocsection" href="library-circuits"
+                >Circuit Libraries</a
+              >
+            </p>
+
+            <p class="current-part">
+              <a class="tocsection" href="library-decorations"
+                >Decoration Library</a
+              >
+            </p>
+
+            <p class="current-part">
+              <a class="tocsection" href="library-er"
+                >Entity-Relationship Diagram Drawing Library</a
+              >
+            </p>
+
+            <p class="current-part">
+              <a class="tocsection" href="library-external"
+                >Externalization Library</a
+              >
+            </p>
+
+            <p class="current-part">
+              <a class="tocsection" href="library-fadings">Fading Library</a>
+            </p>
+
+            <p class="current-part">
+              <a class="tocsection" href="library-fit">Fitting Library</a>
+            </p>
+
+            <p class="current-part">
+              <a class="tocsection" href="library-fixedpoint"
+                >Fixed Point Arithmetic Library</a
+              >
+            </p>
+
+            <p class="current-part">
+              <a class="tocsection" href="library-fpu"
+                >Floating Point Unit Library</a
+              >
+            </p>
+
+            <p class="current-part">
+              <a class="tocsection" href="library-lsystems"
+                >Lindenmayer System Drawing Library</a
+              >
+            </p>
+
+            <p class="current-part">
+              <a class="tocsection" href="library-math">Math Library</a>
+            </p>
+
+            <p class="current-part">
+              <a class="tocsection" href="library-matrix">Matrix Library</a>
+            </p>
+
+            <p class="current-part">
+              <a class="tocsection" href="library-mindmaps"
+                >Mindmap Drawing Library</a
+              >
+            </p>
+
+            <p class="current-part">
+              <a class="tocsection" href="library-folding"
+                >Paper-Folding Diagrams Library</a
+              >
+            </p>
+
+            <p class="current-part">
+              <a class="tocsection" href="library-patterns">Pattern Library</a>
+            </p>
+
+            <p class="current-part">
+              <a class="tocsection" href="library-perspective"
+                >Three Point Perspective Drawing Library</a
+              >
+            </p>
+
+            <p class="current-part">
+              <a class="tocsection" href="library-petri"
+                >Petri-Net Drawing Library</a
+              >
+            </p>
+
+            <p class="current-part">
+              <a class="tocsection" href="library-plot-handlers"
+                >Plot Handler Library</a
+              >
+            </p>
+
+            <p class="current-part">
+              <a class="tocsection" href="library-plot-marks"
+                >Plot Mark Library</a
+              >
+            </p>
+
+            <p class="current-part">
+              <a class="tocsection" href="library-profiler">Profiler Library</a>
+            </p>
+
+            <p class="current-part">
+              <a class="tocsection" href="library-shadings">Shadings Library</a>
+            </p>
+
+            <p class="current-part">
+              <a class="tocsection" href="library-shadows">Shadows Library</a>
+            </p>
+
+            <p class="current-part">
+              <a class="tocsection" href="library-shapes">Shape Library</a>
+            </p>
+
+            <p class="current-part">
+              <a class="tocsection" href="library-spy"
+                >Spy Library: Magnifying Parts of Pictures</a
+              >
+            </p>
+
+            <p class="current-part">
+              <a class="tocsection" href="library-svg-path">SVG-Path Library</a>
+            </p>
+
+            <p class="current-part">
+              <a class="tocsection" href="library-edges">To Path Library</a>
+            </p>
+
+            <p class="current-part">
+              <a class="tocsection" href="library-through">Through Library</a>
+            </p>
+
+            <p class="current-part">
+              <a class="tocsection" href="library-trees">Tree Library</a>
+            </p>
+
+            <p class="current current-part">
+              <a class="tocsection" href="library-turtle"
+                >Turtle Graphics Library</a
+              >
+            </p>
+
+            <p class="current-part">
+              <a class="tocsection" href="library-views">Views Library</a>
+            </p>
+
+            <p>
+              <a class="tocpart" href="dv">Data Visualization</a>
+            </p>
+
+            <p>
+              <a class="tocpart" href="utilities">Utilities</a>
+            </p>
+
+            <p>
+              <a class="tocpart" href="math"
+                >Mathematical and Object-Oriented Engines</a
+              >
+            </p>
+
+            <p>
+              <a class="tocpart" href="base">The Basic Layer</a>
+            </p>
+
+            <p>
+              <a class="tocpart" href="pgfsys">The System Layer</a>
+            </p>
+          </div>
+        </nav>
+      </div>
+
+      <main class="bodycontainer">
+        <section class="textbody">
+          <h1>
+            The <span class="tikzname">TikZ</span> and PGF Packages<br />
+            Manual for version 3.1.9a
+          </h1>
+          <h2 class="inserted">Libraries</h2>
+
+          <!--MathJax customizations:-->
+
+          <p></p>
+          <h4 id="autosec-6588">
+            <a id="section-library-tutrle"></a
+            ><span class="sectionnumber">76&emsp;</span>Turtle Graphics Library
+          </h4>
+          <a id="pgfmanual-autopage-6588"></a>
+          <a id="pgfmanual-autofile-81"></a>
+
+          <div class="manualentry">
+            <div class="entryheadline">
+              <p>
+                <a id="pgf.turtle"></a>
+                <span class="hl-def"
+                  ><b><span class="tikzname">TikZ</span> Library</b>
+                  <kbd
+                    ><span class="textcolor" style="color: #bf0000"
+                      >turtle</span
+                    ></kbd
+                  ></span
+                >
+                <a class="anchor-link" href="#pgf.turtle">&para;</a>
+              </p>
+            </div>
+            <p>
+              <kbd
+                >\usetikzlibrary{<span class="textcolor" style="color: #bf0000"
+                  >turtle</span
+                >} %
+                <span class="latexlogofont"
+                  ><span class="latexlogo"
+                    >L<span class="latexlogosup">a</span>T<span
+                      class="latexlogosub"
+                      >e</span
+                    >X</span
+                  ></span
+                >
+                and plain
+                <span class="latexlogofont"
+                  ><span class="latexlogo"
+                    >T<span class="latexlogosub">e</span>X</span
+                  ></span
+                ></kbd
+              ><br />
+              <kbd
+                >\usetikzlibrary[<span class="textcolor" style="color: #bf0000"
+                  >turtle</span
+                >] % Con<span class="latexlogofont"
+                  ><span class="latexlogo"
+                    >T<span class="latexlogosub">e</span>X</span
+                  ></span
+                >t</kbd
+              ><br />
+              <br />
+              This little library defines some keys to create simple turtle
+              graphics in the tradition of the Logo programming language. These
+              commands are mostly for fun, but they can also be used for more
+              &ldquo;serious&rdquo; business.
+            </p>
+
+            <figure class="example">
+              <div class="example-image">
+                <p>
+                  <span class="lateximagesource" id="lateximage-pgfmanual-2710"
+                    ><!--
+   -->
+                    <img
+                      alt="(-tikz-&nbsp;diagram)"
+                      class="lateximage"
+                      height="18.075"
+                      loading="lazy"
+                      src="pgfmanual-images/image-2710.png"
+                      style
+                      width="10.803"
+                  /></span>
+                </p>
+              </div>
+
+              <div class="example-code">
+                <button class="clipboardButton" type="button">copy</button>
+                <code>
+                  <span class="c- preamble">\usetikzlibrary {turtle} </span
+                  ><br />
+                  <span class="textcolor" style="color: #0000b2"
+                    ><a href="tikz-scopes#pgf.back/tikz">\tikz</a></span
+                  >[<span class="textcolor" style="color: #008000"
+                    ><a href="library-turtle#pgf./tikz/turtle/distance"
+                      >turtle/distance</a
+                    ></span
+                  >=<span class="textcolor" style="color: #008000">2mm</span
+                  >]<br />
+                  &numsp;&numsp;<span class="textcolor" style="color: #0000b2"
+                    ><a href="tikz-actions#pgf.back/draw">\draw</a></span
+                  >&numsp;[<span class="textcolor" style="color: #008000"
+                    ><a href="library-turtle#pgf.turtle">turtle</a></span
+                  >=<span class="textcolor" style="color: #008000"
+                    >{<a href="library-turtle#pgf.home">home</a>,<a
+                      href="library-turtle#pgf.forward"
+                      >forward</a
+                    >,<a href="tikz-arrows#pgf.right">right</a>,<a
+                      href="library-turtle#pgf.forward"
+                      >forward</a
+                    >,<a href="tikz-arrows#pgf.left">left</a>,<a
+                      href="library-turtle#pgf.forward"
+                      >forward</a
+                    >,<a href="tikz-arrows#pgf.left">left</a>,<a
+                      href="library-turtle#pgf.forward"
+                      >forward</a
+                    >}</span
+                  >];<br />
+                </code>
+              </div>
+            </figure>
+          </div>
+
+          <p>
+            Even though the <span class="texttt">turtle</span> keys looks like
+            an option, it uses the
+            <span class="texttt">insert path</span> option internally to produce
+            a path.
+          </p>
+
+          <p>
+            The basic drawing model behind the turtle graphics is very simple:
+            There is a (virtual) <em>turtle</em> that crawls around the page,
+            thereby extending the path. The turtle always heads in a certain
+            direction. When you move the turtle forward, you extend the path in
+            that direction; turning the turtle just changes the direction, it
+            does not cause anything to be drawn.
+          </p>
+
+          <p>
+            The turtle always moves relative to the last current point of the
+            path and you can mix normal path commands with turtle commands.
+            However, the direction of the turtle is managed independently of
+            other path commands.
+          </p>
+
+          <div class="manualentry">
+            <div class="entryheadline">
+              <p>
+                <a id="pgf./tikz/turtle"></a>
+                <span class="hl-def"
+                  ><kbd
+                    ><span class="keyname"
+                      ><span class="textcolor" style="color: #bf0000"
+                        >/tikz/turtle</span
+                      ></span
+                    >=</kbd
+                  ><span class="angle">&langle;</span><i>keys</i
+                  ><span class="angle">&rangle;</span></span
+                ><span class="hl-default">(no default)</span>
+                <a class="anchor-link" href="#pgf./tikz/turtle">&para;</a>
+              </p>
+            </div>
+            <p>
+              This key executes the <span class="angle">&langle;</span
+              ><i>keys</i><span class="angle">&rangle;</span> with the current
+              key path set to <span class="texttt">/tikz/turtle</span>.
+            </p>
+
+            <figure class="example">
+              <div class="example-image">
+                <p>
+                  <span class="lateximagesource" id="lateximage-pgfmanual-2711"
+                    ><!--
+   -->
+                    <img
+                      alt="(-tikz-&nbsp;diagram)"
+                      class="lateximage"
+                      height="18.075"
+                      loading="lazy"
+                      src="pgfmanual-images/image-2711.png"
+                      style
+                      width="10.803"
+                  /></span>
+                </p>
+              </div>
+
+              <div class="example-code">
+                <button class="clipboardButton" type="button">copy</button>
+                <code>
+                  <span class="c- preamble">\usetikzlibrary {turtle} </span
+                  ><br />
+                  <span class="textcolor" style="color: #0000b2"
+                    ><a href="tikz-scopes#pgf.back/tikz">\tikz</a></span
+                  >[<span class="textcolor" style="color: #008000"
+                    ><a href="library-turtle#pgf./tikz/turtle/distance"
+                      >turtle/distance</a
+                    ></span
+                  >=<span class="textcolor" style="color: #008000">2mm</span
+                  >]<br />
+                  &numsp;&numsp;<span class="textcolor" style="color: #0000b2"
+                    ><a href="tikz-actions#pgf.back/draw">\draw</a></span
+                  >&numsp;[<span class="textcolor" style="color: #008000"
+                    ><a href="library-turtle#pgf.turtle">turtle</a></span
+                  >=<span class="textcolor" style="color: #008000"
+                    >{<a href="library-turtle#pgf.home">home</a>,<a
+                      href="library-turtle#pgf.fd"
+                      >fd</a
+                    >,<a href="library-turtle#pgf.rt">rt</a>,<a
+                      href="library-turtle#pgf.fd"
+                      >fd</a
+                    >,<a href="library-turtle#pgf.lt">lt</a>,<a
+                      href="library-turtle#pgf.fd"
+                      >fd</a
+                    >,<a href="library-turtle#pgf.lt">lt</a>,<a
+                      href="library-turtle#pgf.fd"
+                      >fd</a
+                    >}</span
+                  >];<br />
+                </code>
+              </div>
+            </figure>
+          </div>
+
+          <div class="manualentry">
+            <div class="entryheadline">
+              <p>
+                <a id="pgf./tikz/turtle/home"></a><a id="pgf.home"></a>
+                <span class="hl-def"
+                  ><kbd
+                    ><span class="keyname"
+                      ><span class="textcolor" style="color: #bf0000"
+                        >/tikz/turtle/home</span
+                      ></span
+                    ></kbd
+                  ></span
+                ><span class="hl-default">(no value)</span>
+                <a class="anchor-link" href="#pgf./tikz/turtle/home">&para;</a>
+              </p>
+            </div>
+            <p>Places the turtle at the origin and lets it head upward.</p>
+          </div>
+
+          <div class="manualentry">
+            <div class="entryheadline">
+              <p>
+                <a id="pgf./tikz/turtle/forward"></a><a id="pgf.forward"></a>
+                <span class="hl-def"
+                  ><kbd
+                    ><span class="keyname"
+                      ><span class="textcolor" style="color: #bf0000"
+                        >/tikz/turtle/forward</span
+                      ></span
+                    ><span class="textcolor" style="color: #008000"
+                      >=</span
+                    ></kbd
+                  ><span class="textcolor" style="color: #008000"
+                    ><span class="angle">&langle;</span><i>distance</i
+                    ><span class="angle">&rangle;</span>
+                  </span></span
+                ><span class="hl-default">(default <kbd>see text</kbd>)</span>
+                <a class="anchor-link" href="#pgf./tikz/turtle/forward"
+                  >&para;</a
+                >
+              </p>
+            </div>
+            <p>
+              Makes the turtle move forward by the given
+              <span class="angle">&langle;</span><i>distance</i
+              ><span class="angle">&rangle;</span>. If no
+              <span class="angle">&langle;</span><i>distance</i
+              ><span class="angle">&rangle;</span> is specified, the current
+              value of the following key is used:
+            </p>
+
+            <div class="manualentry">
+              <div class="entryheadline">
+                <p>
+                  <a id="pgf./tikz/turtle/distance"></a>
+                  <span class="hl-def"
+                    ><kbd
+                      ><span class="keyname"
+                        ><span class="textcolor" style="color: #bf0000"
+                          >/tikz/turtle/distance</span
+                        ></span
+                      >=</kbd
+                    ><span class="angle">&langle;</span><i>distance</i
+                    ><span class="angle">&rangle;</span> </span
+                  ><span class="hl-default"
+                    >(no default, initially <kbd>1cm</kbd>)</span
+                  >
+                  <a class="anchor-link" href="#pgf./tikz/turtle/distance"
+                    >&para;</a
+                  >
+                </p>
+              </div>
+              <p>The default distance by which the turtle advances.</p>
+            </div>
+            <p>
+              &ldquo;Moving forward the turtle&rdquo; actually means that,
+              relative to the current last point on the path, a point at the
+              given <span class="angle">&langle;</span><i>distance</i
+              ><span class="angle">&rangle;</span> in the direction the turtle
+              is currently heading is computed. Then, the operation
+              <span class="texttt">to[turtle/how]</span> is used to extend the
+              path to this point.
+            </p>
+
+            <div class="manualentry">
+              <div class="entryheadline">
+                <p>
+                  <a id="pgf./tikz/turtle/how"></a><a id="pgf.how"></a>
+                  <span class="hl-def"
+                    ><kbd
+                      ><span class="keyname"
+                        ><span class="textcolor" style="color: #bf0000"
+                          >/tikz/turtle/how</span
+                        ></span
+                      ></kbd
+                    ></span
+                  ><span class="hl-default"
+                    >(style, initially <kbd>empty</kbd>)</span
+                  >
+                  <a class="anchor-link" href="#pgf./tikz/turtle/how">&para;</a>
+                </p>
+              </div>
+              <p>
+                This style can set up the
+                <span class="texttt">to path</span> used by turtles. By setting
+                this style you can change the to-path:
+              </p>
+
+              <figure class="example">
+                <div class="example-image">
+                  <p>
+                    <span
+                      class="lateximagesource"
+                      id="lateximage-pgfmanual-2712"
+                      ><!--
+   -->
+                      <img
+                        alt="(-tikz-&nbsp;diagram)"
+                        class="lateximage"
+                        height="46.419"
+                        loading="lazy"
+                        src="pgfmanual-images/image-2712.png"
+                        style
+                        width="46.419"
+                    /></span>
+                  </p>
+                </div>
+
+                <div class="example-code">
+                  <button class="clipboardButton" type="button">copy</button>
+                  <code>
+                    <span class="c- preamble">\usetikzlibrary {turtle} </span
+                    ><br />
+                    <span class="textcolor" style="color: #0000b2"
+                      ><a href="tikz-scopes#pgf.back/tikz">\tikz</a></span
+                    >&numsp;<span class="textcolor" style="color: #0000b2"
+                      ><a href="tikz-actions#pgf.back/draw">\draw</a></span
+                    >&numsp;[<span class="textcolor" style="color: #008000"
+                      ><a href="library-turtle#pgf.turtle">turtle</a></span
+                    >=<span class="textcolor" style="color: #008000"
+                      >{how/.style={<a href="tikz-paths#pgf.bend">bend</a>
+                      <a href="tikz-arrows#pgf.left">left</a>},<a
+                        href="library-turtle#pgf.home"
+                        >home</a
+                      >,<a href="library-turtle#pgf.forward">forward</a>,<a
+                        href="tikz-arrows#pgf.right"
+                        >right</a
+                      >,<a href="library-turtle#pgf.forward">forward</a>}</span
+                    >];<br />
+                  </code>
+                </div>
+              </figure>
+            </div>
+          </div>
+
+          <div class="manualentry">
+            <div class="entryheadline">
+              <p>
+                <a id="pgf./tikz/turtle/fd"></a><a id="pgf.fd"></a>
+                <span class="hl-def"
+                  ><kbd
+                    ><span class="keyname"
+                      ><span class="textcolor" style="color: #bf0000"
+                        >/tikz/turtle/fd</span
+                      ></span
+                    ></kbd
+                  ></span
+                ><span class="hl-default">(no value)</span>
+                <a class="anchor-link" href="#pgf./tikz/turtle/fd">&para;</a>
+              </p>
+            </div>
+            <p>
+              An abbreviation for the <span class="texttt">forward</span> key.
+            </p>
+          </div>
+
+          <div class="manualentry">
+            <div class="entryheadline">
+              <p>
+                <a id="pgf./tikz/turtle/back"></a><a id="pgf.back"></a>
+                <span class="hl-def"
+                  ><kbd
+                    ><span class="keyname"
+                      ><span class="textcolor" style="color: #bf0000"
+                        >/tikz/turtle/back</span
+                      ></span
+                    ><span class="textcolor" style="color: #008000"
+                      >=</span
+                    ></kbd
+                  ><span class="textcolor" style="color: #008000"
+                    ><span class="angle">&langle;</span><i>distance</i
+                    ><span class="angle">&rangle;</span>
+                  </span></span
+                ><span class="hl-default">(default <kbd>see text</kbd>)</span>
+                <a class="anchor-link" href="#pgf./tikz/turtle/back">&para;</a>
+              </p>
+            </div>
+            <p>
+              This has the same effect as a
+              <span class="texttt">turtle/forward</span> for the negated
+              <span class="angle">&langle;</span><i>distance</i
+              ><span class="angle">&rangle;</span> value.
+            </p>
+          </div>
+
+          <div class="manualentry">
+            <div class="entryheadline">
+              <p>
+                <a id="pgf./tikz/turtle/bk"></a><a id="pgf.bk"></a>
+                <span class="hl-def"
+                  ><kbd
+                    ><span class="keyname"
+                      ><span class="textcolor" style="color: #bf0000"
+                        >/tikz/turtle/bk</span
+                      ></span
+                    ></kbd
+                  ></span
+                ><span class="hl-default">(no value)</span>
+                <a class="anchor-link" href="#pgf./tikz/turtle/bk">&para;</a>
+              </p>
+            </div>
+            <p>An abbreviation for the <span class="texttt">back</span> key.</p>
+          </div>
+
+          <div class="manualentry">
+            <div class="entryheadline">
+              <p>
+                <a id="pgf./tikz/turtle/left"></a>
+                <span class="hl-def"
+                  ><kbd
+                    ><span class="keyname"
+                      ><span class="textcolor" style="color: #bf0000"
+                        >/tikz/turtle/left</span
+                      ></span
+                    ><span class="textcolor" style="color: #008000"
+                      >=</span
+                    ></kbd
+                  ><span class="textcolor" style="color: #008000"
+                    ><span class="angle">&langle;</span><i>angle</i
+                    ><span class="angle">&rangle;</span>
+                  </span></span
+                ><span class="hl-default">(default <kbd>90</kbd>)</span>
+                <a class="anchor-link" href="#pgf./tikz/turtle/left">&para;</a>
+              </p>
+            </div>
+            <p>Turns the turtle left by the given angle.</p>
+          </div>
+
+          <div class="manualentry">
+            <div class="entryheadline">
+              <p>
+                <a id="pgf./tikz/turtle/lt"></a><a id="pgf.lt"></a>
+                <span class="hl-def"
+                  ><kbd
+                    ><span class="keyname"
+                      ><span class="textcolor" style="color: #bf0000"
+                        >/tikz/turtle/lt</span
+                      ></span
+                    ></kbd
+                  ></span
+                ><span class="hl-default">(no value)</span>
+                <a class="anchor-link" href="#pgf./tikz/turtle/lt">&para;</a>
+              </p>
+            </div>
+            <p>An abbreviation for the <span class="texttt">left</span> key.</p>
+          </div>
+
+          <div class="manualentry">
+            <div class="entryheadline">
+              <p>
+                <a id="pgf./tikz/turtle/right"></a>
+                <span class="hl-def"
+                  ><kbd
+                    ><span class="keyname"
+                      ><span class="textcolor" style="color: #bf0000"
+                        >/tikz/turtle/right</span
+                      ></span
+                    ><span class="textcolor" style="color: #008000"
+                      >=</span
+                    ></kbd
+                  ><span class="textcolor" style="color: #008000"
+                    ><span class="angle">&langle;</span><i>angle</i
+                    ><span class="angle">&rangle;</span>
+                  </span></span
+                ><span class="hl-default">(default <kbd>90</kbd>)</span>
+                <a class="anchor-link" href="#pgf./tikz/turtle/right">&para;</a>
+              </p>
+            </div>
+            <p>Turns the turtle right by the given angle.</p>
+          </div>
+
+          <div class="manualentry">
+            <div class="entryheadline">
+              <p>
+                <a id="pgf./tikz/turtle/rt"></a><a id="pgf.rt"></a>
+                <span class="hl-def"
+                  ><kbd
+                    ><span class="keyname"
+                      ><span class="textcolor" style="color: #bf0000"
+                        >/tikz/turtle/rt</span
+                      ></span
+                    ></kbd
+                  ></span
+                ><span class="hl-default">(no value)</span>
+                <a class="anchor-link" href="#pgf./tikz/turtle/rt">&para;</a>
+              </p>
+            </div>
+            <p>
+              An abbreviation for the <span class="texttt">right</span> key.
+            </p>
+          </div>
+
+          <p>
+            Turtle graphics are especially nice in conjunction with the
+            <span class="texttt">\foreach</span> statement:
+          </p>
+
+          <figure class="example">
+            <div class="example-image">
+              <p>
+                <span class="lateximagesource" id="lateximage-pgfmanual-2713"
+                  ><!--
+-->
+                  <img
+                    alt="(-tikz-&nbsp;diagram)"
+                    class="lateximage"
+                    height="42.435"
+                    loading="lazy"
+                    src="pgfmanual-images/image-2713.png"
+                    style
+                    width="41.739"
+                /></span>
+              </p>
+            </div>
+
+            <div class="example-code">
+              <button class="clipboardButton" type="button">copy</button>
+
+              <code>
+                <span class="c- preamble">\usetikzlibrary {turtle} </span><br />
+                <span class="textcolor" style="color: #0000b2"
+                  ><a href="tikz-scopes#pgf.back/tikz">\tikz</a></span
+                >&numsp;<span class="textcolor" style="color: #0000b2"
+                  ><a href="tikz-actions#pgf.back/filldraw">\filldraw</a></span
+                >&numsp;[<span class="textcolor" style="color: #008000"
+                  ><a href="tikz-actions#pgf.thick">thick</a></span
+                >,<span class="textcolor" style="color: #008000">blue</span
+                >,<span class="textcolor" style="color: #008000"
+                  ><a href="tikz-actions#pgf.fill">fill</a></span
+                >=<span class="textcolor" style="color: #008000">blue!20</span
+                >]<br />
+                &numsp;&numsp;[<span class="textcolor" style="color: #008000"
+                  ><a href="library-turtle#pgf.turtle">turtle</a></span
+                >=<span class="textcolor" style="color: #008000"
+                  ><a href="library-turtle#pgf.home">home</a></span
+                >]<br />
+                &numsp;&numsp;<span class="textcolor" style="color: #0000b2"
+                  ><a href="pgffor#pgf.back/foreach">\foreach</a></span
+                >&numsp;<span class="textcolor" style="color: #0000b2">\i</span
+                >&numsp;<span class="textcolor" style="color: #000000"
+                  ><a href="library-edges#pgf.in">in</a></span
+                >
+                {<span class="textcolor" style="color: #000000">1</span
+                >,...,<span class="textcolor" style="color: #000000">5</span
+                >}<br />
+                &numsp;&numsp;{<br />
+                &numsp;&numsp;&numsp;&numsp;[<span
+                  class="textcolor"
+                  style="color: #008000"
+                  ><a href="library-turtle#pgf.turtle">turtle</a></span
+                >=<span class="textcolor" style="color: #008000"
+                  >{<a href="library-turtle#pgf.forward">forward</a
+                  >,right=144}</span
+                >]<br />
+                &numsp;&numsp;};<br />
+              </code>
+            </div>
+          </figure>
+        </section>
+      </main>
+
+      <footer>
+        <div class_="footer-left">
+          <a href="https://github.com/pgf-tikz/pgf">Github</a> &middot;
+          <a href="/license">License</a> &middot;
+          <a href="https://ctan.org/pkg/pgf">CTAN</a> &middot;
+          <a href="https://pgf-tikz.github.io/pgf/pgfmanual.pdf">PDF version</a>
+          &middot;
+          <a href="https://github.com/DominikPeters/pgf-tikz-html-manual"
+            >About this HTML version</a
+          >
+        </div>
+        <div class_="footer-right">
+          <em>Manual last updated: 2022-04-23</em>
+        </div>
+      </footer>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/@docsearch/js@alpha"></script>
+    <script>
+      docsearch({
+        apiKey: "ae66ec3fc9df4b52b4d6f24fc8508fd3",
+        indexName: "tikz.dev",
+        appId: "Q70NNMA9GC",
+        container: "#search",
+      });
+    </script>
+  </body>
+</html>

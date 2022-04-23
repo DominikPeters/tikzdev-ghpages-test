@@ -1,0 +1,449 @@
+<!DOCTYPE html>
+<html lang="en-US">
+  <head>
+    <meta charset="utf-8" />
+    <meta content="LaTeX Lwarp package" name="generator" />
+    <meta content="width=device-width, initial-scale=1.0" name="viewport" />
+    <!--[if lt IE 9]>
+      <script src="http://html5shiv.googlecode.com/svn/trunk/html5.js"></script>
+    <![endif]-->
+    <title>The Protocol Subsystem - PGF/TikZ Manual</title>
+    <link href="style.css" rel="stylesheet" type="text/css" />
+
+    <script src="pgfmanual.js"></script>
+
+    <link href="https://unpkg.com/@docsearch/css@alpha" rel="stylesheet" />
+    <link href="/favicon-16x16.png" rel="icon" sizes="16x16" type="image/png" />
+    <link href="/favicon-32x32.png" rel="icon" sizes="32x32" type="image/png" />
+    <link
+      href="/apple-touch-icon.png"
+      rel="apple-touch-icon"
+      sizes="180x180"
+      type="image/png"
+    />
+    <link href="/site.webmanifest" rel="manifest" />
+  </head>
+  <body>
+    <a id="pgfmanual-autopage-8419"></a>
+
+    <div class="bodyandsidetoc grid-container">
+      <header>
+        <strong><a href="/">PGF/Ti<i>k</i>Z Manual</a></strong>
+        <div id="search"></div>
+      </header>
+      <div class="sidetoccontainer" id="local-toc-container">
+        <nav class="sidetoc">
+          <div class="sidetoctitle"><p>On this page</p></div>
+          <div class="sidetoccontents"></div>
+        </nav>
+      </div>
+      <div class="sidetoccontainer" id="chapter-toc-container">
+        <nav class="sidetoc">
+          <div class="sidetoctitle">
+            <p>
+              <span class="sidetocthetitle"
+                >The <span class="tikzname">TikZ</span> and PGF Packages<br />
+                Manual for version 3.1.9a</span
+              >
+            </p>
+
+            <p>Contents</p>
+          </div>
+
+          <div class="sidetoccontents">
+            <p></p>
+
+            <p>
+              <a class="linkintro" href="/">Introduction</a>
+            </p>
+
+            <p>
+              <a class="tocpart" href="tutorials-guidelines"
+                >Tutorials and Guidelines</a
+              >
+            </p>
+
+            <p>
+              <a class="tocpart" href="install"
+                >Installation and Configuration</a
+              >
+            </p>
+
+            <p>
+              <a class="tocpart" href="tikz">Ti<em>k</em>Z</a>
+            </p>
+
+            <p>
+              <a class="tocpart" href="gd">Graph Drawing</a>
+            </p>
+
+            <p>
+              <a class="tocpart" href="libraries">Libraries</a>
+            </p>
+
+            <p>
+              <a class="tocpart" href="dv">Data Visualization</a>
+            </p>
+
+            <p>
+              <a class="tocpart" href="utilities">Utilities</a>
+            </p>
+
+            <p>
+              <a class="tocpart" href="math"
+                >Mathematical and Object-Oriented Engines</a
+              >
+            </p>
+
+            <p>
+              <a class="tocpart" href="base">The Basic Layer</a>
+            </p>
+
+            <p class="current-part">
+              <a class="tocpart" href="pgfsys">The System Layer</a>
+            </p>
+
+            <p class="current-part">
+              <a class="tocsection" href="pgfsys-overview"
+                >Design of the System Layer</a
+              >
+            </p>
+
+            <p class="current-part">
+              <a class="tocsection" href="pgfsys-commands"
+                >Commands of the System Layer</a
+              >
+            </p>
+
+            <p class="current-part">
+              <a class="tocsection" href="pgfsys-paths"
+                >The Soft Path Subsystem</a
+              >
+            </p>
+
+            <p class="current current-part">
+              <a class="tocsection" href="pgfsys-protocol"
+                >The Protocol Subsystem</a
+              >
+            </p>
+
+            <p class="current-part">
+              <a class="tocsection" href="pgfsys-animations"
+                >Animation System Layer</a
+              >
+            </p>
+          </div>
+        </nav>
+      </div>
+
+      <main class="bodycontainer">
+        <section class="textbody">
+          <h1>
+            The <span class="tikzname">TikZ</span> and PGF Packages<br />
+            Manual for version 3.1.9a
+          </h1>
+          <h2 class="inserted">The System Layer</h2>
+
+          <!--MathJax customizations:-->
+
+          <p></p>
+          <h4 id="autosec-8420">
+            <a id="section-protocols"></a
+            ><span class="sectionnumber">121&emsp;</span>The Protocol Subsystem
+          </h4>
+          <a id="pgfmanual-autopage-8420"></a>
+          <a id="pgfmanual-autofile-131"></a>
+
+          <p>
+            This section describes commands for <em>protocolling</em> literal
+            text created by <span class="textsc">pgf</span>. The idea is that
+            some literal text, like the string of commands used to draw an arrow
+            head, will be used over and over again in a picture. It is then much
+            more efficient to compute the necessary literal text just once and
+            to quickly insert it &ldquo;in a single sweep&rdquo;.
+          </p>
+
+          <p>
+            When protocolling is &ldquo;switched on&rdquo;, there is a
+            &ldquo;current protocol&rdquo; to which literal text gets appended.
+            Once all commands that needed to be protocolled have been issued,
+            the protocol can be obtained and stored using
+            <span class="texttt">\pgfsysprotocol@getcurrentprotocol</span>. At
+            any point, the current protocol can be changed using a corresponding
+            setting command. Finally,
+            <span class="texttt">\pgfsysprotocol@invokecurrentprotocol</span> is
+            used to insert the protocolled commands into the
+            <span class="texttt">.pdf</span> or
+            <span class="texttt">.dvi</span> file.
+          </p>
+
+          <p>
+            Only those <span class="texttt">\pgfsys@</span> commands can be
+            protocolled that use the command
+            <span class="texttt">\pgfsysprotocol@literal</span> internally. For
+            example, the definition of
+            <span class="texttt">\pgfsys@moveto</span> in
+            <span class="texttt">pgfsys-common-pdf.def</span> is
+          </p>
+
+          <figure class="example">
+            <div class="example-code">
+              <button class="clipboardButton" type="button">copy</button>
+
+              <code>
+                <br />
+                <span class="textcolor" style="color: #0000b2">\def</span
+                ><span class="textcolor" style="color: #0000b2"
+                  ><a href="pgfsys-commands#pgf.back/pgfsys@moveto"
+                    >\pgfsys@moveto</a
+                  ></span
+                ><span class="textcolor" style="color: #000000">#1#2</span
+                >{<span class="textcolor" style="color: #0000b2"
+                  ><a href="pgfsys-protocol#pgf.back/pgfsysprotocol@literal"
+                    >\pgfsysprotocol@literal</a
+                  ></span
+                >{<span class="textcolor" style="color: #000000">#1</span>
+                <span class="textcolor" style="color: #000000">#2</span>
+                <span class="textcolor" style="color: #000000"
+                  ><a href="tikz-graphs#pgf.m">m</a></span
+                >}}<br />
+              </code>
+            </div>
+          </figure>
+
+          <p>
+            All &ldquo;normal&rdquo; system-level commands can be protocolled.
+            However, commands for creating or invoking shadings, images, or
+            whole pictures require special
+            <span class="texttt">\special</span>&rsquo;s and cannot be
+            protocolled.
+          </p>
+
+          <div class="manualentry">
+            <div class="entryheadline">
+              <p>
+                <a id="pgf.back/pgfsysprotocol@literalbuffered"></a>
+                <span class="hl-def"
+                  ><span class="textcolor" style="color: #bf0000"
+                    ><kbd>\pgfsysprotocol@literalbuffered</kbd></span
+                  >{<span class="angle">&langle;</span><i>literal text</i
+                  ><span class="angle">&rangle;</span>}</span
+                >
+                <a
+                  class="anchor-link"
+                  href="#pgf.back/pgfsysprotocol@literalbuffered"
+                  >&para;</a
+                >
+              </p>
+            </div>
+            <p>
+              Adds the <span class="angle">&langle;</span><i>literal text</i
+              ><span class="angle">&rangle;</span> to the current protocol,
+              after it has been &ldquo;<span class="texttt">\edef</span
+              >ed&rdquo;. This command will always be protocolled.
+            </p>
+          </div>
+
+          <div class="manualentry">
+            <div class="entryheadline">
+              <p>
+                <a id="pgf.back/pgfsysprotocol@literal"></a>
+                <span class="hl-def"
+                  ><span class="textcolor" style="color: #bf0000"
+                    ><kbd>\pgfsysprotocol@literal</kbd></span
+                  >{<span class="angle">&langle;</span><i>literal text</i
+                  ><span class="angle">&rangle;</span>}</span
+                >
+                <a class="anchor-link" href="#pgf.back/pgfsysprotocol@literal"
+                  >&para;</a
+                >
+              </p>
+            </div>
+            <p>
+              First calls
+              <span class="texttt">\pgfsysprotocol@literalbuffered</span> on
+              <span class="angle">&langle;</span><i>literal text</i
+              ><span class="angle">&rangle;</span>. Then, if protocolling is
+              currently switched off, the <span class="angle">&langle;</span
+              ><i>literal text</i><span class="angle">&rangle;</span> is passed
+              on to <span class="texttt">\pgfsys@invoke</span>.
+            </p>
+          </div>
+
+          <div class="manualentry">
+            <div class="entryheadline">
+              <p>
+                <a id="pgf.back/pgfsysprotocol@bufferedtrue"></a>
+                <span class="hl-def"
+                  ><span class="textcolor" style="color: #bf0000"
+                    ><kbd>\pgfsysprotocol@bufferedtrue</kbd></span
+                  ></span
+                >
+                <a
+                  class="anchor-link"
+                  href="#pgf.back/pgfsysprotocol@bufferedtrue"
+                  >&para;</a
+                >
+              </p>
+            </div>
+            <p>
+              Turns on protocolling. All subsequent calls of
+              <span class="texttt">\pgfsysprotocol@literal</span> will append
+              their argument to the current protocol.
+            </p>
+          </div>
+
+          <div class="manualentry">
+            <div class="entryheadline">
+              <p>
+                <a id="pgf.back/pgfsysprotocol@bufferedfalse"></a>
+                <span class="hl-def"
+                  ><span class="textcolor" style="color: #bf0000"
+                    ><kbd>\pgfsysprotocol@bufferedfalse</kbd></span
+                  ></span
+                >
+                <a
+                  class="anchor-link"
+                  href="#pgf.back/pgfsysprotocol@bufferedfalse"
+                  >&para;</a
+                >
+              </p>
+            </div>
+            <p>
+              Turns off protocolling. Subsequent calls of
+              <span class="texttt">\pgfsysprotocol@literal</span> directly
+              insert their argument into the current
+              <span class="texttt">.pdf</span> or
+              <span class="texttt">.ps</span>.
+            </p>
+            <p>
+              Note that if the current protocol is not empty when protocolling
+              is switched off, the next call to
+              <span class="texttt">\pgfsysprotocol@literal</span> will first
+              flush the current protocol, that is, insert it into the file.
+            </p>
+          </div>
+
+          <div class="manualentry">
+            <div class="entryheadline">
+              <p>
+                <a id="pgf.back/pgfsysprotocol@getcurrentprotocol"></a>
+                <span class="hl-def"
+                  ><span class="textcolor" style="color: #bf0000"
+                    ><kbd>\pgfsysprotocol@getcurrentprotocol</kbd></span
+                  >{<span class="angle">&langle;</span><i>macro name</i
+                  ><span class="angle">&rangle;</span>}</span
+                >
+                <a
+                  class="anchor-link"
+                  href="#pgf.back/pgfsysprotocol@getcurrentprotocol"
+                  >&para;</a
+                >
+              </p>
+            </div>
+            <p>
+              Stores the current protocol in <span class="angle">&langle;</span
+              ><i>macro name</i><span class="angle">&rangle;</span> for later
+              use.
+            </p>
+          </div>
+
+          <div class="manualentry">
+            <div class="entryheadline">
+              <p>
+                <a id="pgf.back/pgfsysprotocol@setcurrentprotocol"></a>
+                <span class="hl-def"
+                  ><span class="textcolor" style="color: #bf0000"
+                    ><kbd>\pgfsysprotocol@setcurrentprotocol</kbd></span
+                  >{<span class="angle">&langle;</span><i>macro name</i
+                  ><span class="angle">&rangle;</span>}</span
+                >
+                <a
+                  class="anchor-link"
+                  href="#pgf.back/pgfsysprotocol@setcurrentprotocol"
+                  >&para;</a
+                >
+              </p>
+            </div>
+            <p>
+              Sets the current protocol to <span class="angle">&langle;</span
+              ><i>macro name</i><span class="angle">&rangle;</span>.
+            </p>
+          </div>
+
+          <div class="manualentry">
+            <div class="entryheadline">
+              <p>
+                <a id="pgf.back/pgfsysprotocol@invokecurrentprotocol"></a>
+                <span class="hl-def"
+                  ><span class="textcolor" style="color: #bf0000"
+                    ><kbd>\pgfsysprotocol@invokecurrentprotocol</kbd></span
+                  ></span
+                >
+                <a
+                  class="anchor-link"
+                  href="#pgf.back/pgfsysprotocol@invokecurrentprotocol"
+                  >&para;</a
+                >
+              </p>
+            </div>
+            <p>
+              Inserts the text stored in the current protocol into the
+              <span class="texttt">.pdf</span> or
+              <span class="texttt">.dvi</span> file. This does
+              <em>not</em> change the current protocol.
+            </p>
+          </div>
+
+          <div class="manualentry">
+            <div class="entryheadline">
+              <p>
+                <a id="pgf.back/pgfsysprotocol@flushcurrentprotocol"></a>
+                <span class="hl-def"
+                  ><span class="textcolor" style="color: #bf0000"
+                    ><kbd>\pgfsysprotocol@flushcurrentprotocol</kbd></span
+                  ></span
+                >
+                <a
+                  class="anchor-link"
+                  href="#pgf.back/pgfsysprotocol@flushcurrentprotocol"
+                  >&para;</a
+                >
+              </p>
+            </div>
+            <p>
+              First inserts the current protocol, then sets the current protocol
+              to the empty string.
+            </p>
+          </div>
+        </section>
+      </main>
+
+      <footer>
+        <div class_="footer-left">
+          <a href="https://github.com/pgf-tikz/pgf">Github</a> &middot;
+          <a href="/license">License</a> &middot;
+          <a href="https://ctan.org/pkg/pgf">CTAN</a> &middot;
+          <a href="https://pgf-tikz.github.io/pgf/pgfmanual.pdf">PDF version</a>
+          &middot;
+          <a href="https://github.com/DominikPeters/pgf-tikz-html-manual"
+            >About this HTML version</a
+          >
+        </div>
+        <div class_="footer-right">
+          <em>Manual last updated: 2022-04-23</em>
+        </div>
+      </footer>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/@docsearch/js@alpha"></script>
+    <script>
+      docsearch({
+        apiKey: "ae66ec3fc9df4b52b4d6f24fc8508fd3",
+        indexName: "tikz.dev",
+        appId: "Q70NNMA9GC",
+        container: "#search",
+      });
+    </script>
+  </body>
+</html>

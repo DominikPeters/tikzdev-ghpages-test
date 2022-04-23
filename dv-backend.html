@@ -1,0 +1,254 @@
+<!DOCTYPE html>
+<html lang="en-US">
+  <head>
+    <meta charset="utf-8" />
+    <meta content="LaTeX Lwarp package" name="generator" />
+    <meta content="width=device-width, initial-scale=1.0" name="viewport" />
+    <!--[if lt IE 9]>
+      <script src="http://html5shiv.googlecode.com/svn/trunk/html5.js"></script>
+    <![endif]-->
+    <title>The Data Visualization Backend - PGF/TikZ Manual</title>
+    <link href="style.css" rel="stylesheet" type="text/css" />
+
+    <script src="pgfmanual.js"></script>
+
+    <link href="https://unpkg.com/@docsearch/css@alpha" rel="stylesheet" />
+    <link href="/favicon-16x16.png" rel="icon" sizes="16x16" type="image/png" />
+    <link href="/favicon-32x32.png" rel="icon" sizes="32x32" type="image/png" />
+    <link
+      href="/apple-touch-icon.png"
+      rel="apple-touch-icon"
+      sizes="180x180"
+      type="image/png"
+    />
+    <link href="/site.webmanifest" rel="manifest" />
+  </head>
+  <body>
+    <a id="pgfmanual-autopage-7442"></a>
+
+    <div class="bodyandsidetoc grid-container">
+      <header>
+        <strong><a href="/">PGF/Ti<i>k</i>Z Manual</a></strong>
+        <div id="search"></div>
+      </header>
+      <div class="sidetoccontainer" id="local-toc-container">
+        <nav class="sidetoc">
+          <div class="sidetoctitle"><p>On this page</p></div>
+          <div class="sidetoccontents">
+            <p><a class="tocsubsection" href="#sec-85.1">Overview</a></p>
+            <p>
+              <a class="tocsubsection" href="#sec-85.2"
+                >The Rendering Pipeline</a
+              >
+            </p>
+            <p><a class="tocsubsection" href="#sec-85.3">Usage</a></p>
+            <p>
+              <a class="tocsubsection" href="#sec-85.4"
+                >The Mathematical Micro-Kernel</a
+              >
+            </p>
+          </div>
+        </nav>
+      </div>
+      <div class="sidetoccontainer" id="chapter-toc-container">
+        <nav class="sidetoc">
+          <div class="sidetoctitle">
+            <p>
+              <span class="sidetocthetitle"
+                >The <span class="tikzname">TikZ</span> and PGF Packages<br />
+                Manual for version 3.1.9a</span
+              >
+            </p>
+
+            <p>Contents</p>
+          </div>
+
+          <div class="sidetoccontents">
+            <p></p>
+
+            <p>
+              <a class="linkintro" href="/">Introduction</a>
+            </p>
+
+            <p>
+              <a class="tocpart" href="tutorials-guidelines"
+                >Tutorials and Guidelines</a
+              >
+            </p>
+
+            <p>
+              <a class="tocpart" href="install"
+                >Installation and Configuration</a
+              >
+            </p>
+
+            <p>
+              <a class="tocpart" href="tikz">Ti<em>k</em>Z</a>
+            </p>
+
+            <p>
+              <a class="tocpart" href="gd">Graph Drawing</a>
+            </p>
+
+            <p>
+              <a class="tocpart" href="libraries">Libraries</a>
+            </p>
+
+            <p class="current-part">
+              <a class="tocpart" href="dv">Data Visualization</a>
+            </p>
+
+            <p class="current-part">
+              <a class="tocsection" href="dv-introduction"
+                >Introduction to Data Visualization</a
+              >
+            </p>
+
+            <p class="current-part">
+              <a class="tocsection" href="dv-main"
+                >Creating Data Visualizations</a
+              >
+            </p>
+
+            <p class="current-part">
+              <a class="tocsection" href="dv-formats"
+                >Providing Data for a Data Visualization</a
+              >
+            </p>
+
+            <p class="current-part">
+              <a class="tocsection" href="dv-axes">Axes</a>
+            </p>
+
+            <p class="current-part">
+              <a class="tocsection" href="dv-visualizers">Visualizers</a>
+            </p>
+
+            <p class="current-part">
+              <a class="tocsection" href="dv-stylesheets"
+                >Style Sheets and Legends</a
+              >
+            </p>
+
+            <p class="current-part">
+              <a class="tocsection" href="dv-polar">Polar Axes</a>
+            </p>
+
+            <p class="current current-part">
+              <a class="tocsection" href="dv-backend"
+                >The Data Visualization Backend</a
+              >
+            </p>
+
+            <p>
+              <a class="tocpart" href="utilities">Utilities</a>
+            </p>
+
+            <p>
+              <a class="tocpart" href="math"
+                >Mathematical and Object-Oriented Engines</a
+              >
+            </p>
+
+            <p>
+              <a class="tocpart" href="base">The Basic Layer</a>
+            </p>
+
+            <p>
+              <a class="tocpart" href="pgfsys">The System Layer</a>
+            </p>
+          </div>
+        </nav>
+      </div>
+
+      <main class="bodycontainer">
+        <section class="textbody">
+          <h1>
+            The <span class="tikzname">TikZ</span> and PGF Packages<br />
+            Manual for version 3.1.9a
+          </h1>
+          <h2 class="inserted">Data Visualization</h2>
+
+          <!--MathJax customizations:-->
+
+          <p></p>
+          <h4 id="autosec-7443">
+            <a id="section-dv-backend"></a
+            ><span class="sectionnumber">85&emsp;</span>The Data Visualization
+            Backend
+          </h4>
+          <a id="pgfmanual-autopage-7443"></a>
+          <a id="pgfmanual-autofile-91"></a>
+          <h5 id="autosec-7444">
+            <span class="sectionnumber" id="sec-85.1">85.1&emsp;</span
+            >Overview<a class="anchor-link" href="#sec-85.1">&para;</a>
+          </h5>
+          <a id="pgfmanual-autopage-7444"></a>
+
+          <p>
+            The present section explains the mechanisms behind the data
+            visualization engine.
+          </p>
+
+          <p>
+            Until it is documented properly, we will have to make do with the
+            documentation in the source code.
+          </p>
+          <h5 id="autosec-7445">
+            <span class="sectionnumber" id="sec-85.2">85.2&emsp;</span>The
+            Rendering Pipeline<a class="anchor-link" href="#sec-85.2">&para;</a>
+          </h5>
+          <a id="pgfmanual-autopage-7445"></a>
+
+          <p>To be written...</p>
+          <h5 id="autosec-7446">
+            <span class="sectionnumber" id="sec-85.3">85.3&emsp;</span>Usage<a
+              class="anchor-link"
+              href="#sec-85.3"
+              >&para;</a
+            >
+          </h5>
+          <a id="pgfmanual-autopage-7446"></a>
+
+          <p>To be written...</p>
+          <h5 id="autosec-7447">
+            <a id="section-dv-math-kernel"></a
+            ><span class="sectionnumber" id="sec-85.4">85.4&emsp;</span>The
+            Mathematical Micro-Kernel<a class="anchor-link" href="#sec-85.4"
+              >&para;</a
+            >
+          </h5>
+          <a id="pgfmanual-autopage-7447"></a>
+
+          <p>To be written...</p>
+        </section>
+      </main>
+
+      <footer>
+        <div class_="footer-left">
+          <a href="https://github.com/pgf-tikz/pgf">Github</a> &middot;
+          <a href="/license">License</a> &middot;
+          <a href="https://ctan.org/pkg/pgf">CTAN</a> &middot;
+          <a href="https://pgf-tikz.github.io/pgf/pgfmanual.pdf">PDF version</a>
+          &middot;
+          <a href="https://github.com/DominikPeters/pgf-tikz-html-manual"
+            >About this HTML version</a
+          >
+        </div>
+        <div class_="footer-right">
+          <em>Manual last updated: 2022-04-23</em>
+        </div>
+      </footer>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/@docsearch/js@alpha"></script>
+    <script>
+      docsearch({
+        apiKey: "ae66ec3fc9df4b52b4d6f24fc8508fd3",
+        indexName: "tikz.dev",
+        appId: "Q70NNMA9GC",
+        container: "#search",
+      });
+    </script>
+  </body>
+</html>

@@ -1,0 +1,2929 @@
+<!DOCTYPE html>
+<html lang="en-US">
+  <head>
+    <meta charset="utf-8" />
+    <meta content="LaTeX Lwarp package" name="generator" />
+    <meta content="width=device-width, initial-scale=1.0" name="viewport" />
+    <!--[if lt IE 9]>
+      <script src="http://html5shiv.googlecode.com/svn/trunk/html5.js"></script>
+    <![endif]-->
+    <title>Providing Data for a Data Visualization - PGF/TikZ Manual</title>
+    <link href="style.css" rel="stylesheet" type="text/css" />
+
+    <script>
+      // Lwarp MathJax emulation code
+      //
+      // Based on code by Davide P. Cervone.
+      // Equation numbering: https://github.com/mathjax/MathJax/issues/2427
+      // Starred and ifnextchar macros: https://github.com/mathjax/MathJax/issues/2428
+      // \left, \right delimiters: https://github.com/mathjax/MathJax/issues/2535
+      //
+      // Modified by Brian Dunn to adjust equation numbering and add subequations.
+      //
+      // LaTeX can use \seteqnumber{subequations?}{section}{number} before each equation.
+      // subequations? is 0 usually, 1 if inside subequations.
+      // section is a string printed as-is, or empty.
+      // number is auto-incremented by MathJax between equations.
+      //
+      MathJax = {
+        subequations: "0",
+        section: "",
+        loader: {
+          load: ["[tex]/tagformat", "[tex]/textmacros"],
+        },
+        startup: {
+          ready() {
+            // These would be replaced by import commands if you wanted to make
+            // a proper extension.
+            const Configuration =
+              MathJax._.input.tex.Configuration.Configuration;
+            const CommandMap = MathJax._.input.tex.SymbolMap.CommandMap;
+            const Macro = MathJax._.input.tex.Symbol.Macro;
+            const TexError = MathJax._.input.tex.TexError.default;
+            const ParseUtil = MathJax._.input.tex.ParseUtil.default;
+            const expandable = MathJax._.util.Options.expandable;
+
+            // Insert the replacement string into the TeX string, and check
+            // that there haven't been too many maxro substitutions (prevents
+            // infinite loops).
+            const useArgument = (parser, text) => {
+              parser.string = ParseUtil.addArgs(
+                parser,
+                text,
+                parser.string.slice(parser.i)
+              );
+              parser.i = 0;
+              if (
+                ++parser.macroCount > parser.configuration.options.maxMacros
+              ) {
+                throw new TexError(
+                  "MaxMacroSub1",
+                  "MathJax maximum macro substitution count exceeded; " +
+                    "is there a recursive macro call?"
+                );
+              }
+            };
+
+            // Create the command map for:
+            // \ifstar, \ifnextchar, \ifblank, \ifstrequal, \seteqnumber
+            new CommandMap(
+              "Lwarp-macros",
+              {
+                ifstar: "IfstarFunction",
+                ifnextchar: "IfnextcharFunction",
+                ifblank: "IfblankFunction",
+                ifstrequal: "IfstrequalFunction",
+                seteqnumber: "SeteqnumberFunction",
+              },
+              {
+                // This function implements an ifstar macro.
+                IfstarFunction(parser, name) {
+                  const resultstar = parser.GetArgument(name);
+                  const resultnostar = parser.GetArgument(name);
+                  const star = parser.GetStar(); // true if there is a *
+                  useArgument(parser, star ? resultstar : resultnostar);
+                },
+
+                // This function implements an ifnextchar macro.
+                IfnextcharFunction(parser, name) {
+                  let whichchar = parser.GetArgument(name);
+                  if (whichchar.match(/^(?:0x[0-9A-F]+|[0-9]+)$/i)) {
+                    // $ syntax highlighting
+                    whichchar = String.fromCodePoint(parseInt(whichchar));
+                  }
+                  const resultnextchar = parser.GetArgument(name);
+                  const resultnotnextchar = parser.GetArgument(name);
+                  const gotchar = parser.GetNext() === whichchar;
+                  useArgument(
+                    parser,
+                    gotchar ? resultnextchar : resultnotnextchar
+                  );
+                },
+
+                // This function implements an ifblank macro.
+                IfblankFunction(parser, name) {
+                  const blankarg = parser.GetArgument(name);
+                  const resultblank = parser.GetArgument(name);
+                  const resultnotblank = parser.GetArgument(name);
+                  const isblank = blankarg.trim() == "";
+                  useArgument(parser, isblank ? resultblank : resultnotblank);
+                },
+
+                // This function implements an ifstrequal macro.
+                IfstrequalFunction(parser, name) {
+                  const strequalfirst = parser.GetArgument(name);
+                  const strequalsecond = parser.GetArgument(name);
+                  const resultequal = parser.GetArgument(name);
+                  const resultnotequal = parser.GetArgument(name);
+                  const isequal = strequalfirst == strequalsecond;
+                  useArgument(parser, isequal ? resultequal : resultnotequal);
+                },
+
+                // This function modifies the equation numbers.
+                SeteqnumberFunction(parser, name) {
+                  // Get the macro parameters
+                  const star = parser.GetStar(); // true if there is a *
+                  const optBrackets = parser.GetBrackets(name); // contents of optional brackets
+                  const newsubequations = parser.GetArgument(name); // the subequations argument
+                  const neweqsection = parser.GetArgument(name); // the eq section argument
+                  const neweqnumber = parser.GetArgument(name); // the eq number argument
+                  MathJax.config.subequations = newsubequations; // a string with boolean meaning
+                  MathJax.config.section = neweqsection; // a string with numeric meaning
+                  parser.tags.counter = parser.tags.allCounter = neweqnumber;
+                },
+              }
+            );
+
+            // Create the Lwarp-macros package
+            Configuration.create("Lwarp-macros", {
+              handler: { macro: ["Lwarp-macros"] },
+            });
+
+            MathJax.startup.defaultReady();
+
+            // For forward references:
+            MathJax.startup.input[0].preFilters.add(({ math }) => {
+              if (math.inputData.recompile) {
+                MathJax.config.subequations =
+                  math.inputData.recompile.subequations;
+                MathJax.config.section = math.inputData.recompile.section;
+              }
+            });
+            MathJax.startup.input[0].postFilters.add(({ math }) => {
+              if (math.inputData.recompile) {
+                math.inputData.recompile.subequations =
+                  MathJax.config.subequations;
+                math.inputData.recompile.section = MathJax.config.section;
+              }
+            });
+
+            // For \left, \right with unicode-math:
+            const { DelimiterMap } = MathJax._.input.tex.SymbolMap;
+            const { Symbol } = MathJax._.input.tex.Symbol;
+            const { MapHandler } = MathJax._.input.tex.MapHandler;
+            const delimiter = MapHandler.getMap("delimiter");
+            delimiter.add("\\lBrack", new Symbol("\\lBrack", "\u27E6"));
+            delimiter.add("\\rBrack", new Symbol("\\rBrack", "\u27E7"));
+            delimiter.add("\\lAngle", new Symbol("\\lAngle", "\u27EA"));
+            delimiter.add("\\rAngle", new Symbol("\\rAngle", "\u27EB"));
+            delimiter.add("\\lbrbrak", new Symbol("\\lbrbrak", "\u2772"));
+            delimiter.add("\\rbrbrak", new Symbol("\\rbrbrak", "\u2773"));
+            delimiter.add("\\lbag", new Symbol("\\lbag", "\u27C5"));
+            delimiter.add("\\rbag", new Symbol("\\rbag", "\u27C6"));
+            delimiter.add(
+              "\\llparenthesis",
+              new Symbol("\\llparenthesis", "\u2987")
+            );
+            delimiter.add(
+              "\\rrparenthesis",
+              new Symbol("\\rrparenthesis", "\u2988")
+            );
+            delimiter.add("\\llangle", new Symbol("\\llangle", "\u2989"));
+            delimiter.add("\\rrangle", new Symbol("\\rrangle", "\u298A"));
+            delimiter.add("\\Lbrbrak", new Symbol("\\Lbrbrak", "\u27EC"));
+            delimiter.add("\\Rbrbrak", new Symbol("\\Rbrbrak", "\u27ED"));
+            delimiter.add("\\lBrace", new Symbol("\\lBrace", "\u2983"));
+            delimiter.add("\\rBrace", new Symbol("\\rBrace", "\u2984"));
+            delimiter.add("\\lParen", new Symbol("\\lParen", "\u2985"));
+            delimiter.add("\\rParen", new Symbol("\\rParen", "\u2986"));
+            delimiter.add("\\lbrackubar", new Symbol("\\lbrackubar", "\u298B"));
+            delimiter.add("\\rbrackubar", new Symbol("\\rbrackubar", "\u298C"));
+            delimiter.add(
+              "\\lbrackultick",
+              new Symbol("\\lbrackultick", "\u298D")
+            );
+            delimiter.add(
+              "\\rbracklrtick",
+              new Symbol("\\rbracklrtick", "\u298E")
+            );
+            delimiter.add(
+              "\\lbracklltick",
+              new Symbol("\\lbracklltick", "\u298F")
+            );
+            delimiter.add(
+              "\\rbrackurtick",
+              new Symbol("\\rbrackurtick", "\u2990")
+            );
+            delimiter.add("\\langledot", new Symbol("\\langledot", "\u2991"));
+            delimiter.add("\\rangledot", new Symbol("\\rangledot", "\u2992"));
+            delimiter.add("\\lparenless", new Symbol("\\lparenless", "\u2993"));
+            delimiter.add("\\rparengtr", new Symbol("\\rparengtr", "\u2994"));
+            delimiter.add("\\Lparengtr", new Symbol("\\Lparengtr", "\u2995"));
+            delimiter.add("\\Rparenless", new Symbol("\\Rparenless", "\u2996"));
+            delimiter.add("\\lblkbrbrak", new Symbol("\\lblkbrbrak", "\u2997"));
+            delimiter.add("\\rblkbrbrak", new Symbol("\\rblkbrbrak", "\u2998"));
+            delimiter.add("\\lvzigzag", new Symbol("\\lvzigzag", "\u29D8"));
+            delimiter.add("\\rvzigzag", new Symbol("\\rvzigzag", "\u29D9"));
+            delimiter.add("\\Lvzigzag", new Symbol("\\Lvzigzag", "\u29DA"));
+            delimiter.add("\\Rvzigzag", new Symbol("\\Rvzigzag", "\u29DB"));
+            delimiter.add(
+              "\\lcurvyangle",
+              new Symbol("\\lcurvyangle", "\u29FC")
+            );
+            delimiter.add(
+              "\\rcurvyangle",
+              new Symbol("\\rcurvyangle", "\u29FD")
+            );
+            delimiter.add("\\Vvert", new Symbol("\\Vvert", "\u2980"));
+          }, // ready
+        }, // startup
+
+        tex: {
+          packages: { "[+]": ["tagformat", "Lwarp-macros", "textmacros"] },
+          tags: "ams",
+          tagformat: {
+            number: function (n) {
+              if (MathJax.config.subequations == 0)
+                return MathJax.config.section + n;
+              else return MathJax.config.section + String.fromCharCode(96 + n);
+            },
+          },
+        },
+      };
+    </script>
+
+    <script
+      async
+      id="MathJax-script"
+      src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-chtml.js"
+    ></script>
+
+    <script src="pgfmanual.js"></script>
+
+    <link href="https://unpkg.com/@docsearch/css@alpha" rel="stylesheet" />
+    <link href="/favicon-16x16.png" rel="icon" sizes="16x16" type="image/png" />
+    <link href="/favicon-32x32.png" rel="icon" sizes="32x32" type="image/png" />
+    <link
+      href="/apple-touch-icon.png"
+      rel="apple-touch-icon"
+      sizes="180x180"
+      type="image/png"
+    />
+    <link href="/site.webmanifest" rel="manifest" />
+  </head>
+  <body>
+    <a id="pgfmanual-autopage-6665"></a>
+
+    <div class="bodyandsidetoc grid-container">
+      <header>
+        <strong><a href="/">PGF/Ti<i>k</i>Z Manual</a></strong>
+        <div id="search"></div>
+      </header>
+      <div class="sidetoccontainer" id="local-toc-container">
+        <nav class="sidetoc">
+          <div class="sidetoctitle"><p>On this page</p></div>
+          <div class="sidetoccontents">
+            <p><a class="tocsubsection" href="#sec-80.1">Overview</a></p>
+            <p><a class="tocsubsection" href="#sec-80.2">Concepts</a></p>
+            <p>
+              <a class="tocsubsection" href="#sec-80.3"
+                >Reference: Built-In Formats</a
+              >
+            </p>
+            <p>
+              <a class="tocsubsection" href="#sec-80.4"
+                >Reference: Advanced Formats</a
+              >
+            </p>
+            <p>
+              <a class="tocsubsection" href="#sec-80.5"
+                >Advanced: The Data Parsing Process</a
+              >
+            </p>
+            <p>
+              <a class="tocsubsection" href="#sec-80.6"
+                >Advanced: Defining New Formats</a
+              >
+            </p>
+          </div>
+        </nav>
+      </div>
+      <div class="sidetoccontainer" id="chapter-toc-container">
+        <nav class="sidetoc">
+          <div class="sidetoctitle">
+            <p>
+              <span class="sidetocthetitle"
+                >The <span class="tikzname">TikZ</span> and PGF Packages<br />
+                Manual for version 3.1.9a</span
+              >
+            </p>
+
+            <p>Contents</p>
+          </div>
+
+          <div class="sidetoccontents">
+            <p></p>
+
+            <p>
+              <a class="linkintro" href="/">Introduction</a>
+            </p>
+
+            <p>
+              <a class="tocpart" href="tutorials-guidelines"
+                >Tutorials and Guidelines</a
+              >
+            </p>
+
+            <p>
+              <a class="tocpart" href="install"
+                >Installation and Configuration</a
+              >
+            </p>
+
+            <p>
+              <a class="tocpart" href="tikz">Ti<em>k</em>Z</a>
+            </p>
+
+            <p>
+              <a class="tocpart" href="gd">Graph Drawing</a>
+            </p>
+
+            <p>
+              <a class="tocpart" href="libraries">Libraries</a>
+            </p>
+
+            <p class="current-part">
+              <a class="tocpart" href="dv">Data Visualization</a>
+            </p>
+
+            <p class="current-part">
+              <a class="tocsection" href="dv-introduction"
+                >Introduction to Data Visualization</a
+              >
+            </p>
+
+            <p class="current-part">
+              <a class="tocsection" href="dv-main"
+                >Creating Data Visualizations</a
+              >
+            </p>
+
+            <p class="current current-part">
+              <a class="tocsection" href="dv-formats"
+                >Providing Data for a Data Visualization</a
+              >
+            </p>
+
+            <p class="current-part">
+              <a class="tocsection" href="dv-axes">Axes</a>
+            </p>
+
+            <p class="current-part">
+              <a class="tocsection" href="dv-visualizers">Visualizers</a>
+            </p>
+
+            <p class="current-part">
+              <a class="tocsection" href="dv-stylesheets"
+                >Style Sheets and Legends</a
+              >
+            </p>
+
+            <p class="current-part">
+              <a class="tocsection" href="dv-polar">Polar Axes</a>
+            </p>
+
+            <p class="current-part">
+              <a class="tocsection" href="dv-backend"
+                >The Data Visualization Backend</a
+              >
+            </p>
+
+            <p>
+              <a class="tocpart" href="utilities">Utilities</a>
+            </p>
+
+            <p>
+              <a class="tocpart" href="math"
+                >Mathematical and Object-Oriented Engines</a
+              >
+            </p>
+
+            <p>
+              <a class="tocpart" href="base">The Basic Layer</a>
+            </p>
+
+            <p>
+              <a class="tocpart" href="pgfsys">The System Layer</a>
+            </p>
+          </div>
+        </nav>
+      </div>
+
+      <main class="bodycontainer">
+        <section class="textbody">
+          <h1>
+            The <span class="tikzname">TikZ</span> and PGF Packages<br />
+            Manual for version 3.1.9a
+          </h1>
+          <h2 class="inserted">Data Visualization</h2>
+
+          <!--MathJax customizations:-->
+
+          <div class="hidden">
+            \(\newcommand{\footnotename}{footnote}\) \(\def \LWRfootnote {1}\)
+            \(\newcommand {\footnote }[2][\LWRfootnote ]{{}^{\mathrm {#1}}}\)
+            \(\newcommand {\footnotemark }[1][\LWRfootnote ]{{}^{\mathrm
+            {#1}}}\) \(\let \LWRorighspace \hspace \) \(\renewcommand {\hspace
+            }{\ifstar \LWRorighspace \LWRorighspace }\) \(\newcommand
+            {\mathnormal }[1]{{#1}}\) \(\newcommand \ensuremath [1]{#1}\)
+            \(\newcommand {\LWRframebox }[2][]{\fbox {#2}} \newcommand
+            {\framebox }[1][]{\LWRframebox } \) \(\newcommand {\setlength
+            }[2]{}\) \(\newcommand {\addtolength }[2]{}\) \(\newcommand
+            {\setcounter }[2]{}\) \(\newcommand {\addtocounter }[2]{}\)
+            \(\newcommand {\arabic }[1]{}\) \(\newcommand {\number }[1]{}\)
+            \(\newcommand {\noalign }[1]{\text {#1}\notag \\}\) \(\newcommand
+            {\cline }[1]{}\) \(\newcommand {\directlua }[1]{\text
+            {(directlua)}}\) \(\newcommand {\luatexdirectlua }[1]{\text
+            {(directlua)}}\) \(\newcommand {\protect }{}\) \(\def
+            \LWRabsorbnumber #1 {}\) \(\def \LWRabsorbquotenumber "#1 {}\)
+            \(\newcommand {\LWRabsorboption }[1][]{}\) \(\newcommand
+            {\LWRabsorbtwooptions }[1][]{\LWRabsorboption }\) \(\def \mathchar
+            {\ifnextchar "\LWRabsorbquotenumber \LWRabsorbnumber }\) \(\def
+            \mathcode #1={\mathchar }\) \(\let \delcode \mathcode \) \(\let
+            \delimiter \mathchar \) \(\def \oe {\unicode {x0153}}\) \(\def \OE
+            {\unicode {x0152}}\) \(\def \ae {\unicode {x00E6}}\) \(\def \AE
+            {\unicode {x00C6}}\) \(\def \aa {\unicode {x00E5}}\) \(\def \AA
+            {\unicode {x00C5}}\) \(\def \o {\unicode {x00F8}}\) \(\def \O
+            {\unicode {x00D8}}\) \(\def \l {\unicode {x0142}}\) \(\def \L
+            {\unicode {x0141}}\) \(\def \ss {\unicode {x00DF}}\) \(\def \SS
+            {\unicode {x1E9E}}\) \(\def \dag {\unicode {x2020}}\) \(\def \ddag
+            {\unicode {x2021}}\) \(\def \P {\unicode {x00B6}}\) \(\def
+            \copyright {\unicode {x00A9}}\) \(\def \pounds {\unicode {x00A3}}\)
+            \(\let \LWRref \ref \) \(\renewcommand {\ref }{\ifstar \LWRref
+            \LWRref }\) \( \newcommand {\multicolumn }[3]{#3}\) \(\require
+            {textcomp}\) \( \newcommand {\meta }[1]{\langle \textit {#1}\rangle
+            } \) \(\newcommand {\intertext }[1]{\text {#1}\notag \\}\) \(\let
+            \Hat \hat \) \(\let \Check \check \) \(\let \Tilde \tilde \) \(\let
+            \Acute \acute \) \(\let \Grave \grave \) \(\let \Dot \dot \) \(\let
+            \Ddot \ddot \) \(\let \Breve \breve \) \(\let \Bar \bar \) \(\let
+            \Vec \vec \)
+          </div>
+
+          <p></p>
+          <h4 id="autosec-6666">
+            <a id="section-dv-formats"></a
+            ><span class="sectionnumber">80&emsp;</span>Providing Data for a
+            Data Visualization
+          </h4>
+          <a id="pgfmanual-autopage-6666"></a>
+          <a id="pgfmanual-autofile-86"></a>
+          <h5 id="autosec-6667">
+            <span class="sectionnumber" id="sec-80.1">80.1&emsp;</span
+            >Overview<a class="anchor-link" href="#sec-80.1">&para;</a>
+          </h5>
+          <a id="pgfmanual-autopage-6667"></a>
+
+          <p>
+            The data visualization system needs a stream of data points as
+            input. These data points can be directly generated by repeatedly
+            calling the <span class="texttt">\pgfdatapoint</span> command, but
+            usually data is available in some special (text) format and one
+            would like to visualize this data. The present section explains how
+            data in some specific format can be fed to the data visualization
+            system.
+          </p>
+
+          <p>
+            This section starts with an explanation of the main concepts. Then,
+            the standard formats are listed in the reference section. It is also
+            possible to define new formats, but this an advanced concept which
+            requires an understanding of some of the internals of the parsing
+            mechanism, explained in Section&nbsp;<a
+              href="dv-formats#section-dv-parsing"
+              >80.5</a
+            >, and the usage of a rather low-level command, explained in
+            Section&nbsp;<a href="dv-formats#section-dv-declaring-formats"
+              >80.6</a
+            >.
+          </p>
+          <h5 id="autosec-6668">
+            <span class="sectionnumber" id="sec-80.2">80.2&emsp;</span
+            >Concepts<a class="anchor-link" href="#sec-80.2">&para;</a>
+          </h5>
+          <a id="pgfmanual-autopage-6668"></a>
+
+          <p>
+            For the purposes of this section, let call a
+            <em>data format</em> some standardized way of writing down a list of
+            data points. A simple example of a data format is the
+            <span class="textsc">csv</span> format (the acronym stands for
+            <em>comma separated values</em>), where each line contains a data
+            point, specified by values separated by commas. A different format
+            is the <em>key&ndash;value format</em>, where data points are
+            specified by lists of key&ndash;value pairs. A far more complex
+            format is the <span class="textsc">pdb</span>-format used by the
+            protein database to describe molecules.
+          </p>
+
+          <p>
+            The data visualization system does not use any specific format.
+            Instead, whenever data is read by the data visualization system, you
+            must specify a format parser (or it is chosen automatically for
+            you). It is the job of the parser to read (parse) the data lines and
+            to turn them into data points, that is, to setup appropriate subkeys
+            of <span class="texttt">/data point/</span>.
+          </p>
+
+          <p>
+            To give a concrete example, suppose a file contains the following
+            lines:
+          </p>
+
+          <figure class="example">
+            <div class="example-code">
+              <button class="clipboardButton" type="button">copy</button>
+
+              <code>
+                <br />
+                <span class="textcolor" style="color: #000000"
+                  ><a href="tikz-coordinates#pgf.x">x</a></span
+                >,&numsp;<span class="textcolor" style="color: #000000"
+                  ><a href="tikz-coordinates#pgf.y">y</a></span
+                >,&numsp;<span class="textcolor" style="color: #000000"
+                  ><a href="tikz-coordinates#pgf.z">z</a></span
+                ><br />
+                <span class="textcolor" style="color: #000000">0</span
+                >,&numsp;<span class="textcolor" style="color: #000000">0</span
+                >,&numsp;<span class="textcolor" style="color: #000000">0</span
+                ><br />
+                <span class="textcolor" style="color: #000000">1</span
+                >,&numsp;<span class="textcolor" style="color: #000000">1</span
+                >,&numsp;<span class="textcolor" style="color: #000000">0</span
+                ><br />
+                <span class="textcolor" style="color: #000000">1</span
+                >,&numsp;<span class="textcolor" style="color: #000000">1</span
+                >,&numsp;<span class="textcolor" style="color: #000000">0</span
+                >.<span class="textcolor" style="color: #000000">5</span><br />
+                <span class="textcolor" style="color: #000000">0</span
+                >,&numsp;<span class="textcolor" style="color: #000000">1</span
+                >,&numsp;<span class="textcolor" style="color: #000000">0</span
+                >.<span class="textcolor" style="color: #000000">5</span><br />
+              </code>
+            </div>
+          </figure>
+
+          <p>
+            This file is in the <span class="textsc">csv</span>-format. This
+            format can be read by the <span class="texttt">table</span> parser
+            (which is called thus, rather than &ldquo;<span class="texttt"
+              >csv</span
+            >&rdquo;, since it can also read files in which the columns are
+            separated by, say, a semicolon or a space). The
+            <span class="texttt">table</span> format will then read the data and
+            for each line of the data, except for the headline of course, it
+            will produce one data point. For instance, for the last data point
+            the key <span class="texttt">/data point/x</span> will be set to
+            <span class="texttt">0</span>, the key
+            <span class="texttt">/data point/y</span> will be set to
+            <span class="texttt">1</span>, and the key
+            <span class="texttt">/data point/z</span> will be set to
+            <span class="texttt">0.5</span>.
+          </p>
+
+          <p>
+            All parsers are basically line-oriented. This means that, normally,
+            each line in the input data should contain one data point. This rule
+            may not always apply, for instance empty lines are typically ignored
+            and sometimes a data point may span several lines, but deviating
+            from this &ldquo;one data point per line&rdquo; rule makes parsers
+            harder to program.
+          </p>
+          <h5 id="autosec-6669">
+            <span class="sectionnumber" id="sec-80.3">80.3&emsp;</span
+            >Reference: Built-In Formats<a class="anchor-link" href="#sec-80.3"
+              >&para;</a
+            >
+          </h5>
+          <a id="pgfmanual-autopage-6669"></a>
+
+          <p>
+            The following format is the default format, when no
+            <span class="texttt">format=...</span> is specified.
+          </p>
+
+          <div class="manualentry">
+            <div class="entryheadline">
+              <p>
+                <a id="pgf.table"></a>
+                <span class="hl-def"
+                  ><b>Format</b>
+                  <kbd
+                    ><span class="textcolor" style="color: #bf0000"
+                      >table</span
+                    ></kbd
+                  ></span
+                >
+                <a class="anchor-link" href="#pgf.table">&para;</a>
+              </p>
+            </div>
+            <p>
+              This format is used to parse data that is formatted in the
+              following manner: Basically, each line consists of
+              <em>values</em> that are separated by a <em>separator</em> like a
+              comma or a space. The values are stored in different
+              <em>attributes</em>, that is, subkeys of
+              <span class="texttt">/data point</span> like
+              <span class="texttt">/data point/x</span>. In order to decide
+              which attribute is chosen for a give value, the headline is
+              important. This is the first non-empty line of a table. It is
+              formatted in the same way as normal data lines (value separated by
+              the separator), but the meaning of the values is different: The
+              first value in the headline is the name of the attribute where the
+              first values in the following lines should go each time.
+              Similarly, the second value in the headline is the name of the
+              attribute for the second values in the following lines, and so on.
+            </p>
+            <p>A simple example is the following:</p>
+
+            <figure class="example">
+              <div class="example-code">
+                <button class="clipboardButton" type="button">copy</button>
+                <code>
+                  <br />
+                  <span class="textcolor" style="color: #000000"
+                    ><a href="tikz-coordinates#pgf.angle">angle</a></span
+                  >,&numsp;<span class="textcolor" style="color: #000000"
+                    ><a href="tikz-coordinates#pgf.radius">radius</a></span
+                  ><br />
+                  <span class="textcolor" style="color: #000000">0</span
+                  >,&numsp;<span class="textcolor" style="color: #000000"
+                    >1</span
+                  ><br />
+                  <span class="textcolor" style="color: #000000">45</span
+                  >,&numsp;<span class="textcolor" style="color: #000000"
+                    >2</span
+                  ><br />
+                  <span class="textcolor" style="color: #000000">90</span
+                  >,&numsp;<span class="textcolor" style="color: #000000"
+                    >3</span
+                  ><br />
+                  <span class="textcolor" style="color: #000000">135</span
+                  >,&numsp;<span class="textcolor" style="color: #000000"
+                    >4</span
+                  ><br />
+                </code>
+              </div>
+            </figure>
+            <p>
+              The headline states that the values in the first column should be
+              stored in the <span class="texttt">angle</span> attribute (<span
+                class="texttt"
+                >/data point/angle</span
+              >
+              to be precise) and that the values in the second column should be
+              stored in the <span class="texttt">radius</span> attribute. There
+              are four data points in this data set.
+            </p>
+            <p>
+              The format will tolerate too few or too many values in a line. If
+              there are less values in a line than in the headline, the last
+              attributes will simply be empty. If there are more values in a
+              line than in the headline, the values are stored in attributes
+              called <span class="texttt">/data point/attribute </span
+              ><span class="angle">&langle;</span><i>column number</i
+              ><span class="angle">&rangle;</span>, where the first value of a
+              line gets <span class="angle">&langle;</span><i>column number</i
+              ><span class="angle">&rangle;</span> equal to
+              <span class="texttt">1</span> and so on.
+            </p>
+            <p>
+              The <span class="texttt">table</span> format can be configured
+              using the following options:
+            </p>
+
+            <div class="manualentry">
+              <div class="entryheadline">
+                <p>
+                  <a id="pgf./pgf/data/separator"></a
+                  ><a id="pgf.separator"></a>
+                  <span class="hl-def"
+                    ><kbd
+                      ><span class="keyname"
+                        ><span class="textcolor" style="color: #bf0000"
+                          >/pgf/data/separator</span
+                        ></span
+                      >=</kbd
+                    ><span class="angle">&langle;</span><i>character</i
+                    ><span class="angle">&rangle;</span> </span
+                  ><span class="hl-default"
+                    >(no default, initially <kbd>,</kbd>)</span
+                  >
+                  <a class="anchor-link" href="#pgf./pgf/data/separator"
+                    >&para;</a
+                  >
+                </p>
+              </div>
+              <p>
+                Use this key to change which character is used to separate
+                values in the headline and in the data lines. To set the
+                separator to a space, either set this key to an empty value or
+                say <span class="texttt">separator=\space</span>. Note that you
+                must surround a comma by curly braces if you which to (re)set
+                the separator character to a space.
+              </p>
+
+              <figure class="example">
+                <div class="example-image">
+                  <p>
+                    <span
+                      class="lateximagesource"
+                      id="lateximage-pgfmanual-2735"
+                      ><!--
+2
+
+
+1
+
+
+
+0 1 2 3
+   -->
+                      <img
+                        alt="(-tikz-&nbsp;diagram)"
+                        class="lateximage"
+                        height="101.474"
+                        loading="lazy"
+                        src="pgfmanual-images/image-2735.png"
+                        style
+                        width="137.330"
+                    /></span>
+                  </p>
+                </div>
+
+                <div class="example-code">
+                  <button class="clipboardButton" type="button">copy</button>
+                  <code>
+                    <span class="c- preamble"
+                      >\usetikzlibrary {datavisualization} </span
+                    ><br />
+                    <span class="textcolor" style="color: #000000">\begin</span
+                    >{<span class="textcolor" style="color: #0000b2"
+                      ><a href="tikz-scopes#pgf.tikzpicture"
+                        >tikzpicture</a
+                      ></span
+                    >}<br />
+                    &numsp;&numsp;<span class="textcolor" style="color: #0000b2"
+                      ><a href="dv-main#pgf.back/datavisualization"
+                        >\datavisualization</a
+                      ></span
+                    >&numsp;[<span class="textcolor" style="color: #008000"
+                      ><a href="dv-axes#pgf.school:book:axes"
+                        >school book axes</a
+                      ></span
+                    >,&numsp;<span class="textcolor" style="color: #008000"
+                      ><a href="dv-visualizers#pgf.visualize:as:line"
+                        >visualize as line</a
+                      ></span
+                    >]<br />
+                    &numsp;&numsp;&numsp;&numsp;<span
+                      class="textcolor"
+                      style="color: #000000"
+                      ><a href="dv-main#pgf.data">data</a></span
+                    >
+                    [<span class="textcolor" style="color: #008000"
+                      ><a href="dv-formats#pgf.separator">separator</a></span
+                    >=<span class="textcolor" style="color: #008000"
+                      ><span class="textcolor" style="color: #0000b2"
+                        >\space</span
+                      ></span
+                    >]&numsp;{<br />
+                    &numsp;&numsp;&numsp;&numsp;&numsp;&numsp;<span
+                      class="textcolor"
+                      style="color: #000000"
+                      ><a href="tikz-coordinates#pgf.x">x</a></span
+                    >
+                    <span class="textcolor" style="color: #000000"
+                      ><a href="tikz-coordinates#pgf.y">y</a></span
+                    ><br />
+                    &numsp;&numsp;&numsp;&numsp;&numsp;&numsp;<span
+                      class="textcolor"
+                      style="color: #000000"
+                      >0</span
+                    >
+                    <span class="textcolor" style="color: #000000">0</span
+                    ><br />
+                    &numsp;&numsp;&numsp;&numsp;&numsp;&numsp;<span
+                      class="textcolor"
+                      style="color: #000000"
+                      >1</span
+                    >
+                    <span class="textcolor" style="color: #000000">1</span
+                    ><br />
+                    &numsp;&numsp;&numsp;&numsp;&numsp;&numsp;<span
+                      class="textcolor"
+                      style="color: #000000"
+                      >2</span
+                    >
+                    <span class="textcolor" style="color: #000000">1</span
+                    ><br />
+                    &numsp;&numsp;&numsp;&numsp;&numsp;&numsp;<span
+                      class="textcolor"
+                      style="color: #000000"
+                      >3</span
+                    >
+                    <span class="textcolor" style="color: #000000">0</span
+                    ><br />
+                    &numsp;&numsp;&numsp;&numsp;}<br />
+                    &numsp;&numsp;&numsp;&numsp;<span
+                      class="textcolor"
+                      style="color: #000000"
+                      ><a href="dv-main#pgf.data">data</a></span
+                    >
+                    [<span class="textcolor" style="color: #008000"
+                      ><a href="dv-formats#pgf.separator">separator</a></span
+                    >=<span class="textcolor" style="color: #008000">;</span
+                    >]&numsp;{<br />
+                    &numsp;&numsp;&numsp;&numsp;&numsp;&numsp;<span
+                      class="textcolor"
+                      style="color: #000000"
+                      ><a href="tikz-coordinates#pgf.x">x</a></span
+                    >;&numsp;<span class="textcolor" style="color: #000000"
+                      ><a href="tikz-coordinates#pgf.y">y</a></span
+                    >;&numsp;<span class="textcolor" style="color: #000000"
+                      ><a href="tikz-coordinates#pgf.z">z</a></span
+                    ><br />
+                    &numsp;&numsp;&numsp;&numsp;&numsp;&numsp;<span
+                      class="textcolor"
+                      style="color: #000000"
+                      >3</span
+                    >;&numsp;<span class="textcolor" style="color: #000000"
+                      >1</span
+                    >;&numsp;<span class="textcolor" style="color: #000000"
+                      >0</span
+                    ><br />
+                    &numsp;&numsp;&numsp;&numsp;&numsp;&numsp;<span
+                      class="textcolor"
+                      style="color: #000000"
+                      >2</span
+                    >;&numsp;<span class="textcolor" style="color: #000000"
+                      >2</span
+                    >;&numsp;<span class="textcolor" style="color: #000000"
+                      >0</span
+                    ><br />
+                    &numsp;&numsp;&numsp;&numsp;};<br />
+                    <span class="textcolor" style="color: #000000">\end</span
+                    >{<span class="textcolor" style="color: #0000b2"
+                      ><a href="tikz-scopes#pgf.tikzpicture"
+                        >tikzpicture</a
+                      ></span
+                    >}<br />
+                  </code>
+                </div>
+              </figure>
+            </div>
+
+            <div class="manualentry">
+              <div class="entryheadline">
+                <p>
+                  <a id="pgf./pgf/data/headline"></a><a id="pgf.headline"></a>
+                  <span class="hl-def"
+                    ><kbd
+                      ><span class="keyname"
+                        ><span class="textcolor" style="color: #bf0000"
+                          >/pgf/data/headline</span
+                        ></span
+                      >=</kbd
+                    ><span class="angle">&langle;</span><i>headline</i
+                    ><span class="angle">&rangle;</span></span
+                  ><span class="hl-default">(no default)</span>
+                  <a class="anchor-link" href="#pgf./pgf/data/headline"
+                    >&para;</a
+                  >
+                </p>
+              </div>
+              <p>
+                When this key is set to a non-empty value, the value of
+                <span class="angle">&langle;</span><i>headline</i
+                ><span class="angle">&rangle;</span> is used as the headline and
+                the first line of the data is treated as a normal line rather
+                than as a headline.
+              </p>
+
+              <figure class="example">
+                <div class="example-image">
+                  <p>
+                    <span
+                      class="lateximagesource"
+                      id="lateximage-pgfmanual-2736"
+                      ><!--
+1
+
+
+
+0 1 2 3
+   -->
+                      <img
+                        alt="(-tikz-&nbsp;diagram)"
+                        class="lateximage"
+                        height="63.675"
+                        loading="lazy"
+                        src="pgfmanual-images/image-2736.png"
+                        style
+                        width="136.946"
+                    /></span>
+                  </p>
+                </div>
+
+                <div class="example-code">
+                  <button class="clipboardButton" type="button">copy</button>
+                  <code>
+                    <span class="c- preamble"
+                      >\usetikzlibrary {datavisualization} </span
+                    ><br />
+                    <span class="textcolor" style="color: #000000">\begin</span
+                    >{<span class="textcolor" style="color: #0000b2"
+                      ><a href="tikz-scopes#pgf.tikzpicture"
+                        >tikzpicture</a
+                      ></span
+                    >}<br />
+                    &numsp;&numsp;<span class="textcolor" style="color: #0000b2"
+                      ><a href="dv-main#pgf.back/datavisualization"
+                        >\datavisualization</a
+                      ></span
+                    >&numsp;[<span class="textcolor" style="color: #008000"
+                      ><a href="dv-axes#pgf.school:book:axes"
+                        >school book axes</a
+                      ></span
+                    >,&numsp;<span class="textcolor" style="color: #008000"
+                      ><a href="dv-visualizers#pgf.visualize:as:line"
+                        >visualize as line</a
+                      ></span
+                    >]<br />
+                    &numsp;&numsp;&numsp;&numsp;<span
+                      class="textcolor"
+                      style="color: #000000"
+                      ><a href="dv-main#pgf.data">data</a></span
+                    >
+                    [<span class="textcolor" style="color: #008000"
+                      ><a href="dv-formats#pgf.headline">headline</a></span
+                    >=<span class="textcolor" style="color: #008000"
+                      >{<a href="tikz-coordinates#pgf.x">x</a>,&numsp;<a
+                        href="tikz-coordinates#pgf.y"
+                        >y</a
+                      >}</span
+                    >]&numsp;{<br />
+                    &numsp;&numsp;&numsp;&numsp;&numsp;&numsp;<span
+                      class="textcolor"
+                      style="color: #000000"
+                      >0</span
+                    >,&numsp;<span class="textcolor" style="color: #000000"
+                      >0</span
+                    ><br />
+                    &numsp;&numsp;&numsp;&numsp;&numsp;&numsp;<span
+                      class="textcolor"
+                      style="color: #000000"
+                      >1</span
+                    >,&numsp;<span class="textcolor" style="color: #000000"
+                      >1</span
+                    ><br />
+                    &numsp;&numsp;&numsp;&numsp;&numsp;&numsp;<span
+                      class="textcolor"
+                      style="color: #000000"
+                      >2</span
+                    >,&numsp;<span class="textcolor" style="color: #000000"
+                      >1</span
+                    ><br />
+                    &numsp;&numsp;&numsp;&numsp;&numsp;&numsp;<span
+                      class="textcolor"
+                      style="color: #000000"
+                      >3</span
+                    >,&numsp;<span class="textcolor" style="color: #000000"
+                      >0</span
+                    ><br />
+                    &numsp;&numsp;&numsp;&numsp;};<br />
+                    <span class="textcolor" style="color: #000000">\end</span
+                    >{<span class="textcolor" style="color: #0000b2"
+                      ><a href="tikz-scopes#pgf.tikzpicture"
+                        >tikzpicture</a
+                      ></span
+                    >}<br />
+                  </code>
+                </div>
+              </figure>
+            </div>
+          </div>
+
+          <div class="manualentry">
+            <div class="entryheadline">
+              <p>
+                <a id="pgf.named"></a>
+                <span class="hl-def"
+                  ><b>Format</b>
+                  <kbd
+                    ><span class="textcolor" style="color: #bf0000"
+                      >named</span
+                    ></kbd
+                  ></span
+                >
+                <a class="anchor-link" href="#pgf.named">&para;</a>
+              </p>
+            </div>
+            <p>
+              Basically, each line of the data must consist of a comma-separated
+              sequence of attribute&ndash;values pairs like
+              <span class="texttt">x=5, lo=500</span>. This will cause the
+              attribute <span class="texttt">/data point/x</span> to be set to
+              <span class="texttt">5</span> and
+              <span class="texttt">/data point/lo</span> to be set to
+              <span class="texttt">500</span>.
+            </p>
+
+            <figure class="example">
+              <div class="example-image">
+                <p>
+                  <span class="lateximagesource" id="lateximage-pgfmanual-2737"
+                    ><!--
+1
+
+
+
+0 1 2 3
+-->
+                    <img
+                      alt="(-tikz-&nbsp;diagram)"
+                      class="lateximage"
+                      height="63.675"
+                      loading="lazy"
+                      src="pgfmanual-images/image-2737.png"
+                      style
+                      width="136.946"
+                  /></span>
+                </p>
+              </div>
+
+              <div class="example-code">
+                <button class="clipboardButton" type="button">copy</button>
+                <code>
+                  <span class="c- preamble"
+                    >\usetikzlibrary {datavisualization} </span
+                  ><br />
+                  <span class="textcolor" style="color: #000000">\begin</span
+                  >{<span class="textcolor" style="color: #0000b2"
+                    ><a href="tikz-scopes#pgf.tikzpicture">tikzpicture</a></span
+                  >}<br />
+                  &numsp;&numsp;<span class="textcolor" style="color: #0000b2"
+                    ><a href="dv-main#pgf.back/datavisualization"
+                      >\datavisualization</a
+                    ></span
+                  >&numsp;[<span class="textcolor" style="color: #008000"
+                    ><a href="dv-axes#pgf.school:book:axes"
+                      >school book axes</a
+                    ></span
+                  >,&numsp;<span class="textcolor" style="color: #008000"
+                    ><a href="dv-visualizers#pgf.visualize:as:line"
+                      >visualize as line</a
+                    ></span
+                  >]<br />
+                  &numsp;&numsp;&numsp;&numsp;<span
+                    class="textcolor"
+                    style="color: #000000"
+                    ><a href="dv-main#pgf.data">data</a></span
+                  >
+                  [<span class="textcolor" style="color: #008000"
+                    ><a href="dv-main#pgf.format">format</a></span
+                  >=<span class="textcolor" style="color: #008000"
+                    ><a href="dv-formats#pgf.named">named</a></span
+                  >]&numsp;{<br />
+                  &numsp;&numsp;&numsp;&numsp;&numsp;&numsp;<span
+                    class="textcolor"
+                    style="color: #000000"
+                    >x=0</span
+                  >,&numsp;<span class="textcolor" style="color: #000000"
+                    >y=0</span
+                  ><br />
+                  &numsp;&numsp;&numsp;&numsp;&numsp;&numsp;<span
+                    class="textcolor"
+                    style="color: #000000"
+                    >x=1</span
+                  >,&numsp;<span class="textcolor" style="color: #000000"
+                    >y=1</span
+                  ><br />
+                  &numsp;&numsp;&numsp;&numsp;&numsp;&numsp;<span
+                    class="textcolor"
+                    style="color: #000000"
+                    >x=2</span
+                  >,&numsp;<span class="textcolor" style="color: #000000"
+                    >y=1</span
+                  ><br />
+                  &numsp;&numsp;&numsp;&numsp;&numsp;&numsp;<span
+                    class="textcolor"
+                    style="color: #000000"
+                    >x=3</span
+                  >,&numsp;<span class="textcolor" style="color: #000000"
+                    >y=0</span
+                  ><br />
+                  &numsp;&numsp;&numsp;&numsp;};<br />
+                  <span class="textcolor" style="color: #000000">\end</span
+                  >{<span class="textcolor" style="color: #0000b2"
+                    ><a href="tikz-scopes#pgf.tikzpicture">tikzpicture</a></span
+                  >}<br />
+                </code>
+              </div>
+            </figure>
+            <p>
+              However, instead of just specifying a single value for an
+              attribute as in <span class="texttt">x=5</span>, you may also
+              specify a whole set of values as in
+              <span class="texttt">x={1,2,3}</span>. In this case, three data
+              points will be created, one for each value in the list. Indeed,
+              the <span class="texttt">\foreach</span> statement is used to
+              iterate over the list of values, so you can write things like
+              <span class="texttt">x={1,...,5}</span>.
+            </p>
+            <p>
+              It is also permissible to specify lists of values for more than
+              one attribute. In this case, a data point is created for each
+              possible combination of values in the different lists:
+            </p>
+
+            <figure class="example">
+              <div class="example-image">
+                <p>
+                  <span class="lateximagesource" id="lateximage-pgfmanual-2738"
+                    ><!--
+ 15
+12.5
+ 10
+ 7.5
+  5
+ 2.5
+
+       0 1 2 3 4 5 6
+   -->
+                    <img
+                      alt="(-tikz-&nbsp;diagram)"
+                      class="lateximage"
+                      height="142.970"
+                      loading="lazy"
+                      src="pgfmanual-images/image-2738.png"
+                      style
+                      width="226.082"
+                  /></span>
+                </p>
+              </div>
+
+              <div class="example-code">
+                <button class="clipboardButton" type="button">copy</button>
+                <code>
+                  <span class="c- preamble"
+                    >\usetikzlibrary {datavisualization} </span
+                  ><br />
+                  <span class="textcolor" style="color: #0000b2"
+                    ><a href="tikz-scopes#pgf.back/tikz">\tikz</a></span
+                  >&numsp;<span class="textcolor" style="color: #0000b2"
+                    ><a href="dv-main#pgf.back/datavisualization"
+                      >\datavisualization</a
+                    ></span
+                  ><br />
+                  &numsp;&numsp;[<span class="textcolor" style="color: #008000"
+                    ><a href="dv-axes#pgf.scientific:axes"
+                      >scientific axes</a
+                    ></span
+                  >=<span class="textcolor" style="color: #008000">clean</span
+                  >,<br />
+                  &numsp;&numsp;&numsp;<span
+                    class="textcolor"
+                    style="color: #008000"
+                    ><a href="dv-visualizers#pgf.visualize:as:scatter"
+                      >visualize as scatter</a
+                    ></span
+                  >/<span class="textcolor" style="color: #0000b2"
+                    ><a href="pgfkeys#pgf./handlers/.list">.list</a></span
+                  >=<span class="textcolor" style="color: #008000">{a,b,c}</span
+                  >,<br />
+                  &numsp;&numsp;&numsp;<span
+                    class="textcolor"
+                    style="color: #008000"
+                    ><a href="dv-stylesheets#pgf.style:sheet"
+                      >style sheet</a
+                    ></span
+                  >=<span class="textcolor" style="color: #008000"
+                    ><a href="dv-stylesheets#pgf.cross:marks"
+                      >cross marks</a
+                    ></span
+                  >]<br />
+                  <span class="textcolor" style="color: #000000"
+                    ><a href="dv-main#pgf.data">data</a></span
+                  >
+                  [<span class="textcolor" style="color: #008000"
+                    ><a href="dv-main#pgf.format">format</a></span
+                  >=<span class="textcolor" style="color: #008000"
+                    ><a href="dv-formats#pgf.named">named</a></span
+                  >]&numsp;{<br />
+                  &numsp;&numsp;<span class="textcolor" style="color: #000000"
+                    >x=0</span
+                  >,&numsp;&numsp;&numsp;&numsp;&numsp;&numsp;&numsp;<span
+                    class="textcolor"
+                    style="color: #000000"
+                    >y=</span
+                  >{<span class="textcolor" style="color: #000000">1</span
+                  >,<span class="textcolor" style="color: #000000">2</span
+                  >,<span class="textcolor" style="color: #000000">3</span
+                  >},&numsp;&numsp;&numsp;&numsp;&numsp;&numsp;&numsp;&numsp;<span
+                    class="textcolor"
+                    style="color: #000000"
+                    >set=a</span
+                  ><br />
+                  &numsp;&numsp;<span class="textcolor" style="color: #000000"
+                    >x=</span
+                  >{<span class="textcolor" style="color: #000000">2</span
+                  >,<span class="textcolor" style="color: #000000">3</span
+                  >,<span class="textcolor" style="color: #000000">4</span
+                  >},&numsp;<span class="textcolor" style="color: #000000"
+                    >y=</span
+                  >{<span class="textcolor" style="color: #000000">3</span
+                  >,<span class="textcolor" style="color: #000000">4</span
+                  >,<span class="textcolor" style="color: #000000">5</span
+                  >,<span class="textcolor" style="color: #000000">7</span
+                  >},&numsp;&numsp;&numsp;&numsp;&numsp;&numsp;<span
+                    class="textcolor"
+                    style="color: #000000"
+                    >set=b</span
+                  ><br />
+                  &numsp;&numsp;<span class="textcolor" style="color: #000000"
+                    >x=6</span
+                  >,&numsp;&numsp;&numsp;&numsp;&numsp;&numsp;&numsp;<span
+                    class="textcolor"
+                    style="color: #000000"
+                    >y=</span
+                  >{<span class="textcolor" style="color: #000000">5</span
+                  >,<span class="textcolor" style="color: #000000">7</span
+                  >,...,<span class="textcolor" style="color: #000000">15</span
+                  >},&numsp;&numsp;&numsp;<span
+                    class="textcolor"
+                    style="color: #000000"
+                    >set=c</span
+                  ><br />
+                  };<br />
+                </code>
+              </div>
+            </figure>
+          </div>
+
+          <div class="manualentry">
+            <div class="entryheadline">
+              <p>
+                <a id="pgf.TeX:code"></a>
+                <span class="hl-def"
+                  ><b>Format</b>
+                  <kbd
+                    ><span class="textcolor" style="color: #bf0000"
+                      >TeX code</span
+                    ></kbd
+                  ></span
+                >
+                <a class="anchor-link" href="#pgf.TeX:code">&para;</a>
+              </p>
+            </div>
+            <p>
+              This format will simply execute each line of the data, each of
+              which should contain some normal TeX code. Note that at the end of
+              each line control returns to the format handler, so for instance
+              the arguments of a command may not be spread over several lines.
+              However, not each line needs to produce a data point.
+            </p>
+
+            <figure class="example">
+              <div class="example-image">
+                <p>
+                  <span class="lateximagesource" id="lateximage-pgfmanual-2739"
+                    ><!--
+1
+
+
+
+0 1 2 3
+-->
+                    <img
+                      alt="(-tikz-&nbsp;diagram)"
+                      class="lateximage"
+                      height="63.675"
+                      loading="lazy"
+                      src="pgfmanual-images/image-2739.png"
+                      style
+                      width="136.946"
+                  /></span>
+                </p>
+              </div>
+
+              <div class="example-code">
+                <button class="clipboardButton" type="button">copy</button>
+                <code>
+                  <span class="c- preamble"
+                    >\usetikzlibrary {datavisualization} </span
+                  ><br />
+                  <span class="textcolor" style="color: #000000">\begin</span
+                  >{<span class="textcolor" style="color: #0000b2"
+                    ><a href="tikz-scopes#pgf.tikzpicture">tikzpicture</a></span
+                  >}<br />
+                  &numsp;&numsp;<span class="textcolor" style="color: #0000b2"
+                    ><a href="dv-main#pgf.back/datavisualization"
+                      >\datavisualization</a
+                    ></span
+                  >&numsp;[<span class="textcolor" style="color: #008000"
+                    ><a href="dv-axes#pgf.school:book:axes"
+                      >school book axes</a
+                    ></span
+                  >,&numsp;<span class="textcolor" style="color: #008000"
+                    ><a href="dv-visualizers#pgf.visualize:as:line"
+                      >visualize as line</a
+                    ></span
+                  >]<br />
+                  &numsp;&numsp;&numsp;&numsp;<span
+                    class="textcolor"
+                    style="color: #000000"
+                    ><a href="dv-main#pgf.data">data</a></span
+                  >
+                  [<span class="textcolor" style="color: #008000"
+                    ><a href="dv-main#pgf.format">format</a></span
+                  >=<span class="textcolor" style="color: #008000"
+                    >TeX <a href="tikz-pics#pgf.code">code</a></span
+                  >]&numsp;{<br />
+                  &numsp;&numsp;&numsp;&numsp;&numsp;&numsp;<span
+                    class="textcolor"
+                    style="color: #000000"
+                    ><a href="pgfkeys#pgf.back/pgfkeys">\pgfkeys</a></span
+                  >{<span class="textcolor" style="color: #000000"
+                    ><span class="textcolor" style="color: #008000"
+                      >/data point</span
+                    >/<span class="textcolor" style="color: #0000b2"
+                      ><a href="pgfkeys#pgf./handlers/.cd">.cd</a></span
+                    >,<span class="textcolor" style="color: #008000"
+                      ><a href="tikz-coordinates#pgf.x">x</a></span
+                    >=<span class="textcolor" style="color: #008000">0</span
+                    >,&numsp;<span class="textcolor" style="color: #008000"
+                      ><a href="tikz-coordinates#pgf.y">y</a></span
+                    >=<span class="textcolor" style="color: #008000"
+                      >0</span
+                    ></span
+                  >}&numsp;<span class="textcolor" style="color: #0000b2"
+                    >\pgfdatapoint</span
+                  ><br />
+                  &numsp;&numsp;&numsp;&numsp;&numsp;&numsp;<span
+                    class="textcolor"
+                    style="color: #000000"
+                    ><a href="pgfkeys#pgf.back/pgfkeys">\pgfkeys</a></span
+                  >{<span class="textcolor" style="color: #000000"
+                    ><span class="textcolor" style="color: #008000"
+                      >/data point</span
+                    >/<span class="textcolor" style="color: #0000b2"
+                      ><a href="pgfkeys#pgf./handlers/.cd">.cd</a></span
+                    >,<span class="textcolor" style="color: #008000"
+                      ><a href="tikz-coordinates#pgf.x">x</a></span
+                    >=<span class="textcolor" style="color: #008000">1</span
+                    >,&numsp;<span class="textcolor" style="color: #008000"
+                      ><a href="tikz-coordinates#pgf.y">y</a></span
+                    >=<span class="textcolor" style="color: #008000"
+                      >1</span
+                    ></span
+                  >}&numsp;<span class="textcolor" style="color: #0000b2"
+                    >\pgfdatapoint</span
+                  ><br />
+                  &numsp;&numsp;&numsp;&numsp;&numsp;&numsp;<span
+                    class="textcolor"
+                    style="color: #000000"
+                    ><a href="pgfkeys#pgf.back/pgfkeys">\pgfkeys</a></span
+                  >{<span class="textcolor" style="color: #000000"
+                    ><span class="textcolor" style="color: #008000"
+                      >/data point/x</span
+                    >=<span class="textcolor" style="color: #008000"
+                      >2</span
+                    ></span
+                  >}&numsp;&numsp;&numsp;&numsp;&numsp;&numsp;&numsp;&numsp;&numsp;&numsp;<span
+                    class="textcolor"
+                    style="color: #0000b2"
+                    >\pgfdatapoint</span
+                  ><br />
+                  &numsp;&numsp;&numsp;&numsp;&numsp;&numsp;<span
+                    class="textcolor"
+                    style="color: #0000b2"
+                    ><a href="pgfkeys#pgf.back/pgfkeyssetvalue"
+                      >\pgfkeyssetvalue</a
+                    ></span
+                  >{<span class="textcolor" style="color: #000000">/data</span>
+                  <span class="textcolor" style="color: #000000">point/x</span
+                  >}{<span class="textcolor" style="color: #000000">3</span
+                  >}<br />
+                  &numsp;&numsp;&numsp;&numsp;&numsp;&numsp;<span
+                    class="textcolor"
+                    style="color: #0000b2"
+                    ><a href="pgfkeys#pgf.back/pgfkeyssetvalue"
+                      >\pgfkeyssetvalue</a
+                    ></span
+                  >{<span class="textcolor" style="color: #000000">/data</span>
+                  <span class="textcolor" style="color: #000000">point/y</span
+                  >}{<span class="textcolor" style="color: #000000">0</span
+                  >}&numsp;<span class="textcolor" style="color: #0000b2"
+                    >\pgfdatapoint</span
+                  ><br />
+                  &numsp;&numsp;&numsp;&numsp;};<br />
+                  <span class="textcolor" style="color: #000000">\end</span
+                  >{<span class="textcolor" style="color: #0000b2"
+                    ><a href="tikz-scopes#pgf.tikzpicture">tikzpicture</a></span
+                  >}<br />
+                </code>
+              </div>
+            </figure>
+          </div>
+          <h5 id="autosec-6680">
+            <span class="sectionnumber" id="sec-80.4">80.4&emsp;</span
+            >Reference: Advanced Formats<a class="anchor-link" href="#sec-80.4"
+              >&para;</a
+            >
+          </h5>
+          <a id="pgfmanual-autopage-6680"></a>
+
+          <div class="manualentry">
+            <div class="entryheadline">
+              <p>
+                <a id="pgf.datavisualization.formats.functions"></a>
+                <span class="hl-def"
+                  ><b><span class="tikzname">TikZ</span> Library</b>
+                  <kbd
+                    ><span class="textcolor" style="color: #bf0000"
+                      >datavisualization.formats.functions</span
+                    ></kbd
+                  ></span
+                >
+                <a
+                  class="anchor-link"
+                  href="#pgf.datavisualization.formats.functions"
+                  >&para;</a
+                >
+              </p>
+            </div>
+
+            <p>
+              <kbd
+                >\usetikzlibrary{<span class="textcolor" style="color: #bf0000"
+                  >datavisualization.formats.functions</span
+                >} %
+                <span class="latexlogofont"
+                  ><span class="latexlogo"
+                    >L<span class="latexlogosup">a</span>T<span
+                      class="latexlogosub"
+                      >e</span
+                    >X</span
+                  ></span
+                >
+                and plain
+                <span class="latexlogofont"
+                  ><span class="latexlogo"
+                    >T<span class="latexlogosub">e</span>X</span
+                  ></span
+                ></kbd
+              ><br />
+              <kbd
+                >\usetikzlibrary[<span class="textcolor" style="color: #bf0000"
+                  >datavisualization.formats.functions</span
+                >] % Con<span class="latexlogofont"
+                  ><span class="latexlogo"
+                    >T<span class="latexlogosub">e</span>X</span
+                  ></span
+                >t</kbd
+              ><br />
+              <br />
+              This library defines the formats described in the following, which
+              allow you to specify the data points indirectly, namely via a
+              to-be-evaluated function.
+            </p>
+
+            <div class="manualentry">
+              <div class="entryheadline">
+                <p>
+                  <a id="pgf.function"></a>
+                  <span class="hl-def"
+                    ><b>Format</b>
+                    <kbd
+                      ><span class="textcolor" style="color: #bf0000"
+                        >function</span
+                      ></kbd
+                    ></span
+                  >
+                  <a class="anchor-link" href="#pgf.function">&para;</a>
+                </p>
+              </div>
+              <p>
+                This format allows you to specify a function that is then
+                evaluated in order to create the desired data points. In other
+                words, the data lines do not contain the data itself, but rather
+                a functional description of the data.
+              </p>
+              <p>
+                The format used to specify the function works as follows: Each
+                nonempty line of the data should contain at least one of either
+                a <em>variable declaration</em> or a
+                <em>function declaration</em>. A variable declaration signals
+                that a certain attribute will range over a given interval. The
+                function declarations will then, later, be evaluated for values
+                inside this interval. The syntax for a variable declaration is
+                one of the following:
+              </p>
+
+              <p>
+                1. <span class="texttt">var </span
+                ><span class="textcolor" style="color: #bf0000"
+                  ><span class="angle">&langle;</span><i>variable</i
+                  ><span class="angle">&rangle;</span></span
+                ><span class="texttt"> : interval[</span
+                ><span class="angle">&langle;</span><i>low</i
+                ><span class="angle">&rangle;</span><span class="texttt">:</span
+                ><span class="angle">&langle;</span><i>high</i
+                ><span class="angle">&rangle;</span
+                ><span class="texttt">]</span>
+                <span class="textcolor" style="color: #008000"
+                  ><span class="texttt">samples </span
+                  ><span class="angle">&langle;</span><i>number</i
+                  ><span class="angle">&rangle;</span></span
+                ><span class="texttt">;</span>
+              </p>
+              <p>
+                2. <span class="texttt">var </span
+                ><span class="textcolor" style="color: #bf0000"
+                  ><span class="angle">&langle;</span><i>variable</i
+                  ><span class="angle">&rangle;</span></span
+                ><span class="texttt"> : interval[</span
+                ><span class="angle">&langle;</span><i>low</i
+                ><span class="angle">&rangle;</span><span class="texttt">:</span
+                ><span class="angle">&langle;</span><i>high</i
+                ><span class="angle">&rangle;</span
+                ><span class="texttt">] step </span
+                ><span class="angle">&langle;</span><i>step</i
+                ><span class="angle">&rangle;</span
+                ><span class="texttt">;</span>
+              </p>
+              <p>
+                3. <span class="texttt">var </span
+                ><span class="textcolor" style="color: #bf0000"
+                  ><span class="angle">&langle;</span><i>variable</i
+                  ><span class="angle">&rangle;</span></span
+                ><span class="texttt"> : {</span
+                ><span class="angle">&langle;</span><i>values</i
+                ><span class="angle">&rangle;</span
+                ><span class="texttt">};</span>
+              </p>
+
+              <p>
+                In the first case, if the optional
+                <span class="texttt">samples</span> part is missing, the number
+                of <span class="texttt">samples</span> is taken from the value
+                stored in the following key:
+              </p>
+
+              <div class="manualentry">
+                <div class="entryheadline">
+                  <p>
+                    <a id="pgf./pgf/data/samples"></a>
+                    <span class="hl-def"
+                      ><kbd
+                        ><span class="keyname"
+                          ><span class="textcolor" style="color: #bf0000"
+                            >/pgf/data/samples</span
+                          ></span
+                        >=</kbd
+                      ><span class="angle">&langle;</span><i>number</i
+                      ><span class="angle">&rangle;</span> </span
+                    ><span class="hl-default"
+                      >(no default, initially <kbd>25</kbd>)</span
+                    >
+                    <a class="anchor-link" href="#pgf./pgf/data/samples"
+                      >&para;</a
+                    >
+                  </p>
+                </div>
+                <p>
+                  Sets the number of samples to be used when no sample number is
+                  specified.
+                </p>
+              </div>
+              <p>
+                The meaning of declaring a variable declaration to range over an
+                <span class="texttt">interval</span> is that the attribute named
+                <span class="angle">&langle;</span><i>variable</i
+                ><span class="angle">&rangle;</span>, that is, the key
+                <span class="texttt">/data point/</span
+                ><span class="angle">&langle;</span><i>variable</i
+                ><span class="angle">&rangle;</span>, will range over the
+                interval \([\meta {low},\meta {high}]\). If the number of
+                <span class="texttt">samples</span> is given (directly or
+                indirectly), the interval is evenly divided into
+                <span class="angle">&langle;</span><i>number</i
+                ><span class="angle">&rangle;</span> many points and the
+                attribute is set to each of these values. Similarly, when a
+                <span class="angle">&langle;</span><i>step</i
+                ><span class="angle">&rangle;</span> is specified, this stepping
+                is used to increase <span class="angle">&langle;</span><i>low</i
+                ><span class="angle">&rangle;</span> iteratively up to the
+                largest value that is still less or equal to
+                <span class="angle">&langle;</span><i>high</i
+                ><span class="angle">&rangle;</span>.
+              </p>
+              <p>
+                The meaning of declaring a variable using a list of
+                <span class="angle">&langle;</span><i>values</i
+                ><span class="angle">&rangle;</span> is that the variable will
+                simply iterate over the values using
+                <span class="texttt">\foreach</span>.
+              </p>
+              <p>
+                You can specify more than one variable. In this case, each
+                variable is varied independently of the other variables. For
+                instance, if you declare an \(x\)-variable to range over the
+                interval \([0,1]\) in \(25\) steps and you also declare a
+                \(y\)-variable to range over the same interval, you get a total
+                of \(625\) value pairs.
+              </p>
+              <p>
+                The variable declarations specify which (input) variables will
+                take which values. It is the job of the
+                <em>function declarations</em> to specify how some additional
+                attributes are to be computed. The syntax of a function
+                declaration is as follows:
+              </p>
+              <blockquote>
+                <p>
+                  <span class="texttt">func </span
+                  ><span class="textcolor" style="color: #bf0000"
+                    ><span class="angle">&langle;</span><i>attribute</i
+                    ><span class="angle">&rangle;</span></span
+                  ><span class="texttt"> = </span
+                  ><span class="angle">&langle;</span><i>expression</i
+                  ><span class="angle">&rangle;</span
+                  ><span class="texttt">;</span>
+                </p>
+              </blockquote>
+              <p>
+                The meaning of such a declaration is the following: For each
+                setting of the input variables (the variables specified using
+                the <span class="texttt">var</span> declaration), evaluate the
+                <span class="angle">&langle;</span><i>expression</i
+                ><span class="angle">&rangle;</span> using the standard
+                mathematical parser of <span class="tikzname">TikZ</span>. The
+                resulting value is then stored in
+                <span class="texttt">/data point/</span
+                ><span class="angle">&langle;</span><i>attribute</i
+                ><span class="angle">&rangle;</span>.
+              </p>
+              <p>
+                Inside <span class="angle">&langle;</span><i>expression</i
+                ><span class="angle">&rangle;</span> you can reference data
+                point attributes using the following command, which is only
+                defined inside such an expression:
+              </p>
+
+              <div class="manualentry">
+                <div class="entryheadline">
+                  <p>
+                    <a id="pgf.back/value"></a>
+                    <span class="hl-def"
+                      ><span class="textcolor" style="color: #bf0000"
+                        ><kbd>\value</kbd></span
+                      >{<span class="angle">&langle;</span><i>variable</i
+                      ><span class="angle">&rangle;</span>}</span
+                    >
+                    <a class="anchor-link" href="#pgf.back/value">&para;</a>
+                  </p>
+                </div>
+                <p>
+                  This expands to the current value of the key
+                  <span class="texttt">/data point/</span
+                  ><span class="angle">&langle;</span><i>variable</i
+                  ><span class="angle">&rangle;</span>.
+                </p>
+              </div>
+              <p>
+                There can be multiple function declarations in a single data
+                specification. In this case, all of these functions will be
+                evaluated for each setting of input variables.
+              </p>
+
+              <figure class="example">
+                <div class="example-image">
+                  <p>
+                    <span
+                      class="lateximagesource"
+                      id="lateximage-pgfmanual-2740"
+                      ><!--
+     2
+
+
+     1
+
+
+
+−1 0 1
+-->
+                      <img
+                        alt="(-tikz-&nbsp;diagram)"
+                        class="lateximage"
+                        height="110.714"
+                        loading="lazy"
+                        src="pgfmanual-images/image-2740.png"
+                        style
+                        width="135.997"
+                    /></span>
+                  </p>
+                </div>
+
+                <div class="example-code">
+                  <button class="clipboardButton" type="button">copy</button>
+                  <code>
+                    <span class="c- preamble"
+                      >\usetikzlibrary {datavisualization.formats.functions} </span
+                    ><br />
+                    <span class="textcolor" style="color: #0000b2"
+                      ><a href="tikz-scopes#pgf.back/tikz">\tikz</a></span
+                    ><br />
+                    &numsp;&numsp;<span class="textcolor" style="color: #0000b2"
+                      ><a href="dv-main#pgf.back/datavisualization"
+                        >\datavisualization</a
+                      ></span
+                    >&numsp;[<span class="textcolor" style="color: #008000"
+                      ><a href="dv-axes#pgf.school:book:axes"
+                        >school book axes</a
+                      ></span
+                    >,&numsp;<span class="textcolor" style="color: #008000"
+                      ><a href="dv-visualizers#pgf.visualize:as:smooth:line"
+                        >visualize as smooth line</a
+                      ></span
+                    >]<br />
+                    &numsp;&numsp;&numsp;&numsp;<span
+                      class="textcolor"
+                      style="color: #000000"
+                      ><a href="dv-main#pgf.data">data</a></span
+                    >
+                    [<span class="textcolor" style="color: #008000"
+                      ><a href="dv-main#pgf.format">format</a></span
+                    >=<span class="textcolor" style="color: #008000"
+                      ><a href="dv-formats#pgf.function">function</a></span
+                    >]&numsp;{<br />
+                    &numsp;&numsp;&numsp;&numsp;&numsp;&numsp;<span
+                      class="textcolor"
+                      style="color: #000000"
+                      ><a href="pgffor#pgf.var">var</a></span
+                    >
+                    <span class="textcolor" style="color: #000000"
+                      ><a href="tikz-coordinates#pgf.x">x</a></span
+                    >
+                    <span class="textcolor" style="color: #000000"
+                      ><a href="tikz-paths#pgf.:">:</a></span
+                    >
+                    <span class="textcolor" style="color: #000000"
+                      >interval</span
+                    >
+                    [<span class="textcolor" style="color: #008000"
+                      >-1.5:1.5</span
+                    >];<br />
+                    <br />
+                    &numsp;&numsp;&numsp;&numsp;&numsp;&numsp;<span
+                      class="textcolor"
+                      style="color: #000000"
+                      >func</span
+                    >
+                    <span class="textcolor" style="color: #000000"
+                      ><a href="tikz-coordinates#pgf.y">y</a></span
+                    >
+                    <span class="textcolor" style="color: #000000">=</span>
+                    <span class="textcolor" style="color: #0000b2"
+                      ><a href="dv-formats#pgf.back/value">\value</a></span
+                    >&numsp;<span class="textcolor" style="color: #000000"
+                      ><a href="tikz-coordinates#pgf.x">x</a></span
+                    >
+                    <span class="textcolor" style="color: #000000">*</span>
+                    <span class="textcolor" style="color: #0000b2"
+                      ><a href="dv-formats#pgf.back/value">\value</a></span
+                    >&numsp;<span class="textcolor" style="color: #000000"
+                      ><a href="tikz-coordinates#pgf.x">x</a></span
+                    >;<br />
+                    &numsp;&numsp;&numsp;&numsp;};<br />
+                  </code>
+                </div>
+              </figure>
+
+              <figure class="example">
+                <div class="example-image">
+                  <p>
+                    <span
+                      class="lateximagesource"
+                      id="lateximage-pgfmanual-2741"
+                      ><!--
+−2 0 2 4 6
+
+     −2
+
+
+     −4
+-->
+                      <img
+                        alt="(-tikz-&nbsp;diagram)"
+                        class="lateximage"
+                        height="147.674"
+                        loading="lazy"
+                        src="pgfmanual-images/image-2741.png"
+                        style
+                        width="203.469"
+                    /></span>
+                  </p>
+                </div>
+
+                <div class="example-code">
+                  <button class="clipboardButton" type="button">copy</button>
+                  <code>
+                    <span class="c- preamble"
+                      >\usetikzlibrary {datavisualization.formats.functions} </span
+                    ><br />
+                    <span class="textcolor" style="color: #0000b2"
+                      ><a href="tikz-scopes#pgf.back/tikz">\tikz</a></span
+                    >&numsp;<span class="textcolor" style="color: #0000b2"
+                      ><a href="dv-main#pgf.back/datavisualization"
+                        >\datavisualization</a
+                      ></span
+                    >&numsp;[<br />
+                    &numsp;&numsp;<span class="textcolor" style="color: #008000"
+                      ><a href="dv-axes#pgf.school:book:axes"
+                        >school book axes</a
+                      ></span
+                    >,<br />
+                    &numsp;&numsp;<span class="textcolor" style="color: #008000"
+                      ><a href="dv-axes#pgf.all:axes">all axes</a></span
+                    >=<span class="textcolor" style="color: #008000"
+                      >{unit length=5mm,&numsp;ticks={step=2}}</span
+                    >,<br />
+                    &numsp;&numsp;<span class="textcolor" style="color: #008000"
+                      ><a href="dv-visualizers#pgf.visualize:as:smooth:line"
+                        >visualize as smooth line</a
+                      ></span
+                    >]<br />
+                    <span class="textcolor" style="color: #000000"
+                      ><a href="dv-main#pgf.data">data</a></span
+                    >
+                    [<span class="textcolor" style="color: #008000"
+                      ><a href="dv-main#pgf.format">format</a></span
+                    >=<span class="textcolor" style="color: #008000"
+                      ><a href="dv-formats#pgf.function">function</a></span
+                    >]&numsp;{<br />
+                    &numsp;&numsp;<span class="textcolor" style="color: #000000"
+                      ><a href="pgffor#pgf.var">var</a></span
+                    >
+                    <span class="textcolor" style="color: #000000">t</span>
+                    <span class="textcolor" style="color: #000000"
+                      ><a href="tikz-paths#pgf.:">:</a></span
+                    >
+                    <span class="textcolor" style="color: #000000"
+                      >interval</span
+                    >
+                    [<span class="textcolor" style="color: #008000">0:2*pi</span
+                    >];<br />
+                    <br />
+                    &numsp;&numsp;<span class="textcolor" style="color: #000000"
+                      >func</span
+                    >
+                    <span class="textcolor" style="color: #000000"
+                      ><a href="tikz-coordinates#pgf.x">x</a></span
+                    >
+                    <span class="textcolor" style="color: #000000">=</span>
+                    <span class="textcolor" style="color: #0000b2"
+                      ><a href="dv-formats#pgf.back/value">\value</a></span
+                    >&numsp;<span class="textcolor" style="color: #000000"
+                      >t</span
+                    >
+                    <span class="textcolor" style="color: #000000">*</span>
+                    <span class="textcolor" style="color: #000000"
+                      ><a href="tikz-paths#pgf.cos">cos</a></span
+                    ><span class="textcolor" style="color: #800080"
+                      >(\value t r)</span
+                    >;<br />
+                    &numsp;&numsp;<span class="textcolor" style="color: #000000"
+                      >func</span
+                    >
+                    <span class="textcolor" style="color: #000000"
+                      ><a href="tikz-coordinates#pgf.y">y</a></span
+                    >
+                    <span class="textcolor" style="color: #000000">=</span>
+                    <span class="textcolor" style="color: #0000b2"
+                      ><a href="dv-formats#pgf.back/value">\value</a></span
+                    >&numsp;<span class="textcolor" style="color: #000000"
+                      >t</span
+                    >
+                    <span class="textcolor" style="color: #000000">*</span>
+                    <span class="textcolor" style="color: #000000"
+                      ><a href="tikz-paths#pgf.sin">sin</a></span
+                    ><span class="textcolor" style="color: #800080"
+                      >(\value t r)</span
+                    >;<br />
+                    };<br />
+                  </code>
+                </div>
+              </figure>
+
+              <figure class="example">
+                <div class="example-image">
+                  <p>
+                    <span
+                      class="lateximagesource"
+                      id="lateximage-pgfmanual-2742"
+                      ><!--
+ 0.15
+ 0.10
+ 0.05
+ 0.00
+−0.05
+−0.10
+−0.15
+
+        0◦ 10◦ 20◦ 30◦ 40◦ 50◦
+-->
+                      <img
+                        alt="(-tikz-&nbsp;diagram)"
+                        class="lateximage"
+                        height="140.498"
+                        loading="lazy"
+                        src="pgfmanual-images/image-2742.png"
+                        style
+                        width="239.642"
+                    /></span>
+                  </p>
+                </div>
+
+                <div class="example-code">
+                  <button class="clipboardButton" type="button">copy</button>
+                  <code>
+                    <span class="c- preamble"
+                      >\usetikzlibrary {datavisualization.formats.functions} </span
+                    ><br />
+                    <span class="textcolor" style="color: #0000b2"
+                      ><a href="tikz-scopes#pgf.back/tikz">\tikz</a></span
+                    >&numsp;<span class="textcolor" style="color: #0000b2"
+                      ><a href="dv-main#pgf.back/datavisualization"
+                        >\datavisualization</a
+                      ></span
+                    >&numsp;[<br />
+                    &numsp;&numsp;<span class="textcolor" style="color: #008000"
+                      ><a href="dv-axes#pgf.scientific:axes"
+                        >scientific axes</a
+                      ></span
+                    >=<span class="textcolor" style="color: #008000">clean</span
+                    >,<br />
+                    &numsp;&numsp;<span class="textcolor" style="color: #008000"
+                      >y axis</span
+                    >=<span class="textcolor" style="color: #008000"
+                      >{ticks={style={<br />
+                      &numsp;&numsp;&numsp;&numsp;&numsp;&numsp;&numsp;&numsp;/pgf/number
+                      format/fixed,<br />
+                      &numsp;&numsp;&numsp;&numsp;&numsp;&numsp;&numsp;&numsp;/pgf/number
+                      format/fixed
+                      <a href="math-numberprinting#pgf.zerofill">zerofill</a
+                      >,<br />
+                      &numsp;&numsp;&numsp;&numsp;&numsp;&numsp;&numsp;&numsp;/pgf/number
+                      format/precision=2}}}</span
+                    >,<br />
+                    &numsp;&numsp;<span class="textcolor" style="color: #008000"
+                      >x axis</span
+                    >=<span class="textcolor" style="color: #008000"
+                      >{ticks={tick suffix=${}^<span
+                        class="textcolor"
+                        style="color: #0000b2"
+                        >\circ</span
+                      >$}}</span
+                    >,<br />
+                    &numsp;&numsp;<span class="textcolor" style="color: #008000"
+                      ><a href="dv-visualizers#pgf.visualize:as:smooth:line"
+                        >visualize as smooth line</a
+                      ></span
+                    >/<span class="textcolor" style="color: #0000b2"
+                      ><a href="pgfkeys#pgf./handlers/.list">.list</a></span
+                    >=<span class="textcolor" style="color: #008000"
+                      >{1,2,3,4,5,6}</span
+                    >,<br />
+                    &numsp;&numsp;<span class="textcolor" style="color: #008000"
+                      ><a href="dv-stylesheets#pgf.style:sheet"
+                        >style sheet</a
+                      ></span
+                    >=<span class="textcolor" style="color: #008000"
+                      ><a href="dv-stylesheets#pgf.vary:hue">vary hue</a></span
+                    >]<br />
+                    <span class="textcolor" style="color: #000000"
+                      ><a href="dv-main#pgf.data">data</a></span
+                    >
+                    [<span class="textcolor" style="color: #008000"
+                      ><a href="dv-main#pgf.format">format</a></span
+                    >=<span class="textcolor" style="color: #008000"
+                      ><a href="dv-formats#pgf.function">function</a></span
+                    >]&numsp;{<br />
+                    &numsp;&numsp;<span class="textcolor" style="color: #000000"
+                      ><a href="pgffor#pgf.var">var</a></span
+                    >
+                    <span class="textcolor" style="color: #000000"
+                      ><a href="tikz-graphs#pgf.set">set</a></span
+                    >
+                    <span class="textcolor" style="color: #000000"
+                      ><a href="tikz-paths#pgf.:">:</a></span
+                    >
+                    {<span class="textcolor" style="color: #000000">1</span
+                    >,...,<span class="textcolor" style="color: #000000">6</span
+                    >};<br />
+                    &numsp;&numsp;<span class="textcolor" style="color: #000000"
+                      ><a href="pgffor#pgf.var">var</a></span
+                    >
+                    <span class="textcolor" style="color: #000000"
+                      ><a href="tikz-coordinates#pgf.x">x</a></span
+                    >
+                    <span class="textcolor" style="color: #000000"
+                      ><a href="tikz-paths#pgf.:">:</a></span
+                    >
+                    <span class="textcolor" style="color: #000000"
+                      >interval</span
+                    >
+                    [<span class="textcolor" style="color: #008000">0:50</span
+                    >];<br />
+                    &numsp;&numsp;<span class="textcolor" style="color: #000000"
+                      >func</span
+                    >
+                    <span class="textcolor" style="color: #000000"
+                      ><a href="tikz-coordinates#pgf.y">y</a></span
+                    >
+                    <span class="textcolor" style="color: #000000">=</span>
+                    <span class="textcolor" style="color: #000000"
+                      ><a href="tikz-paths#pgf.sin">sin</a></span
+                    ><span class="textcolor" style="color: #800080"
+                      >(\value x * (\value{set}+10)</span
+                    >)<span class="textcolor" style="color: #000000">/</span
+                    ><span class="textcolor" style="color: #800080"
+                      >(\value{set}+5)</span
+                    >;<br />
+                    };<br />
+                  </code>
+                </div>
+              </figure>
+            </div>
+          </div>
+          <h5 id="autosec-6688">
+            <a id="section-dv-parsing"></a
+            ><span class="sectionnumber" id="sec-80.5">80.5&emsp;</span
+            >Advanced: The Data Parsing Process<a
+              class="anchor-link"
+              href="#sec-80.5"
+              >&para;</a
+            >
+          </h5>
+          <a id="pgfmanual-autopage-6688"></a>
+
+          <p>
+            Whenever data is fed to the data visualization system, it will be
+            handled by the <span class="texttt">\pgfdata</span> command,
+            declared in the
+            <span class="texttt">datavisualization</span> module. The command is
+            both used to parse data stored in external sources (that is, in
+            external files or which is produced on the fly by calling an
+            external command) as well as data given inline. A data format does
+            not need to know whether data comes from a file or is given inline,
+            the <span class="texttt">\pgfdata</span> command will take care of
+            this.
+          </p>
+
+          <p>
+            Since
+            <span class="latexlogofont"
+              ><span class="latexlogo"
+                >T<span class="latexlogosub">e</span>X</span
+              ></span
+            >
+            will always read files in a line-wise fashion, data is always fed to
+            data format parsers in such a fashion. Thus, even it would make more
+            sense for a format to ignore line-breaks, the parser must still
+            handle data given line-by-line.
+          </p>
+
+          <p>
+            Let us now have a look at how
+            <span class="texttt">\pgfdata</span> works.
+          </p>
+
+          <div class="manualentry">
+            <div class="entryheadline">
+              <p>
+                <a id="pgf.back/pgfdata"></a>
+                <span class="hl-def"
+                  ><span class="textcolor" style="color: #bf0000"
+                    ><kbd>\pgfdata</kbd></span
+                  ><span class="textcolor" style="color: #008000"
+                    >[<span class="angle">&langle;</span><i>options</i
+                    ><span class="angle">&rangle;</span>]{<span class="angle"
+                      >&langle;</span
+                    ><i>inline data</i
+                    ><span class="angle">&rangle;</span>}</span
+                  ></span
+                >
+                <a class="anchor-link" href="#pgf.back/pgfdata">&para;</a>
+              </p>
+            </div>
+            <p>
+              This command is used to feed data to the visualization pipeline.
+              This command can only be used when a data visualization object has
+              been properly setup, see Section&nbsp;<a
+                href="dv-main#section-dv-main-setup"
+                >79</a
+              >.
+            </p>
+            <p>
+              <b>Basic options.</b> The
+              <span class="texttt">\pgfdata</span> command may be followed by
+              <span class="angle">&langle;</span><i>options</i
+              ><span class="angle">&rangle;</span>, which are executed with the
+              path <span class="texttt">/pgf/data/</span>. Depending on these
+              options, the <span class="angle">&langle;</span><i>options</i
+              ><span class="angle">&rangle;</span> may either be followed by
+              <span class="angle">&langle;</span><i>inline data</i
+              ><span class="angle">&rangle;</span> or, alternatively, no
+              <span class="angle">&langle;</span><i>inline data</i
+              ><span class="angle">&rangle;</span> is present and the data is
+              read from an external source.
+            </p>
+            <p>
+              The first important option is <span class="angle">&langle;</span
+              ><i>source</i><span class="angle">&rangle;</span>, which governs
+              which of these two alternatives applies:
+            </p>
+
+            <div class="manualentry">
+              <div class="entryheadline">
+                <p>
+                  <span class="hl-def"
+                    ><kbd
+                      ><span class="keyname"
+                        ><span class="textcolor" style="color: #bf0000"
+                          >/pgf/data/read from file</span
+                        ></span
+                      >=</kbd
+                    ><span class="angle">&langle;</span><i>filename</i
+                    ><span class="angle">&rangle;</span> </span
+                  ><span class="hl-default"
+                    >(no default, initially <kbd>empty</kbd>)</span
+                  >
+                </p>
+              </div>
+              <p>
+                If you set the
+                <span class="texttt">read from file</span> attribute to a
+                non-empty <span class="angle">&langle;</span><i>filename</i
+                ><span class="angle">&rangle;</span>, the data will be read from
+                this file. In this case, no <span class="angle">&langle;</span
+                ><i>inline data</i><span class="angle">&rangle;</span> may be
+                present, not even empty curly braces should be provided. If
+                <span class="texttt">read from file</span> is empty, the data
+                must directly follow as <span class="angle">&langle;</span
+                ><i>inline data</i><span class="angle">&rangle;</span>.
+              </p>
+
+              <figure class="example">
+                <div class="example-code">
+                  <button class="clipboardButton" type="button">copy</button>
+                  <code>
+                    <br />
+                    <span class="example-code-comment"
+                      >% Data is read from two external files:</span
+                    ><br />
+                    <span class="textcolor" style="color: #0000b2"
+                      ><a href="dv-formats#pgf.back/pgfdata">\pgfdata</a></span
+                    >[<span class="textcolor" style="color: #008000"
+                      ><a href="dv-main#pgf.format">format</a></span
+                    >=<span class="textcolor" style="color: #008000"
+                      ><a href="dv-formats#pgf.table">table</a></span
+                    >,&numsp;<span class="textcolor" style="color: #008000"
+                      ><a href="dv-main#pgf.read:from:file"
+                        >read from file</a
+                      ></span
+                    >=<span class="textcolor" style="color: #008000"
+                      >file1.csv</span
+                    >]<br />
+                    <span class="textcolor" style="color: #0000b2"
+                      ><a href="dv-formats#pgf.back/pgfdata">\pgfdata</a></span
+                    >[<span class="textcolor" style="color: #008000"
+                      ><a href="dv-main#pgf.format">format</a></span
+                    >=<span class="textcolor" style="color: #008000"
+                      ><a href="dv-formats#pgf.table">table</a></span
+                    >,&numsp;<span class="textcolor" style="color: #008000"
+                      ><a href="dv-main#pgf.read:from:file"
+                        >read from file</a
+                      ></span
+                    >=<span class="textcolor" style="color: #008000"
+                      >file2.csv</span
+                    >]<br />
+                  </code>
+                </div>
+              </figure>
+
+              <figure class="example">
+                <div class="example-code">
+                  <button class="clipboardButton" type="button">copy</button>
+                  <code>
+                    <br />
+                    <span class="example-code-comment"
+                      >% Data is given inline:</span
+                    ><br />
+                    <span class="textcolor" style="color: #0000b2"
+                      ><a href="dv-formats#pgf.back/pgfdata">\pgfdata</a></span
+                    >[<span class="textcolor" style="color: #008000"
+                      ><a href="dv-main#pgf.format">format</a></span
+                    >=<span class="textcolor" style="color: #008000"
+                      ><a href="dv-formats#pgf.table">table</a></span
+                    >]<br />
+                    {<br />
+                    &numsp;&numsp;<span class="textcolor" style="color: #000000"
+                      ><a href="tikz-coordinates#pgf.x">x</a></span
+                    >,&numsp;<span class="textcolor" style="color: #000000"
+                      ><a href="tikz-coordinates#pgf.y">y</a></span
+                    ><br />
+                    &numsp;&numsp;<span class="textcolor" style="color: #000000"
+                      >1</span
+                    >,&numsp;<span class="textcolor" style="color: #000000"
+                      >2</span
+                    ><br />
+                    &numsp;&numsp;<span class="textcolor" style="color: #000000"
+                      >2</span
+                    >,&numsp;<span class="textcolor" style="color: #000000"
+                      >3</span
+                    ><br />
+                    }<br />
+                  </code>
+                </div>
+              </figure>
+            </div>
+
+            <div class="manualentry">
+              <div class="entryheadline">
+                <p>
+                  <a id="pgf./pgf/data/inline"></a><a id="pgf.inline"></a>
+                  <span class="hl-def"
+                    ><kbd
+                      ><span class="keyname"
+                        ><span class="textcolor" style="color: #bf0000"
+                          >/pgf/data/inline</span
+                        ></span
+                      ></kbd
+                    ></span
+                  ><span class="hl-default">(no value)</span>
+                  <a class="anchor-link" href="#pgf./pgf/data/inline">&para;</a>
+                </p>
+              </div>
+              <p>
+                This is a shorthand file
+                <span class="texttt">read from file={}</span>. You can add this
+                to make it clear(er) to the reader that data follows inline.
+              </p>
+            </div>
+            <p>
+              The second important key is <span class="texttt">format</span>,
+              which is used to specify the data format:
+            </p>
+
+            <div class="manualentry">
+              <div class="entryheadline">
+                <p>
+                  <span class="hl-def"
+                    ><kbd
+                      ><span class="keyname"
+                        ><span class="textcolor" style="color: #bf0000"
+                          >/pgf/data/format</span
+                        ></span
+                      >=</kbd
+                    ><span class="angle">&langle;</span><i>format</i
+                    ><span class="angle">&rangle;</span> </span
+                  ><span class="hl-default"
+                    >(no default, initially <kbd>table</kbd>)</span
+                  >
+                </p>
+              </div>
+              <p>
+                Use this key to locally set the format used for parsing the
+                data. The <span class="angle">&langle;</span><i>format</i
+                ><span class="angle">&rangle;</span> must be a format that has
+                been previously declared using the
+                <span class="texttt">\pgfdeclaredataformat</span> command. See
+                the reference section for a list of the predefined formats.
+              </p>
+            </div>
+            <p>
+              In case all your data is in a certain format, you may wish to
+              generally set the above key somewhere at the beginning of your
+              file. Alternatively, you can use the following style to setup the
+              <span class="texttt">format</span> key and possibly further keys
+              concerning the data format:
+            </p>
+
+            <div class="manualentry">
+              <div class="entryheadline">
+                <p>
+                  <a id="pgf./pgf/every:data"></a>
+                  <span class="hl-def"
+                    ><kbd
+                      ><span class="keyname"
+                        ><span class="textcolor" style="color: #bf0000"
+                          >/pgf/every data</span
+                        ></span
+                      ></kbd
+                    ></span
+                  ><span class="hl-default">(style, no value)</span>
+                  <a class="anchor-link" href="#pgf./pgf/every:data">&para;</a>
+                </p>
+              </div>
+              <p>
+                This style is executed by
+                <span class="texttt">\pgfdata</span> before the
+                <span class="angle">&langle;</span><i>options</i
+                ><span class="angle">&rangle;</span> are parsed.
+              </p>
+              <p>
+                Note that the path of this key is just
+                <span class="texttt">/pgf/</span>, not
+                <span class="texttt">/pgf/data/</span>. Also note that
+                <span class="tikzname">TikZ</span> internally sets the value of
+                this key up in such a way that the keys
+                <span class="texttt">/tikz/every data</span> and also
+                <span class="texttt">/tikz/data visualization/every data</span>
+                are executed. The bottom line of this is that when using
+                <span class="tikzname">TikZ</span>, you should not set this key
+                directly, set
+                <span class="texttt">/tikz/every data</span> instead.
+              </p>
+            </div>
+            <p>
+              <b>Gathering of the data.</b> Once the data format and the source
+              have been decided upon, the data is &ldquo;gathered&rdquo;. During
+              this phase the data is not actually parsed in detail, but just
+              gathered so that it can later be parsed during the visualization.
+              There are two different ways in which the data is gathered:
+            </p>
+
+            <p>
+              &bull; In case you have specified an external source, the data
+              visualization object is told (by means of invoking the
+              <span class="texttt">add data</span> method) that it should
+              (later) read data from the file specified by the
+              <span class="texttt">source</span> key using the format specified
+              by the <span class="texttt">format</span> key. The file is not
+              read at this point, but only later during the actual
+              visualization.
+            </p>
+
+            <p>
+              &bull; Otherwise, namely when data is given inline, depending on
+              which format is used, some catcodes get changed. This is necessary
+              since
+              <span class="latexlogofont"
+                ><span class="latexlogo"
+                  >T<span class="latexlogosub">e</span>X</span
+                ></span
+              >&rsquo;s special characters are often not-so-special in a certain
+              format.
+            </p>
+            <p>
+              Independently of the format, the end-of-line character (carriage
+              return) is made an active character.
+            </p>
+            <p>
+              Finally, the <span class="angle">&langle;</span><i>inline data</i
+              ><span class="angle">&rangle;</span> is then read as a normal
+              argument and the data visualization object is told that later on
+              it should parse this data using the given format parser. Note that
+              in this case the data visualization object must store the whole
+              data internally.
+            </p>
+
+            <p>
+              In both cases the &ldquo;data visualization object&rdquo; is the
+              object stored in the
+              <span class="texttt">/pgf/data visualization/obj</span> key.
+            </p>
+            <p>
+              <b>Parsing of the data.</b> During the actual data visualization,
+              all code that has been added to the data visualization object by
+              means of the <span class="texttt">add data</span> method is
+              executed several times. It is the job of this code to call the
+              <span class="texttt">\pgfdatapoint</span> method for all data
+              points present in the data.
+            </p>
+            <p>
+              When the <span class="texttt">\pgfdata</span> method calls
+              <span class="texttt">add data</span>, the code that is passed to
+              the data visualization object is just a call to internal macros of
+              <span class="texttt">\pgfdata</span>, which are able to parse the
+              data stored in an external file or in the inlined data.
+              Independently of where the data is stored, these macros always do
+              the following:
+            </p>
+
+            <p>
+              1. The catcodes are setup according to what the data format
+              requires.
+            </p>
+
+            <p>
+              2. Format-specific startup code gets called, which can initialize
+              internal variables of the parsing process. (The catcode changes
+              are not part of the startup code since in order to read inline
+              data <span class="texttt">\pgfdata</span> must be able to setup to
+              temporarily setup the catcodes needed later on by the parsers, but
+              since no reading is to be done, no startup code should be called
+              at this point.)
+            </p>
+
+            <p>
+              3. For each line of the data a format-specific code handler, which
+              depends on the data format, is called. This handler gets the
+              current line as input and should call
+              <span class="texttt">\pgfdatapoint</span> once for each data point
+              that is encoded by this line (a line might define multiple data
+              points or none at all). Empty lines are handled by special
+              format-specific code.
+            </p>
+
+            <p>4. At the end, format-specific end code is executed.</p>
+
+            <p>
+              For an example of how this works, see the description of the
+              <span class="texttt">\pgfdeclaredataformat</span> command.
+            </p>
+            <p>
+              <b>Data sets.</b> There are three options that allow you to create
+              <em>data sets</em>. Such a data set is essentially a macro that
+              stores a pre-parsed set of data that can be used multiple times in
+              subsequent visualizations (or even in the same visualization).
+            </p>
+
+            <div class="manualentry">
+              <div class="entryheadline">
+                <p>
+                  <a id="pgf./pgf/data/new:set"></a>
+                  <span class="hl-def"
+                    ><kbd
+                      ><span class="keyname"
+                        ><span class="textcolor" style="color: #bf0000"
+                          >/pgf/data/new set</span
+                        ></span
+                      >=</kbd
+                    ><span class="angle">&langle;</span><i>name</i
+                    ><span class="angle">&rangle;</span></span
+                  ><span class="hl-default">(no default)</span>
+                  <a class="anchor-link" href="#pgf./pgf/data/new:set"
+                    >&para;</a
+                  >
+                </p>
+              </div>
+              <p>
+                Creates an empty data set called
+                <span class="angle">&langle;</span><i>name</i
+                ><span class="angle">&rangle;</span>. If a data set of the same
+                name already exists, it is overwritten and made empty. Data sets
+                are global.
+              </p>
+            </div>
+
+            <div class="manualentry">
+              <div class="entryheadline">
+                <p>
+                  <a id="pgf./pgf/data/store:in:set"></a
+                  ><a id="pgf.store:in:set"></a>
+                  <span class="hl-def"
+                    ><kbd
+                      ><span class="keyname"
+                        ><span class="textcolor" style="color: #bf0000"
+                          >/pgf/data/store in set</span
+                        ></span
+                      >=</kbd
+                    ><span class="angle">&langle;</span><i>name</i
+                    ><span class="angle">&rangle;</span></span
+                  ><span class="hl-default">(no default)</span>
+                  <a class="anchor-link" href="#pgf./pgf/data/store:in:set"
+                    >&para;</a
+                  >
+                </p>
+              </div>
+              <p>
+                When this key is set to any non-empty
+                <span class="angle">&langle;</span><i>name</i
+                ><span class="angle">&rangle;</span> and if this
+                <span class="angle">&langle;</span><i>name</i
+                ><span class="angle">&rangle;</span> has previously been used
+                with the <span class="texttt">new set</span> key, then the
+                following happens: For the current
+                <span class="texttt">\pgfdata</span> command, all parsed data is
+                not passed to the rendering pipeline. Instead, the parsed data
+                is appended to the data set <span class="angle">&langle;</span
+                ><i>name</i><span class="angle">&rangle;</span>. This includes
+                all options parsed to the
+                <span class="texttt">\pgfdata</span> command, which is why
+                neither this key nor the previous key should be passed as
+                options to a <span class="texttt">\pgfdata</span> command.
+              </p>
+            </div>
+
+            <div class="manualentry">
+              <div class="entryheadline">
+                <p>
+                  <a id="pgf./pgf/data/use:set"></a><a id="pgf.use:set"></a>
+                  <span class="hl-def"
+                    ><kbd
+                      ><span class="keyname"
+                        ><span class="textcolor" style="color: #bf0000"
+                          >/pgf/data/use set</span
+                        ></span
+                      >=</kbd
+                    ><span class="angle">&langle;</span><i>name</i
+                    ><span class="angle">&rangle;</span></span
+                  ><span class="hl-default">(no default)</span>
+                  <a class="anchor-link" href="#pgf./pgf/data/use:set"
+                    >&para;</a
+                  >
+                </p>
+              </div>
+              <p>
+                This works similar to
+                <span class="texttt">read from file</span>. When this key is
+                used with a <span class="texttt">\pgfdata</span> command, no
+                inline data may follow. Instead, the data stored in the data set
+                <span class="angle">&langle;</span><i>name</i
+                ><span class="angle">&rangle;</span> is used.
+              </p>
+            </div>
+          </div>
+          <h5 id="autosec-6689">
+            <a id="section-dv-declaring-formats"></a
+            ><span class="sectionnumber" id="sec-80.6">80.6&emsp;</span
+            >Advanced: Defining New Formats<a
+              class="anchor-link"
+              href="#sec-80.6"
+              >&para;</a
+            >
+          </h5>
+          <a id="pgfmanual-autopage-6689"></a>
+
+          <p>
+            In order to define a new data format you can use the following
+            command, which is basic layer command defined in the module
+            <span class="texttt">datavisualization</span>:
+          </p>
+
+          <div class="manualentry">
+            <div class="entryheadline">
+              <p>
+                <a id="pgf.back/pgfdeclaredataformat"></a>
+                <span class="hl-def"
+                  ><span class="textcolor" style="color: #bf0000"
+                    ><kbd>\pgfdeclaredataformat</kbd></span
+                  >{<span class="angle">&langle;</span><i>format name</i
+                  ><span class="angle">&rangle;</span>}{<span class="angle"
+                    >&langle;</span
+                  ><i>catcode code</i><span class="angle">&rangle;</span>}{<span
+                    class="angle"
+                    >&langle;</span
+                  ><i>startup code</i><span class="angle">&rangle;</span>}{<span
+                    class="angle"
+                    >&langle;</span
+                  ><i>line arguments</i
+                  ><span class="angle">&rangle;</span>}<br />
+                  {<span class="angle">&langle;</span><i>line code</i
+                  ><span class="angle">&rangle;</span>}{<span class="angle"
+                    >&langle;</span
+                  ><i>empty line code</i
+                  ><span class="angle">&rangle;</span>}{<span class="angle"
+                    >&langle;</span
+                  ><i>end code</i><span class="angle">&rangle;</span>}</span
+                >
+                <a class="anchor-link" href="#pgf.back/pgfdeclaredataformat"
+                  >&para;</a
+                >
+              </p>
+            </div>
+            <p>
+              This command defines a new data format called
+              <span class="angle">&langle;</span><i>format name</i
+              ><span class="angle">&rangle;</span>, which can subsequently be
+              used in the <span class="texttt">\pgfdata</span> command. (The
+              <span class="tikzname">TikZ</span>&rsquo;s
+              <span class="texttt">data</span> maps directly to
+              <span class="texttt">\pgfdata</span>, so the following applies to
+              <span class="tikzname">TikZ</span> as well.)
+            </p>
+            <p>
+              As explained in the description of the
+              <span class="texttt">\pgfdata</span> command, when data is being
+              parsed that is formatted according to
+              <span class="angle">&langle;</span><i>format name</i
+              ><span class="angle">&rangle;</span>, the following happens:
+            </p>
+
+            <p>
+              1. The <span class="angle">&langle;</span><i>catcode code</i
+              ><span class="angle">&rangle;</span> is executed. This code should
+              just contain catcode changes. The
+              <span class="angle">&langle;</span><i>catcode code</i
+              ><span class="angle">&rangle;</span> will also be executed when
+              inline data is read.
+            </p>
+
+            <p>
+              2. Next, the <span class="angle">&langle;</span><i>startup code</i
+              ><span class="angle">&rangle;</span> is executed.
+            </p>
+
+            <p>
+              3. Next, for each non-empty line of the data, the line is passed
+              to a macro whose argument list is given by
+              <span class="angle">&langle;</span><i>line arguments</i
+              ><span class="angle">&rangle;</span> and whose body is given by
+              <span class="angle">&langle;</span><i>line code</i
+              ><span class="angle">&rangle;</span>. The idea is that you can use
+              <span class="latexlogofont"
+                ><span class="latexlogo"
+                  >T<span class="latexlogosub">e</span>X</span
+                ></span
+              >&rsquo;s powerful pattern matching capabilities to parse the
+              non-empty lines. See also the below example.
+            </p>
+
+            <p>
+              4. Empty lines are not processed by the
+              <span class="angle">&langle;</span><i>line code</i
+              ><span class="angle">&rangle;</span>, but rather by the
+              <span class="angle">&langle;</span><i>empty line code</i
+              ><span class="angle">&rangle;</span>. Typically, empty lines can
+              simply be ignored and in this case you can let this parameter be
+              empty.
+            </p>
+
+            <p>
+              5. At the end of the data, the <span class="angle">&langle;</span
+              ><i>end code</i><span class="angle">&rangle;</span> is executed.
+            </p>
+
+            <p>
+              As an example, let us now define a simple data format for reading
+              files formatted in the following manner: Each line should contain
+              a coordinate pair as in <span class="texttt">(1.2,3.2)</span>, so
+              two numbers separated by a comma and surrounded by parentheses. To
+              make things more interesting, suppose that the hash mark symbol
+              can be used to indicate comments. Here is an example of some data
+              given in this format:
+            </p>
+
+            <figure class="example">
+              <div class="example-code">
+                <button class="clipboardButton" type="button">copy</button>
+                <code>
+                  <br />
+                  <span class="textcolor" style="color: #000000">#</span>
+                  <span class="textcolor" style="color: #000000">This</span>
+                  <span class="textcolor" style="color: #000000">is</span>
+                  <span class="textcolor" style="color: #000000"
+                    ><a href="dv-axes#pgf.some">some</a></span
+                  >
+                  <span class="textcolor" style="color: #000000"
+                    ><a href="dv-main#pgf.data">data</a></span
+                  >
+                  <span class="textcolor" style="color: #000000"
+                    >formatted</span
+                  >
+                  <span class="textcolor" style="color: #000000"
+                    >according</span
+                  >
+                  <span class="textcolor" style="color: #000000"
+                    ><a href="tikz-paths#pgf.to">to</a></span
+                  >
+                  <span class="textcolor" style="color: #000000">the</span>
+                  <span class="textcolor" style="color: #000000"
+                    >"coordinates"</span
+                  >
+                  <span class="textcolor" style="color: #000000"
+                    ><a href="dv-main#pgf.format">format</a></span
+                  ><br />
+                  <span class="textcolor" style="color: #800080">(0,0)</span
+                  ><br />
+                  <span class="textcolor" style="color: #800080"
+                    >(0.5,0.25)</span
+                  ><br />
+                  <span class="textcolor" style="color: #800080">(1,1)</span
+                  ><br />
+                  <span class="textcolor" style="color: #800080"
+                    >(1.5,2.25)</span
+                  ><br />
+                  <span class="textcolor" style="color: #800080">(2,4)</span
+                  ><br />
+                </code>
+              </div>
+            </figure>
+            <p>A format parser for this format could be defined as follows:</p>
+
+            <figure class="example">
+              <div class="example-code">
+                <button class="clipboardButton" type="button">copy</button>
+                <code>
+                  <br />
+                  <span class="textcolor" style="color: #0000b2"
+                    ><a href="dv-formats#pgf.back/pgfdeclaredataformat"
+                      >\pgfdeclaredataformat</a
+                    ></span
+                  >{<span class="textcolor" style="color: #000000"
+                    >coordinates</span
+                  >}<br />
+                  <span class="example-code-comment"
+                    >% First comes the catcode argument. We turn the hash mark
+                    into a comment character.</span
+                  ><br />
+                  {<span class="textcolor" style="color: #0000b2">\catcode</span
+                  ><span class="textcolor" style="color: #000000">`</span
+                  ><span class="textcolor" style="color: #0000b2">\</span
+                  ><span class="textcolor" style="color: #000000">#=14</span
+                  ><span class="textcolor" style="color: #0000b2">\relax</span
+                  >}<br />
+                  <span class="example-code-comment"
+                    >% Second comes the startup code. Since we do not need to
+                    setup things, we can leave</span
+                  ><br />
+                  <span class="example-code-comment"
+                    >% it empty. Note that we could also set it to something
+                    like \begingroup, provided we</span
+                  ><br />
+                  <span class="example-code-comment"
+                    >% put an \endgroup in the end code</span
+                  ><br />
+                  {}<br />
+                  <span class="example-code-comment"
+                    >% Now comes the arguments for non-empty lines. Well, these
+                    should be of the form</span
+                  ><br />
+                  <span class="example-code-comment"
+                    >% (#1,#2), so we specify that:</span
+                  ><br />
+                  {<span class="textcolor" style="color: #800080">(#1,#2)</span
+                  >}<br />
+                  <span class="example-code-comment"
+                    >% Now we must do something with a line of this form. We
+                    store the #1 argument in</span
+                  ><br />
+                  <span class="example-code-comment"
+                    >% /data point/x and #2 in /data point/y. Then we call
+                    \pgfdatapoint to create a data point.</span
+                  ><br />
+                  {<br />
+                  &numsp;&numsp;<span class="textcolor" style="color: #0000b2"
+                    ><a href="pgfkeys#pgf.back/pgfkeyssetvalue"
+                      >\pgfkeyssetvalue</a
+                    ></span
+                  >{<span class="textcolor" style="color: #000000">/data</span>
+                  <span class="textcolor" style="color: #000000">point/x</span
+                  >}{<span class="textcolor" style="color: #000000">#1</span
+                  >}<br />
+                  &numsp;&numsp;<span class="textcolor" style="color: #0000b2"
+                    ><a href="pgfkeys#pgf.back/pgfkeyssetvalue"
+                      >\pgfkeyssetvalue</a
+                    ></span
+                  >{<span class="textcolor" style="color: #000000">/data</span>
+                  <span class="textcolor" style="color: #000000">point/y</span
+                  >}{<span class="textcolor" style="color: #000000">#2</span
+                  >}<br />
+                  &numsp;&numsp;<span class="textcolor" style="color: #0000b2"
+                    >\pgfdatapoint</span
+                  ><br />
+                  }<br />
+                  <span class="example-code-comment"
+                    >% We ignore empty lines:</span
+                  ><br />
+                  {}<br />
+                  <span class="example-code-comment"
+                    >% And we also have no end-of-line code.</span
+                  ><br />
+                  {}<br />
+                </code>
+              </div>
+            </figure>
+            <p>This format could now be used as follows:</p>
+
+            <figure class="example">
+              <div class="example-code">
+                <button class="clipboardButton" type="button">copy</button>
+                <code>
+                  <br />
+                  <span class="textcolor" style="color: #000000">\begin</span
+                  >{<span class="textcolor" style="color: #0000b2"
+                    ><a href="tikz-scopes#pgf.tikzpicture">tikzpicture</a></span
+                  >}<br />
+                  &numsp;&numsp;<span class="textcolor" style="color: #0000b2"
+                    ><a href="dv-main#pgf.back/datavisualization"
+                      >\datavisualization</a
+                    ></span
+                  >[<span class="textcolor" style="color: #008000"
+                    ><a href="dv-axes#pgf.school:book:axes"
+                      >school book axes</a
+                    ></span
+                  >,&numsp;<span class="textcolor" style="color: #008000"
+                    ><a href="dv-visualizers#pgf.visualize:as:smooth:line"
+                      >visualize as smooth line</a
+                    ></span
+                  >]<br />
+                  &numsp;&numsp;<span class="textcolor" style="color: #000000"
+                    ><a href="dv-main#pgf.data">data</a></span
+                  >
+                  [<span class="textcolor" style="color: #008000"
+                    ><a href="dv-main#pgf.format">format</a></span
+                  >=<span class="textcolor" style="color: #008000"
+                    >coordinates</span
+                  >]&numsp;{<br />
+                  &numsp;&numsp;&numsp;&numsp;<span
+                    class="textcolor"
+                    style="color: #000000"
+                    >#</span
+                  >
+                  <span class="textcolor" style="color: #000000">This</span>
+                  <span class="textcolor" style="color: #000000">is</span>
+                  <span class="textcolor" style="color: #000000"
+                    ><a href="dv-axes#pgf.some">some</a></span
+                  >
+                  <span class="textcolor" style="color: #000000"
+                    ><a href="dv-main#pgf.data">data</a></span
+                  >
+                  <span class="textcolor" style="color: #000000"
+                    >formatted</span
+                  >
+                  <span class="textcolor" style="color: #000000">according</span
+                  ><br />
+                  &numsp;&numsp;&numsp;&numsp;<span
+                    class="textcolor"
+                    style="color: #000000"
+                    >#</span
+                  >
+                  <span class="textcolor" style="color: #000000"
+                    ><a href="tikz-paths#pgf.to">to</a></span
+                  >
+                  <span class="textcolor" style="color: #000000">the</span>
+                  <span class="textcolor" style="color: #000000"
+                    >"coordinates"</span
+                  >
+                  <span class="textcolor" style="color: #000000"
+                    ><a href="dv-main#pgf.format">format</a></span
+                  ><br />
+                  &numsp;&numsp;&numsp;&numsp;<span
+                    class="textcolor"
+                    style="color: #800080"
+                    >(0,0)</span
+                  ><br />
+                  &numsp;&numsp;&numsp;&numsp;<span
+                    class="textcolor"
+                    style="color: #800080"
+                    >(0.5,0.25)</span
+                  ><br />
+                  &numsp;&numsp;&numsp;&numsp;<span
+                    class="textcolor"
+                    style="color: #800080"
+                    >(1,1)</span
+                  ><br />
+                  &numsp;&numsp;&numsp;&numsp;<span
+                    class="textcolor"
+                    style="color: #800080"
+                    >(1.5,2.25)</span
+                  ><br />
+                  &numsp;&numsp;&numsp;&numsp;<span
+                    class="textcolor"
+                    style="color: #800080"
+                    >(2,4)</span
+                  ><br />
+                  &numsp;&numsp;};<br />
+                  <span class="textcolor" style="color: #000000">\end</span
+                  >{<span class="textcolor" style="color: #0000b2"
+                    ><a href="tikz-scopes#pgf.tikzpicture">tikzpicture</a></span
+                  >}<br />
+                </code>
+              </div>
+            </figure>
+          </div>
+        </section>
+      </main>
+
+      <footer>
+        <div class_="footer-left">
+          <a href="https://github.com/pgf-tikz/pgf">Github</a> &middot;
+          <a href="/license">License</a> &middot;
+          <a href="https://ctan.org/pkg/pgf">CTAN</a> &middot;
+          <a href="https://pgf-tikz.github.io/pgf/pgfmanual.pdf">PDF version</a>
+          &middot;
+          <a href="https://github.com/DominikPeters/pgf-tikz-html-manual"
+            >About this HTML version</a
+          >
+        </div>
+        <div class_="footer-right">
+          <em>Manual last updated: 2022-04-23</em>
+        </div>
+      </footer>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/@docsearch/js@alpha"></script>
+    <script>
+      docsearch({
+        apiKey: "ae66ec3fc9df4b52b4d6f24fc8508fd3",
+        indexName: "tikz.dev",
+        appId: "Q70NNMA9GC",
+        container: "#search",
+      });
+    </script>
+  </body>
+</html>

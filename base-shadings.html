@@ -1,0 +1,3777 @@
+<!DOCTYPE html>
+<html lang="en-US">
+  <head>
+    <meta charset="utf-8" />
+    <meta content="LaTeX Lwarp package" name="generator" />
+    <meta content="width=device-width, initial-scale=1.0" name="viewport" />
+    <!--[if lt IE 9]>
+      <script src="http://html5shiv.googlecode.com/svn/trunk/html5.js"></script>
+    <![endif]-->
+    <title>Shadings - PGF/TikZ Manual</title>
+    <link href="style.css" rel="stylesheet" type="text/css" />
+
+    <script>
+      // Lwarp MathJax emulation code
+      //
+      // Based on code by Davide P. Cervone.
+      // Equation numbering: https://github.com/mathjax/MathJax/issues/2427
+      // Starred and ifnextchar macros: https://github.com/mathjax/MathJax/issues/2428
+      // \left, \right delimiters: https://github.com/mathjax/MathJax/issues/2535
+      //
+      // Modified by Brian Dunn to adjust equation numbering and add subequations.
+      //
+      // LaTeX can use \seteqnumber{subequations?}{section}{number} before each equation.
+      // subequations? is 0 usually, 1 if inside subequations.
+      // section is a string printed as-is, or empty.
+      // number is auto-incremented by MathJax between equations.
+      //
+      MathJax = {
+        subequations: "0",
+        section: "",
+        loader: {
+          load: ["[tex]/tagformat", "[tex]/textmacros"],
+        },
+        startup: {
+          ready() {
+            // These would be replaced by import commands if you wanted to make
+            // a proper extension.
+            const Configuration =
+              MathJax._.input.tex.Configuration.Configuration;
+            const CommandMap = MathJax._.input.tex.SymbolMap.CommandMap;
+            const Macro = MathJax._.input.tex.Symbol.Macro;
+            const TexError = MathJax._.input.tex.TexError.default;
+            const ParseUtil = MathJax._.input.tex.ParseUtil.default;
+            const expandable = MathJax._.util.Options.expandable;
+
+            // Insert the replacement string into the TeX string, and check
+            // that there haven't been too many maxro substitutions (prevents
+            // infinite loops).
+            const useArgument = (parser, text) => {
+              parser.string = ParseUtil.addArgs(
+                parser,
+                text,
+                parser.string.slice(parser.i)
+              );
+              parser.i = 0;
+              if (
+                ++parser.macroCount > parser.configuration.options.maxMacros
+              ) {
+                throw new TexError(
+                  "MaxMacroSub1",
+                  "MathJax maximum macro substitution count exceeded; " +
+                    "is there a recursive macro call?"
+                );
+              }
+            };
+
+            // Create the command map for:
+            // \ifstar, \ifnextchar, \ifblank, \ifstrequal, \seteqnumber
+            new CommandMap(
+              "Lwarp-macros",
+              {
+                ifstar: "IfstarFunction",
+                ifnextchar: "IfnextcharFunction",
+                ifblank: "IfblankFunction",
+                ifstrequal: "IfstrequalFunction",
+                seteqnumber: "SeteqnumberFunction",
+              },
+              {
+                // This function implements an ifstar macro.
+                IfstarFunction(parser, name) {
+                  const resultstar = parser.GetArgument(name);
+                  const resultnostar = parser.GetArgument(name);
+                  const star = parser.GetStar(); // true if there is a *
+                  useArgument(parser, star ? resultstar : resultnostar);
+                },
+
+                // This function implements an ifnextchar macro.
+                IfnextcharFunction(parser, name) {
+                  let whichchar = parser.GetArgument(name);
+                  if (whichchar.match(/^(?:0x[0-9A-F]+|[0-9]+)$/i)) {
+                    // $ syntax highlighting
+                    whichchar = String.fromCodePoint(parseInt(whichchar));
+                  }
+                  const resultnextchar = parser.GetArgument(name);
+                  const resultnotnextchar = parser.GetArgument(name);
+                  const gotchar = parser.GetNext() === whichchar;
+                  useArgument(
+                    parser,
+                    gotchar ? resultnextchar : resultnotnextchar
+                  );
+                },
+
+                // This function implements an ifblank macro.
+                IfblankFunction(parser, name) {
+                  const blankarg = parser.GetArgument(name);
+                  const resultblank = parser.GetArgument(name);
+                  const resultnotblank = parser.GetArgument(name);
+                  const isblank = blankarg.trim() == "";
+                  useArgument(parser, isblank ? resultblank : resultnotblank);
+                },
+
+                // This function implements an ifstrequal macro.
+                IfstrequalFunction(parser, name) {
+                  const strequalfirst = parser.GetArgument(name);
+                  const strequalsecond = parser.GetArgument(name);
+                  const resultequal = parser.GetArgument(name);
+                  const resultnotequal = parser.GetArgument(name);
+                  const isequal = strequalfirst == strequalsecond;
+                  useArgument(parser, isequal ? resultequal : resultnotequal);
+                },
+
+                // This function modifies the equation numbers.
+                SeteqnumberFunction(parser, name) {
+                  // Get the macro parameters
+                  const star = parser.GetStar(); // true if there is a *
+                  const optBrackets = parser.GetBrackets(name); // contents of optional brackets
+                  const newsubequations = parser.GetArgument(name); // the subequations argument
+                  const neweqsection = parser.GetArgument(name); // the eq section argument
+                  const neweqnumber = parser.GetArgument(name); // the eq number argument
+                  MathJax.config.subequations = newsubequations; // a string with boolean meaning
+                  MathJax.config.section = neweqsection; // a string with numeric meaning
+                  parser.tags.counter = parser.tags.allCounter = neweqnumber;
+                },
+              }
+            );
+
+            // Create the Lwarp-macros package
+            Configuration.create("Lwarp-macros", {
+              handler: { macro: ["Lwarp-macros"] },
+            });
+
+            MathJax.startup.defaultReady();
+
+            // For forward references:
+            MathJax.startup.input[0].preFilters.add(({ math }) => {
+              if (math.inputData.recompile) {
+                MathJax.config.subequations =
+                  math.inputData.recompile.subequations;
+                MathJax.config.section = math.inputData.recompile.section;
+              }
+            });
+            MathJax.startup.input[0].postFilters.add(({ math }) => {
+              if (math.inputData.recompile) {
+                math.inputData.recompile.subequations =
+                  MathJax.config.subequations;
+                math.inputData.recompile.section = MathJax.config.section;
+              }
+            });
+
+            // For \left, \right with unicode-math:
+            const { DelimiterMap } = MathJax._.input.tex.SymbolMap;
+            const { Symbol } = MathJax._.input.tex.Symbol;
+            const { MapHandler } = MathJax._.input.tex.MapHandler;
+            const delimiter = MapHandler.getMap("delimiter");
+            delimiter.add("\\lBrack", new Symbol("\\lBrack", "\u27E6"));
+            delimiter.add("\\rBrack", new Symbol("\\rBrack", "\u27E7"));
+            delimiter.add("\\lAngle", new Symbol("\\lAngle", "\u27EA"));
+            delimiter.add("\\rAngle", new Symbol("\\rAngle", "\u27EB"));
+            delimiter.add("\\lbrbrak", new Symbol("\\lbrbrak", "\u2772"));
+            delimiter.add("\\rbrbrak", new Symbol("\\rbrbrak", "\u2773"));
+            delimiter.add("\\lbag", new Symbol("\\lbag", "\u27C5"));
+            delimiter.add("\\rbag", new Symbol("\\rbag", "\u27C6"));
+            delimiter.add(
+              "\\llparenthesis",
+              new Symbol("\\llparenthesis", "\u2987")
+            );
+            delimiter.add(
+              "\\rrparenthesis",
+              new Symbol("\\rrparenthesis", "\u2988")
+            );
+            delimiter.add("\\llangle", new Symbol("\\llangle", "\u2989"));
+            delimiter.add("\\rrangle", new Symbol("\\rrangle", "\u298A"));
+            delimiter.add("\\Lbrbrak", new Symbol("\\Lbrbrak", "\u27EC"));
+            delimiter.add("\\Rbrbrak", new Symbol("\\Rbrbrak", "\u27ED"));
+            delimiter.add("\\lBrace", new Symbol("\\lBrace", "\u2983"));
+            delimiter.add("\\rBrace", new Symbol("\\rBrace", "\u2984"));
+            delimiter.add("\\lParen", new Symbol("\\lParen", "\u2985"));
+            delimiter.add("\\rParen", new Symbol("\\rParen", "\u2986"));
+            delimiter.add("\\lbrackubar", new Symbol("\\lbrackubar", "\u298B"));
+            delimiter.add("\\rbrackubar", new Symbol("\\rbrackubar", "\u298C"));
+            delimiter.add(
+              "\\lbrackultick",
+              new Symbol("\\lbrackultick", "\u298D")
+            );
+            delimiter.add(
+              "\\rbracklrtick",
+              new Symbol("\\rbracklrtick", "\u298E")
+            );
+            delimiter.add(
+              "\\lbracklltick",
+              new Symbol("\\lbracklltick", "\u298F")
+            );
+            delimiter.add(
+              "\\rbrackurtick",
+              new Symbol("\\rbrackurtick", "\u2990")
+            );
+            delimiter.add("\\langledot", new Symbol("\\langledot", "\u2991"));
+            delimiter.add("\\rangledot", new Symbol("\\rangledot", "\u2992"));
+            delimiter.add("\\lparenless", new Symbol("\\lparenless", "\u2993"));
+            delimiter.add("\\rparengtr", new Symbol("\\rparengtr", "\u2994"));
+            delimiter.add("\\Lparengtr", new Symbol("\\Lparengtr", "\u2995"));
+            delimiter.add("\\Rparenless", new Symbol("\\Rparenless", "\u2996"));
+            delimiter.add("\\lblkbrbrak", new Symbol("\\lblkbrbrak", "\u2997"));
+            delimiter.add("\\rblkbrbrak", new Symbol("\\rblkbrbrak", "\u2998"));
+            delimiter.add("\\lvzigzag", new Symbol("\\lvzigzag", "\u29D8"));
+            delimiter.add("\\rvzigzag", new Symbol("\\rvzigzag", "\u29D9"));
+            delimiter.add("\\Lvzigzag", new Symbol("\\Lvzigzag", "\u29DA"));
+            delimiter.add("\\Rvzigzag", new Symbol("\\Rvzigzag", "\u29DB"));
+            delimiter.add(
+              "\\lcurvyangle",
+              new Symbol("\\lcurvyangle", "\u29FC")
+            );
+            delimiter.add(
+              "\\rcurvyangle",
+              new Symbol("\\rcurvyangle", "\u29FD")
+            );
+            delimiter.add("\\Vvert", new Symbol("\\Vvert", "\u2980"));
+          }, // ready
+        }, // startup
+
+        tex: {
+          packages: { "[+]": ["tagformat", "Lwarp-macros", "textmacros"] },
+          tags: "ams",
+          tagformat: {
+            number: function (n) {
+              if (MathJax.config.subequations == 0)
+                return MathJax.config.section + n;
+              else return MathJax.config.section + String.fromCharCode(96 + n);
+            },
+          },
+        },
+      };
+    </script>
+
+    <script
+      async
+      id="MathJax-script"
+      src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-chtml.js"
+    ></script>
+
+    <script src="pgfmanual.js"></script>
+
+    <link href="https://unpkg.com/@docsearch/css@alpha" rel="stylesheet" />
+    <link href="/favicon-16x16.png" rel="icon" sizes="16x16" type="image/png" />
+    <link href="/favicon-32x32.png" rel="icon" sizes="32x32" type="image/png" />
+    <link
+      href="/apple-touch-icon.png"
+      rel="apple-touch-icon"
+      sizes="180x180"
+      type="image/png"
+    />
+    <link href="/site.webmanifest" rel="manifest" />
+  </head>
+  <body>
+    <a id="pgfmanual-autopage-8242"></a>
+
+    <div class="bodyandsidetoc grid-container">
+      <header>
+        <strong><a href="/">PGF/Ti<i>k</i>Z Manual</a></strong>
+        <div id="search"></div>
+      </header>
+      <div class="sidetoccontainer" id="local-toc-container">
+        <nav class="sidetoc">
+          <div class="sidetoctitle"><p>On this page</p></div>
+          <div class="sidetoccontents">
+            <p><a class="tocsubsection" href="#sec-113.1">Overview</a></p>
+            <p>
+              <a class="tocsubsubsection" href="#sec-113.1.1">Color models</a>
+            </p>
+            <p>
+              <a class="tocsubsection" href="#sec-113.2">Declaring Shadings</a>
+            </p>
+            <p>
+              <a class="tocsubsubsection" href="#sec-113.2.1"
+                >Horizontal and Vertical Shadings</a
+              >
+            </p>
+            <p>
+              <a class="tocsubsubsection" href="#sec-113.2.2"
+                >Radial Shadings</a
+              >
+            </p>
+            <p>
+              <a class="tocsubsubsection" href="#sec-113.2.3"
+                >General (Functional) Shadings</a
+              >
+            </p>
+            <p><a class="tocsubsection" href="#sec-113.3">Using Shadings</a></p>
+          </div>
+        </nav>
+      </div>
+      <div class="sidetoccontainer" id="chapter-toc-container">
+        <nav class="sidetoc">
+          <div class="sidetoctitle">
+            <p>
+              <span class="sidetocthetitle"
+                >The <span class="tikzname">TikZ</span> and PGF Packages<br />
+                Manual for version 3.1.9a</span
+              >
+            </p>
+
+            <p>Contents</p>
+          </div>
+
+          <div class="sidetoccontents">
+            <p></p>
+
+            <p>
+              <a class="linkintro" href="/">Introduction</a>
+            </p>
+
+            <p>
+              <a class="tocpart" href="tutorials-guidelines"
+                >Tutorials and Guidelines</a
+              >
+            </p>
+
+            <p>
+              <a class="tocpart" href="install"
+                >Installation and Configuration</a
+              >
+            </p>
+
+            <p>
+              <a class="tocpart" href="tikz">Ti<em>k</em>Z</a>
+            </p>
+
+            <p>
+              <a class="tocpart" href="gd">Graph Drawing</a>
+            </p>
+
+            <p>
+              <a class="tocpart" href="libraries">Libraries</a>
+            </p>
+
+            <p>
+              <a class="tocpart" href="dv">Data Visualization</a>
+            </p>
+
+            <p>
+              <a class="tocpart" href="utilities">Utilities</a>
+            </p>
+
+            <p>
+              <a class="tocpart" href="math"
+                >Mathematical and Object-Oriented Engines</a
+              >
+            </p>
+
+            <p class="current-part">
+              <a class="tocpart" href="base">The Basic Layer</a>
+            </p>
+
+            <p class="current-part">
+              <a class="tocsection" href="base-design">Design Principles</a>
+            </p>
+
+            <p class="current-part">
+              <a class="tocsection" href="base-scopes"
+                >Hierarchical Structures: Package, Environments, Scopes, and
+                Text</a
+              >
+            </p>
+
+            <p class="current-part">
+              <a class="tocsection" href="base-points"
+                >Specifying Coordinates</a
+              >
+            </p>
+
+            <p class="current-part">
+              <a class="tocsection" href="base-paths">Constructing Paths</a>
+            </p>
+
+            <p class="current-part">
+              <a class="tocsection" href="base-decorations">Decorations</a>
+            </p>
+
+            <p class="current-part">
+              <a class="tocsection" href="base-actions">Using Paths</a>
+            </p>
+
+            <p class="current-part">
+              <a class="tocsection" href="base-arrows"
+                >Defining New Arrow Tip Kinds</a
+              >
+            </p>
+
+            <p class="current-part">
+              <a class="tocsection" href="base-nodes">Nodes and Shapes</a>
+            </p>
+
+            <p class="current-part">
+              <a class="tocsection" href="base-matrices">Matrices</a>
+            </p>
+
+            <p class="current-part">
+              <a class="tocsection" href="base-transformations"
+                >Coordinate, Canvas, and Nonlinear Transformations</a
+              >
+            </p>
+
+            <p class="current-part">
+              <a class="tocsection" href="base-patterns">Patterns</a>
+            </p>
+
+            <p class="current-part">
+              <a class="tocsection" href="base-images"
+                >Declaring and Using Images</a
+              >
+            </p>
+
+            <p class="current-part">
+              <a class="tocsection" href="base-external"
+                >Externalizing Graphics</a
+              >
+            </p>
+
+            <p class="current-part">
+              <a class="tocsection" href="base-plots">Creating Plots</a>
+            </p>
+
+            <p class="current-part">
+              <a class="tocsection" href="base-layers">Layered Graphics</a>
+            </p>
+
+            <p class="current current-part">
+              <a class="tocsection" href="base-shadings">Shadings</a>
+            </p>
+
+            <p class="current-part">
+              <a class="tocsection" href="base-transparency">Transparency</a>
+            </p>
+
+            <p class="current-part">
+              <a class="tocsection" href="base-animations">Animations</a>
+            </p>
+
+            <p class="current-part">
+              <a class="tocsection" href="base-internalregisters"
+                >Adding libraries to <span class="textsc">pgf</span>: temporary
+                registers</a
+              >
+            </p>
+
+            <p class="current-part">
+              <a class="tocsection" href="base-quick">Quick Commands</a>
+            </p>
+
+            <p>
+              <a class="tocpart" href="pgfsys">The System Layer</a>
+            </p>
+          </div>
+        </nav>
+      </div>
+
+      <main class="bodycontainer">
+        <section class="textbody">
+          <h1>
+            The <span class="tikzname">TikZ</span> and PGF Packages<br />
+            Manual for version 3.1.9a
+          </h1>
+          <h2 class="inserted">The Basic Layer</h2>
+
+          <!--MathJax customizations:-->
+
+          <div class="hidden">
+            \(\newcommand{\footnotename}{footnote}\) \(\def \LWRfootnote {1}\)
+            \(\newcommand {\footnote }[2][\LWRfootnote ]{{}^{\mathrm {#1}}}\)
+            \(\newcommand {\footnotemark }[1][\LWRfootnote ]{{}^{\mathrm
+            {#1}}}\) \(\let \LWRorighspace \hspace \) \(\renewcommand {\hspace
+            }{\ifstar \LWRorighspace \LWRorighspace }\) \(\newcommand
+            {\mathnormal }[1]{{#1}}\) \(\newcommand \ensuremath [1]{#1}\)
+            \(\newcommand {\LWRframebox }[2][]{\fbox {#2}} \newcommand
+            {\framebox }[1][]{\LWRframebox } \) \(\newcommand {\setlength
+            }[2]{}\) \(\newcommand {\addtolength }[2]{}\) \(\newcommand
+            {\setcounter }[2]{}\) \(\newcommand {\addtocounter }[2]{}\)
+            \(\newcommand {\arabic }[1]{}\) \(\newcommand {\number }[1]{}\)
+            \(\newcommand {\noalign }[1]{\text {#1}\notag \\}\) \(\newcommand
+            {\cline }[1]{}\) \(\newcommand {\directlua }[1]{\text
+            {(directlua)}}\) \(\newcommand {\luatexdirectlua }[1]{\text
+            {(directlua)}}\) \(\newcommand {\protect }{}\) \(\def
+            \LWRabsorbnumber #1 {}\) \(\def \LWRabsorbquotenumber "#1 {}\)
+            \(\newcommand {\LWRabsorboption }[1][]{}\) \(\newcommand
+            {\LWRabsorbtwooptions }[1][]{\LWRabsorboption }\) \(\def \mathchar
+            {\ifnextchar "\LWRabsorbquotenumber \LWRabsorbnumber }\) \(\def
+            \mathcode #1={\mathchar }\) \(\let \delcode \mathcode \) \(\let
+            \delimiter \mathchar \) \(\def \oe {\unicode {x0153}}\) \(\def \OE
+            {\unicode {x0152}}\) \(\def \ae {\unicode {x00E6}}\) \(\def \AE
+            {\unicode {x00C6}}\) \(\def \aa {\unicode {x00E5}}\) \(\def \AA
+            {\unicode {x00C5}}\) \(\def \o {\unicode {x00F8}}\) \(\def \O
+            {\unicode {x00D8}}\) \(\def \l {\unicode {x0142}}\) \(\def \L
+            {\unicode {x0141}}\) \(\def \ss {\unicode {x00DF}}\) \(\def \SS
+            {\unicode {x1E9E}}\) \(\def \dag {\unicode {x2020}}\) \(\def \ddag
+            {\unicode {x2021}}\) \(\def \P {\unicode {x00B6}}\) \(\def
+            \copyright {\unicode {x00A9}}\) \(\def \pounds {\unicode {x00A3}}\)
+            \(\let \LWRref \ref \) \(\renewcommand {\ref }{\ifstar \LWRref
+            \LWRref }\) \( \newcommand {\multicolumn }[3]{#3}\) \(\require
+            {textcomp}\) \( \newcommand {\meta }[1]{\langle \textit {#1}\rangle
+            } \) \(\newcommand {\intertext }[1]{\text {#1}\notag \\}\) \(\let
+            \Hat \hat \) \(\let \Check \check \) \(\let \Tilde \tilde \) \(\let
+            \Acute \acute \) \(\let \Grave \grave \) \(\let \Dot \dot \) \(\let
+            \Ddot \ddot \) \(\let \Breve \breve \) \(\let \Bar \bar \) \(\let
+            \Vec \vec \)
+          </div>
+
+          <p></p>
+          <h4 id="autosec-8243">
+            <a id="section-shadings"></a
+            ><span class="sectionnumber">113&emsp;</span>Shadings
+          </h4>
+          <a id="pgfmanual-autopage-8243"></a>
+          <a id="pgfmanual-autofile-122"></a>
+          <h5 id="autosec-8244">
+            <span class="sectionnumber" id="sec-113.1">113.1&emsp;</span
+            >Overview<a class="anchor-link" href="#sec-113.1">&para;</a>
+          </h5>
+          <a id="pgfmanual-autopage-8244"></a>
+
+          <p>
+            A shading is an area in which the color changes smoothly between
+            different colors. Similarly to an image, a shading must first be
+            declared before it can be used. Also similarly to an image, a
+            shading is put into a
+            <span class="latexlogofont"
+              ><span class="latexlogo"
+                >T<span class="latexlogosub">e</span>X</span
+              ></span
+            >-box. Hence, in order to include a shading in a
+            <span class="texttt">{pgfpicture}</span>, you have to use
+            <span class="texttt">\pgftext</span> around it.
+          </p>
+
+          <p>
+            There are different kinds of shadings: horizontal, vertical, radial,
+            and functional shadings. However, you can rotate and clip shadings
+            like any other graphics object, which allows you to create more
+            complicated shadings. Horizontal shadings could be created by
+            rotating a vertical shading by 90 degrees, but explicit commands for
+            creating both horizontal and vertical shadings are included for
+            convenience.
+          </p>
+
+          <p>
+            Once you have declared a shading, you can insert it into the text
+            using the command <span class="texttt">\pgfuseshading</span>. This
+            command cannot be used directly in a
+            <span class="texttt">{pgfpicture}</span>, you have to put a
+            <span class="texttt">\pgftext</span> around it. The second command
+            for using shadings, <span class="texttt">\pgfshadepath</span>, on
+            the other hand, can only be used inside
+            <span class="texttt">{pgfpicture}</span> environments. It will
+            &ldquo;fill&rdquo; the current path with the shading.
+          </p>
+
+          <p>
+            A horizontal shading is a horizontal bar of a certain height whose
+            color changes smoothly. You must at least specify the colors at the
+            left and at the right end of the bar, but you can also add color
+            specifications for points in between. For example, suppose you wish
+            to create a bar that is red at the left end, green in the middle,
+            and blue at the end, and you would like the bar to be 4cm long. This
+            could be specified as follows:
+          </p>
+
+          <figure class="example">
+            <div class="example-code">
+              <button class="clipboardButton" type="button">copy</button>
+
+              <code>
+                <br />
+                <span class="textcolor" style="color: #000000">rgb</span
+                ><span class="textcolor" style="color: #800080">(0cm)</span
+                ><span class="textcolor" style="color: #000000">=</span
+                ><span class="textcolor" style="color: #800080">(1,0,0)</span
+                >;&numsp;<span class="textcolor" style="color: #000000"
+                  >rgb</span
+                ><span class="textcolor" style="color: #800080">(2cm)</span
+                ><span class="textcolor" style="color: #000000">=</span
+                ><span class="textcolor" style="color: #800080">(0,1,0)</span
+                >;&numsp;<span class="textcolor" style="color: #000000"
+                  >rgb</span
+                ><span class="textcolor" style="color: #800080">(4cm)</span
+                ><span class="textcolor" style="color: #000000">=</span
+                ><span class="textcolor" style="color: #800080">(0,0,1)</span
+                ><br />
+              </code>
+            </div>
+          </figure>
+
+          <p>
+            This line means that at 0cm (the left end) of the bar, the color
+            should be red, which has red-green-blue (rgb) components (1,0,0). At
+            2cm, the bar should be green, and at 4cm it should be blue. Instead
+            of <span class="texttt">rgb</span>, you can currently also specify
+            <span class="texttt">cmyk</span> as color model, in which case four
+            values are needed, <span class="texttt">gray</span> as color model,
+            in which case only one value is needed, or
+            <span class="texttt">color</span>, in which case you must provide
+            the name of a color in parentheses. In a color specification the
+            individual specifications must be separated using a semicolon, which
+            may be followed by a whitespace (like a space or a newline).
+            Individual specifications must be given in increasing order.
+          </p>
+          <h6 id="autosec-8245">
+            <span class="sectionnumber" id="sec-113.1.1">113.1.1&emsp;</span
+            >Color models<a class="anchor-link" href="#sec-113.1.1">&para;</a>
+          </h6>
+          <a id="pgfmanual-autopage-8245"></a>
+
+          <p>
+            <em>by David Purton</em>
+          </p>
+
+          <p>
+            An attempt is made to produce shadings consistent with the currently
+            selected <span class="texttt">xcolor</span> package color model. The
+            <span class="texttt">rgb</span>, <span class="texttt">cmyk</span>,
+            and <span class="texttt">gray</span> color models from the
+            <span class="texttt">xcolor</span> package are supported.
+          </p>
+
+          <p>
+            <b>Note:</b> The color model chosen for a shading is based on the
+            <span class="texttt">xcolor</span> color model
+            <em>at the time the shading is created</em>. This is either when
+            <kbd>\pgfdeclare*shading</kbd> is called with no optional argument
+            or when <kbd>\pgfuseshading</kbd> is called if
+            <kbd>\pgfdeclare*shading</kbd> was called with an optional argument.
+          </p>
+
+          <p>
+            If the <span class="texttt">xcolor</span> package
+            <span class="texttt">natural</span> color model is in use then the
+            shading color model will be <span class="textsc">rgb</span> by
+            default. In practice this means that if you are using the
+            <span class="texttt">natural</span> color model of the
+            <span class="texttt">xcolor</span> package you can get mismatched
+            colors if you, for example, create a shading from green (which is
+            defined as <span class="textsc">rgb</span>) to magenta (which is
+            defined as <span class="textsc">cmyk</span>). The shading will
+            finish with <span class="textsc">rgb</span> magenta which will look
+            different to the <span class="textsc">cmyk</span> magenta used in
+            solid colors.
+          </p>
+
+          <p>
+            You can avoid mismatched colors by loading the
+            <span class="texttt">xcolor</span> package first with an explicit
+            color model (<span class="texttt">rgb</span>,
+            <span class="texttt">cmyk</span>, or
+            <span class="texttt">gray</span>).
+          </p>
+
+          <figure class="example">
+            <div class="example-code">
+              <button class="clipboardButton" type="button">copy</button>
+
+              <code>
+                <br />
+                <span class="textcolor" style="color: #000000">\begin</span
+                >{<span class="textcolor" style="color: #0000b2"
+                  ><a href="tikz-scopes#pgf.tikzpicture">tikzpicture</a></span
+                >}<br />
+                &numsp;&numsp;<span class="textcolor" style="color: #0000b2"
+                  ><a href="tikz-actions#pgf.back/fill">\fill</a></span
+                >[<span class="textcolor" style="color: #008000">green</span
+                >]&numsp;<span class="textcolor" style="color: #800080"
+                  >(0,0)</span
+                >&numsp;<span class="textcolor" style="color: #000000"
+                  ><a href="tikz-paths#pgf.rectangle">rectangle</a></span
+                >
+                <span class="textcolor" style="color: #800080">(1,1)</span
+                >;<br />
+                &numsp;&numsp;<span class="textcolor" style="color: #0000b2"
+                  ><a href="tikz-actions#pgf.back/shade">\shade</a></span
+                >[<span class="textcolor" style="color: #008000"
+                  ><a href="library-shadings#pgf.left:color"
+                    >left color</a
+                  ></span
+                >=<span class="textcolor" style="color: #008000">green</span
+                >,&numsp;<span class="textcolor" style="color: #008000"
+                  ><a href="library-shadings#pgf.right:color"
+                    >right color</a
+                  ></span
+                >=<span class="textcolor" style="color: #008000">magenta</span
+                >]&numsp;<span class="textcolor" style="color: #800080"
+                  >(1.25,0)</span
+                >&numsp;<span class="textcolor" style="color: #000000"
+                  ><a href="tikz-paths#pgf.rectangle">rectangle</a></span
+                >
+                <span class="textcolor" style="color: #800080">(3.75,1)</span
+                >;<br />
+                &numsp;&numsp;<span class="textcolor" style="color: #0000b2"
+                  ><a href="tikz-actions#pgf.back/fill">\fill</a></span
+                >[<span class="textcolor" style="color: #008000">magenta</span
+                >]&numsp;<span class="textcolor" style="color: #800080"
+                  >(4,0)</span
+                >&numsp;<span class="textcolor" style="color: #000000"
+                  ><a href="tikz-paths#pgf.rectangle">rectangle</a></span
+                >
+                <span class="textcolor" style="color: #800080">(5,1)</span
+                >;<br />
+                <span class="textcolor" style="color: #000000">\end</span>{<span
+                  class="textcolor"
+                  style="color: #0000b2"
+                  ><a href="tikz-scopes#pgf.tikzpicture">tikzpicture</a></span
+                >}<br />
+              </code>
+            </div>
+          </figure>
+          <div class="center">
+            <div
+              class="minipage"
+              style="
+                vertical-align: bottom;
+                justify-content: flex-start;
+                width: 166pt;
+              "
+            >
+              <a id="pgfmanual-autopage-8247"></a>
+
+              <p>
+                <span class="texttt">xcolor</span>
+                <span class="texttt">natural</span> color model:
+              </p>
+
+              <p>
+                <span class="lateximagesource" id="lateximage-pgfmanual-3293"
+                  ><!--
+-->
+                  <img
+                    alt="(-tikz-&nbsp;diagram)"
+                    class="lateximage"
+                    height="40.491"
+                    loading="lazy"
+                    src="pgfmanual-images/image-3293.png"
+                    style
+                    width="191.678"
+                /></span>
+              </p>
+            </div>
+
+            <span style="width: 57pt; display: inline-block"><!----></span>
+            <div
+              class="minipage"
+              style="
+                vertical-align: bottom;
+                justify-content: flex-start;
+                width: 166pt;
+              "
+            >
+              <a id="pgfmanual-autopage-8250"></a>
+
+              <p>
+                <span class="texttt">xcolor</span>
+                <span class="texttt">cmyk</span> color model:
+              </p>
+
+              <p>
+                <span class="lateximagesource" id="lateximage-pgfmanual-3294"
+                  ><!--
+-->
+                  <img
+                    alt="(-tikz-&nbsp;diagram)"
+                    class="lateximage"
+                    height="40.491"
+                    loading="lazy"
+                    src="pgfmanual-images/image-3294.png"
+                    style
+                    width="191.678"
+                /></span>
+              </p>
+            </div>
+            <div
+              class="minipage"
+              style="
+                vertical-align: bottom;
+                justify-content: flex-start;
+                width: 166pt;
+              "
+            >
+              <a id="pgfmanual-autopage-8253"></a>
+
+              <p>
+                <span class="texttt">xcolor</span>
+                <span class="texttt">rgb</span> color model:
+              </p>
+
+              <p>
+                <span class="lateximagesource" id="lateximage-pgfmanual-3295"
+                  ><!--
+-->
+                  <img
+                    alt="(-tikz-&nbsp;diagram)"
+                    class="lateximage"
+                    height="40.491"
+                    loading="lazy"
+                    src="pgfmanual-images/image-3295.png"
+                    style
+                    width="191.678"
+                /></span>
+              </p>
+            </div>
+
+            <span style="width: 57pt; display: inline-block"><!----></span>
+            <div
+              class="minipage"
+              style="
+                vertical-align: bottom;
+                justify-content: flex-start;
+                width: 166pt;
+              "
+            >
+              <a id="pgfmanual-autopage-8256"></a>
+
+              <p>
+                <span class="texttt">xcolor</span>
+                <span class="texttt">gray</span> color model:
+              </p>
+
+              <p>
+                <span class="lateximagesource" id="lateximage-pgfmanual-3296"
+                  ><!--
+-->
+                  <img
+                    alt="(-tikz-&nbsp;diagram)"
+                    class="lateximage"
+                    height="40.491"
+                    loading="lazy"
+                    src="pgfmanual-images/image-3296.png"
+                    style
+                    width="191.678"
+                /></span>
+              </p>
+            </div>
+          </div>
+          <h5 id="autosec-8259">
+            <span class="sectionnumber" id="sec-113.2">113.2&emsp;</span
+            >Declaring Shadings<a class="anchor-link" href="#sec-113.2"
+              >&para;</a
+            >
+          </h5>
+          <a id="pgfmanual-autopage-8259"></a>
+          <h6 id="autosec-8260">
+            <span class="sectionnumber" id="sec-113.2.1">113.2.1&emsp;</span
+            >Horizontal and Vertical Shadings<a
+              class="anchor-link"
+              href="#sec-113.2.1"
+              >&para;</a
+            >
+          </h6>
+          <a id="pgfmanual-autopage-8260"></a>
+
+          <div class="manualentry">
+            <div class="entryheadline">
+              <p>
+                <a id="pgf.back/pgfdeclarehorizontalshading"></a>
+                <span class="hl-def"
+                  ><span class="textcolor" style="color: #bf0000"
+                    ><kbd>\pgfdeclarehorizontalshading</kbd></span
+                  >[<span class="angle">&langle;</span><i>color list</i
+                  ><span class="angle">&rangle;</span>]{<span class="angle"
+                    >&langle;</span
+                  ><i>shading name</i><span class="angle">&rangle;</span>}{<span
+                    class="angle"
+                    >&langle;</span
+                  ><i>shading height</i
+                  ><span class="angle">&rangle;</span>}{<span class="angle"
+                    >&langle;</span
+                  ><i>color specification</i
+                  ><span class="angle">&rangle;</span>}</span
+                >
+                <a
+                  class="anchor-link"
+                  href="#pgf.back/pgfdeclarehorizontalshading"
+                  >&para;</a
+                >
+              </p>
+            </div>
+            <p>
+              Declares a horizontal shading named
+              <span class="angle">&langle;</span><i>shading name</i
+              ><span class="angle">&rangle;</span> of the specified
+              <span class="angle">&langle;</span><i>height</i
+              ><span class="angle">&rangle;</span> with the specified colors.
+              The width of the bar is deduced automatically from the maximum
+              dimension in the specification.
+            </p>
+
+            <figure class="example">
+              <div class="example-image"></div>
+
+              <div class="example-code">
+                <button class="clipboardButton" type="button">copy</button>
+                <code>
+                  <br />
+                  <span class="textcolor" style="color: #0000b2"
+                    ><a
+                      href="base-shadings#pgf.back/pgfdeclarehorizontalshading"
+                      >\pgfdeclarehorizontalshading</a
+                    ></span
+                  >{<span class="textcolor" style="color: #000000"
+                    >myshadingA</span
+                  >}<br />
+                  &numsp;&numsp;{<span class="textcolor" style="color: #000000"
+                    >1cm</span
+                  >}{<span class="textcolor" style="color: #000000">rgb</span
+                  ><span class="textcolor" style="color: #800080">(0cm)</span
+                  ><span class="textcolor" style="color: #000000">=</span
+                  ><span class="textcolor" style="color: #800080">(1,0,0)</span
+                  >;&numsp;<span class="textcolor" style="color: #000000"
+                    ><a href="tikz-actions#pgf.color">color</a></span
+                  ><span class="textcolor" style="color: #800080">(2cm)</span
+                  ><span class="textcolor" style="color: #000000">=</span
+                  ><span class="textcolor" style="color: #800080">(green)</span
+                  >;&numsp;<span class="textcolor" style="color: #000000"
+                    ><a href="tikz-actions#pgf.color">color</a></span
+                  ><span class="textcolor" style="color: #800080">(4cm)</span
+                  ><span class="textcolor" style="color: #000000">=</span
+                  ><span class="textcolor" style="color: #800080">(blue)</span
+                  >}<br />
+                  <span class="textcolor" style="color: #0000b2"
+                    ><a href="base-shadings#pgf.back/pgfuseshading"
+                      >\pgfuseshading</a
+                    ></span
+                  >{<span class="textcolor" style="color: #000000"
+                    >myshadingA</span
+                  >}<br />
+                </code>
+              </div>
+            </figure>
+            <p>
+              The effect of the <span class="angle">&langle;</span
+              ><i>color list</i><span class="angle">&rangle;</span>, which is a
+              comma-separated list of colors, is the following: Normally, when
+              this list is empty, once a shading has been declared, it becomes
+              &ldquo;frozen&rdquo;. This means that even if you change a color
+              that was used in the declaration of the shading later on, the
+              shading will not change. By specifying a
+              <span class="angle">&langle;</span><i>color list</i
+              ><span class="angle">&rangle;</span> you can specify that the
+              shading should be recalculated whenever one of the colors listed
+              in the list changes (this includes effects like color mixins and
+              <span class="texttt">xcolor</span> color models). Thus, when you
+              specify a <span class="angle">&langle;</span><i>color list</i
+              ><span class="angle">&rangle;</span>, whenever the shading is
+              used, <span class="textsc">pgf</span> first converts the colors in
+              the list to tuples in the current
+              <span class="texttt">xcolor</span> color model using the current
+              values of the colors and taking any mixins and blends into
+              account. If the resulting tuples have not yet been used, a new
+              shading is internally created and used. Note that if the option
+              <span class="angle">&langle;</span><i>color list</i
+              ><span class="angle">&rangle;</span> is used, then no shading is
+              created until the first use of
+              <span class="texttt">\pgfuseshading</span>. In particular, the
+              colors mentioned in the shading need not be defined when the
+              declaration is given.
+            </p>
+            <p>
+              When a shading is recalculated because of a change in the colors
+              mentioned in <span class="angle">&langle;</span><i>color list</i
+              ><span class="angle">&rangle;</span>, the complete shading is
+              recalculated. Thus even colors not mentioned in the list will be
+              used with their current values, not with the values they had upon
+              declaration.
+            </p>
+
+            <figure class="example">
+              <div class="example-image"></div>
+
+              <div class="example-code">
+                <button class="clipboardButton" type="button">copy</button>
+                <code>
+                  <br />
+                  <span class="textcolor" style="color: #0000b2"
+                    ><a
+                      href="base-shadings#pgf.back/pgfdeclarehorizontalshading"
+                      >\pgfdeclarehorizontalshading</a
+                    ></span
+                  >[<span class="textcolor" style="color: #008000">mycolor</span
+                  >]{<span class="textcolor" style="color: #000000"
+                    >myshadingB</span
+                  >}<br />
+                  &numsp;&numsp;{<span class="textcolor" style="color: #000000"
+                    >1cm</span
+                  >}{<span class="textcolor" style="color: #000000">rgb</span
+                  ><span class="textcolor" style="color: #800080">(0cm)</span
+                  ><span class="textcolor" style="color: #000000">=</span
+                  ><span class="textcolor" style="color: #800080">(1,0,0)</span
+                  >;&numsp;<span class="textcolor" style="color: #000000"
+                    ><a href="tikz-actions#pgf.color">color</a></span
+                  ><span class="textcolor" style="color: #800080">(2cm)</span
+                  ><span class="textcolor" style="color: #000000">=</span
+                  ><span class="textcolor" style="color: #800080"
+                    >(mycolor)</span
+                  >}<br />
+                  <span class="textcolor" style="color: #0000b2">\colorlet</span
+                  >{<span class="textcolor" style="color: #000000">mycolor</span
+                  >}{<span class="textcolor" style="color: #000000">green</span
+                  >}<br />
+                  <span class="textcolor" style="color: #0000b2"
+                    ><a href="base-shadings#pgf.back/pgfuseshading"
+                      >\pgfuseshading</a
+                    ></span
+                  >{<span class="textcolor" style="color: #000000"
+                    >myshadingB</span
+                  >}<br />
+                  <span class="textcolor" style="color: #0000b2">\colorlet</span
+                  >{<span class="textcolor" style="color: #000000">mycolor</span
+                  >}{<span class="textcolor" style="color: #000000">blue</span
+                  >}<br />
+                  <span class="textcolor" style="color: #0000b2"
+                    ><a href="base-shadings#pgf.back/pgfuseshading"
+                      >\pgfuseshading</a
+                    ></span
+                  >{<span class="textcolor" style="color: #000000"
+                    >myshadingB</span
+                  >}<br />
+                </code>
+              </div>
+            </figure>
+          </div>
+
+          <div class="manualentry">
+            <div class="entryheadline">
+              <p>
+                <a id="pgf.back/pgfdeclareverticalshading"></a>
+                <span class="hl-def"
+                  ><span class="textcolor" style="color: #bf0000"
+                    ><kbd>\pgfdeclareverticalshading</kbd></span
+                  >[<span class="angle">&langle;</span><i>color list</i
+                  ><span class="angle">&rangle;</span>]{<span class="angle"
+                    >&langle;</span
+                  ><i>shading name</i><span class="angle">&rangle;</span>}{<span
+                    class="angle"
+                    >&langle;</span
+                  ><i>shading width</i
+                  ><span class="angle">&rangle;</span>}{<span class="angle"
+                    >&langle;</span
+                  ><i>color specification</i
+                  ><span class="angle">&rangle;</span>}</span
+                >
+                <a
+                  class="anchor-link"
+                  href="#pgf.back/pgfdeclareverticalshading"
+                  >&para;</a
+                >
+              </p>
+            </div>
+            <p>
+              Declares a vertical shading named
+              <span class="angle">&langle;</span><i>shading name</i
+              ><span class="angle">&rangle;</span> of the specified
+              <span class="angle">&langle;</span><i>width</i
+              ><span class="angle">&rangle;</span>. The height of the bar is
+              deduced automatically. The effect of
+              <span class="angle">&langle;</span><i>color list</i
+              ><span class="angle">&rangle;</span> is the same as for horizontal
+              shadings.
+            </p>
+
+            <figure class="example">
+              <div class="example-image"></div>
+
+              <div class="example-code">
+                <button class="clipboardButton" type="button">copy</button>
+                <code>
+                  <br />
+                  <span class="textcolor" style="color: #0000b2"
+                    ><a href="base-shadings#pgf.back/pgfdeclareverticalshading"
+                      >\pgfdeclareverticalshading</a
+                    ></span
+                  >{<span class="textcolor" style="color: #000000"
+                    >myshadingC</span
+                  >}<br />
+                  &numsp;&numsp;{<span class="textcolor" style="color: #000000"
+                    >4cm</span
+                  >}{<span class="textcolor" style="color: #000000">rgb</span
+                  ><span class="textcolor" style="color: #800080">(0cm)</span
+                  ><span class="textcolor" style="color: #000000">=</span
+                  ><span class="textcolor" style="color: #800080">(1,0,0)</span
+                  >;&numsp;<span class="textcolor" style="color: #000000"
+                    >rgb</span
+                  ><span class="textcolor" style="color: #800080">(1.5cm)</span
+                  ><span class="textcolor" style="color: #000000">=</span
+                  ><span class="textcolor" style="color: #800080">(0,1,0)</span
+                  >;&numsp;<span class="textcolor" style="color: #000000"
+                    >rgb</span
+                  ><span class="textcolor" style="color: #800080">(2cm)</span
+                  ><span class="textcolor" style="color: #000000">=</span
+                  ><span class="textcolor" style="color: #800080">(0,0,1)</span
+                  >}<br />
+                  <span class="textcolor" style="color: #0000b2"
+                    ><a href="base-shadings#pgf.back/pgfuseshading"
+                      >\pgfuseshading</a
+                    ></span
+                  >{<span class="textcolor" style="color: #000000"
+                    >myshadingC</span
+                  >}<br />
+                </code>
+              </div>
+            </figure>
+          </div>
+          <h6 id="autosec-8261">
+            <span class="sectionnumber" id="sec-113.2.2">113.2.2&emsp;</span
+            >Radial Shadings<a class="anchor-link" href="#sec-113.2.2"
+              >&para;</a
+            >
+          </h6>
+          <a id="pgfmanual-autopage-8261"></a>
+
+          <div class="manualentry">
+            <div class="entryheadline">
+              <p>
+                <a id="pgf.back/pgfdeclareradialshading"></a>
+                <span class="hl-def"
+                  ><span class="textcolor" style="color: #bf0000"
+                    ><kbd>\pgfdeclareradialshading</kbd></span
+                  >[<span class="angle">&langle;</span><i>color list</i
+                  ><span class="angle">&rangle;</span>]{<span class="angle"
+                    >&langle;</span
+                  ><i>shading name</i><span class="angle">&rangle;</span>}{<span
+                    class="angle"
+                    >&langle;</span
+                  ><i>center point</i><span class="angle">&rangle;</span>}{<span
+                    class="angle"
+                    >&langle;</span
+                  ><i>color specification</i
+                  ><span class="angle">&rangle;</span>}</span
+                >
+                <a class="anchor-link" href="#pgf.back/pgfdeclareradialshading"
+                  >&para;</a
+                >
+              </p>
+            </div>
+            <p>
+              Declares a radial shading. A radial shading is a circle whose
+              inner color changes as specified by the color specification.
+              Assuming that the center of the shading is at the origin, the
+              color of the center will be the color specified for 0cm and the
+              color of the border of the circle will be the color for the
+              maximum dimension given in the <span class="angle">&langle;</span
+              ><i>color specified</i><span class="angle">&rangle;</span>. This
+              maximum will also be the radius of the circle. If the
+              <span class="angle">&langle;</span><i>center point</i
+              ><span class="angle">&rangle;</span> is not at the origin, the
+              whole shading inside the circle (whose size remains exactly the
+              same) will be distorted such that the given center now has the
+              color specified for 0cm. The effect of
+              <span class="angle">&langle;</span><i>color list</i
+              ><span class="angle">&rangle;</span> is the same as for horizontal
+              shadings.
+            </p>
+
+            <figure class="example">
+              <div class="example-image"></div>
+
+              <div class="example-code">
+                <button class="clipboardButton" type="button">copy</button>
+                <code>
+                  <br />
+                  <span class="textcolor" style="color: #0000b2"
+                    ><a href="base-shadings#pgf.back/pgfdeclareradialshading"
+                      >\pgfdeclareradialshading</a
+                    ></span
+                  >{<span class="textcolor" style="color: #000000">sphere</span
+                  >}{<span class="textcolor" style="color: #0000b2"
+                    ><a href="base-points#pgf.back/pgfpoint">\pgfpoint</a></span
+                  >{<span class="textcolor" style="color: #000000">0</span
+                  >.<span class="textcolor" style="color: #000000">5cm</span
+                  >}{<span class="textcolor" style="color: #000000">0</span
+                  >.<span class="textcolor" style="color: #000000">5cm</span
+                  >}}<span class="example-code-comment">%</span><br />
+                  &numsp;&numsp;{<span class="textcolor" style="color: #000000"
+                    >rgb</span
+                  ><span class="textcolor" style="color: #800080">(0cm)</span
+                  ><span class="textcolor" style="color: #000000">=</span
+                  ><span class="textcolor" style="color: #800080"
+                    >(0.9,0,0)</span
+                  >;<br />
+                  &numsp;&numsp;&numsp;<span
+                    class="textcolor"
+                    style="color: #000000"
+                    >rgb</span
+                  ><span class="textcolor" style="color: #800080">(0.7cm)</span
+                  ><span class="textcolor" style="color: #000000">=</span
+                  ><span class="textcolor" style="color: #800080"
+                    >(0.7,0,0)</span
+                  >;<br />
+                  &numsp;&numsp;&numsp;<span
+                    class="textcolor"
+                    style="color: #000000"
+                    >rgb</span
+                  ><span class="textcolor" style="color: #800080">(1cm)</span
+                  ><span class="textcolor" style="color: #000000">=</span
+                  ><span class="textcolor" style="color: #800080"
+                    >(0.5,0,0)</span
+                  >;<br />
+                  &numsp;&numsp;&numsp;<span
+                    class="textcolor"
+                    style="color: #000000"
+                    >rgb</span
+                  ><span class="textcolor" style="color: #800080">(1.05cm)</span
+                  ><span class="textcolor" style="color: #000000">=</span
+                  ><span class="textcolor" style="color: #800080">(1,1,1)</span
+                  >}<br />
+                  <span class="textcolor" style="color: #0000b2"
+                    ><a href="base-shadings#pgf.back/pgfuseshading"
+                      >\pgfuseshading</a
+                    ></span
+                  >{<span class="textcolor" style="color: #000000">sphere</span
+                  >}<br />
+                </code>
+              </div>
+            </figure>
+          </div>
+          <h6 id="autosec-8262">
+            <span class="sectionnumber" id="sec-113.2.3">113.2.3&emsp;</span
+            >General (Functional) Shadings<a
+              class="anchor-link"
+              href="#sec-113.2.3"
+              >&para;</a
+            >
+          </h6>
+          <a id="pgfmanual-autopage-8262"></a>
+
+          <div class="manualentry">
+            <div class="entryheadline">
+              <p>
+                <a id="pgf.back/pgfdeclarefunctionalshading"></a>
+                <span class="hl-def"
+                  ><span class="textcolor" style="color: #bf0000"
+                    ><kbd>\pgfdeclarefunctionalshading</kbd></span
+                  >[<span class="angle">&langle;</span><i>color list</i
+                  ><span class="angle">&rangle;</span>]{<span class="angle"
+                    >&langle;</span
+                  ><i>shading name</i><span class="angle">&rangle;</span>}{<span
+                    class="angle"
+                    >&langle;</span
+                  ><i>lower left corner</i
+                  ><span class="angle">&rangle;</span>}{<span class="angle"
+                    >&langle;</span
+                  ><i>upper right corner</i
+                  ><span class="angle">&rangle;</span>}<br />
+                  {<span class="angle">&langle;</span><i>init code</i
+                  ><span class="angle">&rangle;</span>}{<span class="angle"
+                    >&langle;</span
+                  ><i>type 4 function</i
+                  ><span class="angle">&rangle;</span>}</span
+                >
+                <a
+                  class="anchor-link"
+                  href="#pgf.back/pgfdeclarefunctionalshading"
+                  >&para;</a
+                >
+              </p>
+            </div>
+            <p>
+              <em
+                >Warning: These shadings are the least portable of all and they
+                put the heaviest burden of the renderer. They are slow and,
+                possibly, will not print correctly!</em
+              >
+            </p>
+            <p>
+              This command creates a <em>functional shading</em>. For such a
+              shading, the color of each point is calculated by calling a
+              function that takes the coordinates of the point as input and
+              yields the color as an output. Note that the function is evaluated
+              by the <em>renderer</em>, not by
+              <span class="textsc">pgf</span> or
+              <span class="latexlogofont"
+                ><span class="latexlogo"
+                  >T<span class="latexlogosub">e</span>X</span
+                ></span
+              >
+              or someone else at compile-time. This means that the evaluation of
+              this function has to be done <em>extremely quickly</em> and the
+              function should be <em>very simple</em>. For this reason, only a
+              very restricted set of operations are possible in the function and
+              functions should be kept small. Any errors in the function will
+              only be noticed by the renderer.
+            </p>
+            <p>
+              The syntax for specifying functions is the following: You use a
+              simplified form of a subset of the PostScript language. This
+              subset will be understood by the PDF-renderer (yes, PDF-renderers
+              do have a basic understanding of PostScript) and also by
+              PostScript renders. This subset is detailed in Section&nbsp;3.9.4
+              of the PDF-specification (version&nbsp;1.7). In essence, the
+              specification states that these functions may contain
+              &ldquo;expressions involving integers, real numbers, and boolean
+              values only. There are no composite data structures such as
+              strings or arrays, no procedures, and no variables or
+              names.&rdquo; The allowed operators are (exactly) the following:
+              <kbd>abs</kbd>, <kbd>add</kbd>, <kbd>atan</kbd>,
+              <kbd>ceiling</kbd>, <kbd>cos</kbd>, <kbd>cvi</kbd>,
+              <kbd>cvr</kbd>, <kbd>div</kbd>, <kbd>exp</kbd>, <kbd>floor</kbd>,
+              <kbd>idiv</kbd>, <kbd>ln</kbd>, <kbd>log</kbd>, <kbd>mod</kbd>,
+              <kbd>mul</kbd>, <kbd>neg</kbd>, <kbd>round</kbd>, <kbd>sin</kbd>,
+              <kbd>sqrt</kbd>, <kbd>sub</kbd>, <kbd>truncate</kbd>,
+              <kbd>and</kbd>, <kbd>bitshift</kbd>, <kbd>eq</kbd>,
+              <kbd>false</kbd>, <kbd>ge</kbd>, <kbd>gt</kbd>, <kbd>le</kbd>,
+              <kbd>lt</kbd>, <kbd>ne</kbd>, <kbd>not</kbd>, <kbd>or</kbd>,
+              <kbd>true</kbd>, <kbd>xor</kbd>, <kbd>if</kbd>, <kbd>ifelse</kbd>,
+              <kbd>copy</kbd>, <kbd>dup</kbd>, <kbd>exch</kbd>,
+              <kbd>index</kbd>, <kbd>pop</kbd>.
+            </p>
+            <p>
+              When the function is evaluated, the top two stack elements are the
+              coordinates of the point for which the color should be computed.
+              The coordinates are dimensionless and given in big points, so for
+              the coordinate \((50bp, 72.27pt)\) the top two stack elements
+              would be <kbd>50.0</kbd> and <kbd>72.0</kbd>. Otherwise, the
+              (virtual) stack is empty (or should be treated as if it were
+              empty). The function should then replace these two values by three
+              values, representing the red, green, and blue color of the point
+              for an <span class="textsc">rgb</span> shading, four colors,
+              representing the cyan, magenta, yellow, and black color of the
+              point for a <span class="textsc">cmyk</span> shading, or one value
+              representing the gray color for a grayscale shading. The numbers
+              should be real values, not integers since, Apple&rsquo;s PDF
+              renderer is broken in this regard (use <kbd>cvr</kbd> at the end
+              if necessary).
+            </p>
+            <p>
+              Conceptually, the function will be evaluated once for each point
+              of the rectangle <span class="angle">&langle;</span
+              ><i>lower left corner</i><span class="angle">&rangle;</span> to
+              <span class="angle">&langle;</span><i>upper right corner</i
+              ><span class="angle">&rangle;</span>, which should be a
+              <span class="textsc">pgf</span>-point expression like
+              <span class="texttt">\pgfpoint{100bp}{100bp}</span>. A renderer
+              may choose to evaluate the function at less points, but, in
+              principle, the function will be evaluated for each pixel
+              independently.
+            </p>
+            <p>
+              Because of the rather difficult PostScript syntax, use this macro
+              only <em>if you know what you are doing</em> (or if you are
+              adventurous, of course).
+            </p>
+            <p>
+              As for other shadings, the optional
+              <span class="angle">&langle;</span><i>color list</i
+              ><span class="angle">&rangle;</span> is used to determine whether
+              a shading needs to be recalculated when a color has changed.
+            </p>
+            <p>
+              The <span class="angle">&langle;</span><i>init code</i
+              ><span class="angle">&rangle;</span> is executed each time a
+              shading is (re)calculated. Typically, it will contain code to
+              extract coordinates from colors.
+            </p>
+
+            <figure class="example">
+              <div class="example-image"></div>
+
+              <div class="example-code">
+                <button class="clipboardButton" type="button">copy</button>
+                <code>
+                  <br />
+                  <span class="textcolor" style="color: #0000b2"
+                    ><a
+                      href="base-shadings#pgf.back/pgfdeclarefunctionalshading"
+                      >\pgfdeclarefunctionalshading</a
+                    ></span
+                  >{<span class="textcolor" style="color: #000000"
+                    >twospots</span
+                  >}<br />
+                  &numsp;&numsp;&numsp;&numsp;{<span
+                    class="textcolor"
+                    style="color: #0000b2"
+                    ><a href="base-points#pgf.back/pgfpointorigin"
+                      >\pgfpointorigin</a
+                    ></span
+                  >}{<span class="textcolor" style="color: #0000b2"
+                    ><a href="base-points#pgf.back/pgfpoint">\pgfpoint</a></span
+                  >{<span class="textcolor" style="color: #000000">4cm</span
+                  >}{<span class="textcolor" style="color: #000000">4cm</span
+                  >}}{}{<br />
+                  &numsp;&numsp;<span class="example-code-comment"
+                    >% Save coordinates for later</span
+                  ><br />
+                  &numsp;&numsp;<span class="textcolor" style="color: #000000"
+                    >2</span
+                  >
+                  <span class="textcolor" style="color: #000000"
+                    ><a href="oo#pgf.copy">copy</a></span
+                  ><br />
+                  &numsp;&numsp;<span class="example-code-comment"
+                    >% Compute distance from (40bp,45bp), with x doubled</span
+                  ><br />
+                  &numsp;&numsp;<span class="textcolor" style="color: #000000"
+                    >45</span
+                  >
+                  <span class="textcolor" style="color: #000000">sub</span>
+                  <span class="textcolor" style="color: #000000">dup</span>
+                  <span class="textcolor" style="color: #000000">mul</span>
+                  <span class="textcolor" style="color: #000000">exch</span
+                  ><br />
+                  &numsp;&numsp;<span class="textcolor" style="color: #000000"
+                    >40</span
+                  >
+                  <span class="textcolor" style="color: #000000">sub</span>
+                  <span class="textcolor" style="color: #000000">dup</span>
+                  <span class="textcolor" style="color: #000000">mul</span>
+                  <span class="textcolor" style="color: #000000">0</span>.<span
+                    class="textcolor"
+                    style="color: #000000"
+                    >5</span
+                  >
+                  <span class="textcolor" style="color: #000000">mul</span>
+                  <span class="textcolor" style="color: #000000">add</span>
+                  <span class="textcolor" style="color: #000000">sqrt</span
+                  ><br />
+                  &numsp;&numsp;<span class="example-code-comment"
+                    >% exponential decay</span
+                  ><br />
+                  &numsp;&numsp;<span class="textcolor" style="color: #000000"
+                    >dup</span
+                  >
+                  <span class="textcolor" style="color: #000000">mul</span>
+                  <span class="textcolor" style="color: #000000">neg</span>
+                  <span class="textcolor" style="color: #000000">1</span>.<span
+                    class="textcolor"
+                    style="color: #000000"
+                    >0005</span
+                  >
+                  <span class="textcolor" style="color: #000000">exch</span>
+                  <span class="textcolor" style="color: #000000">exp</span>
+                  <span class="textcolor" style="color: #000000">1</span>.<span
+                    class="textcolor"
+                    style="color: #000000"
+                    >0</span
+                  >
+                  <span class="textcolor" style="color: #000000">exch</span>
+                  <span class="textcolor" style="color: #000000">sub</span
+                  ><br />
+                  &numsp;&numsp;<span class="example-code-comment"
+                    >% Compute distance from (70bp,70bp) from stored coordinate,
+                    scaled</span
+                  ><br />
+                  &numsp;&numsp;<span class="textcolor" style="color: #000000"
+                    >3</span
+                  >
+                  <span class="textcolor" style="color: #000000">1</span>
+                  <span class="textcolor" style="color: #000000">roll</span
+                  ><br />
+                  &numsp;&numsp;<span class="textcolor" style="color: #000000"
+                    >70</span
+                  >
+                  <span class="textcolor" style="color: #000000">sub</span>
+                  <span class="textcolor" style="color: #000000">dup</span>
+                  <span class="textcolor" style="color: #000000">mul</span>
+                  .<span class="textcolor" style="color: #000000">5</span>
+                  <span class="textcolor" style="color: #000000">mul</span>
+                  <span class="textcolor" style="color: #000000">exch</span
+                  ><br />
+                  &numsp;&numsp;<span class="textcolor" style="color: #000000"
+                    >70</span
+                  >
+                  <span class="textcolor" style="color: #000000">sub</span>
+                  <span class="textcolor" style="color: #000000">dup</span>
+                  <span class="textcolor" style="color: #000000">mul</span>
+                  <span class="textcolor" style="color: #000000">add</span>
+                  <span class="textcolor" style="color: #000000">sqrt</span
+                  ><br />
+                  &numsp;&numsp;<span class="example-code-comment">% Decay</span
+                  ><br />
+                  &numsp;&numsp;<span class="textcolor" style="color: #000000"
+                    >dup</span
+                  >
+                  <span class="textcolor" style="color: #000000">mul</span>
+                  <span class="textcolor" style="color: #000000">neg</span>
+                  <span class="textcolor" style="color: #000000">1</span>.<span
+                    class="textcolor"
+                    style="color: #000000"
+                    >002</span
+                  >
+                  <span class="textcolor" style="color: #000000">exch</span>
+                  <span class="textcolor" style="color: #000000">exp</span>
+                  <span class="textcolor" style="color: #000000">1</span>.<span
+                    class="textcolor"
+                    style="color: #000000"
+                    >0</span
+                  >
+                  <span class="textcolor" style="color: #000000">exch</span>
+                  <span class="textcolor" style="color: #000000">sub</span
+                  ><br />
+                  &numsp;&numsp;<span class="example-code-comment"
+                    >% red component</span
+                  ><br />
+                  &numsp;&numsp;<span class="textcolor" style="color: #000000"
+                    >1</span
+                  >.<span class="textcolor" style="color: #000000">0</span>
+                  <span class="textcolor" style="color: #000000">3</span>
+                  <span class="textcolor" style="color: #000000">1</span>
+                  <span class="textcolor" style="color: #000000">roll</span
+                  ><br />
+                  }<br />
+                  <span class="textcolor" style="color: #0000b2"
+                    ><a href="base-shadings#pgf.back/pgfuseshading"
+                      >\pgfuseshading</a
+                    ></span
+                  >{<span class="textcolor" style="color: #000000"
+                    >twospots</span
+                  >}<br />
+                </code>
+              </div>
+            </figure>
+            <p>
+              Inside the PostScript function <span class="angle">&langle;</span
+              ><i>type 4 function</i><span class="angle">&rangle;</span> you
+              cannot use colors directly. Rather, you must push the color
+              components on the stack. For this, it is useful to call one of
+              <span class="texttt">\pgfshadecolortorgb</span>,
+              <span class="texttt">\pgfshadecolortocmyk</span>, or
+              <span class="texttt">\pgfshadecolortogray</span> in the
+              <span class="angle">&langle;</span><i>init code</i
+              ><span class="angle">&rangle;</span>:
+            </p>
+
+            <div class="manualentry">
+              <div class="entryheadline">
+                <p>
+                  <a id="pgf.back/pgfshadecolortorgb"></a>
+                  <span class="hl-def"
+                    ><span class="textcolor" style="color: #bf0000"
+                      ><kbd>\pgfshadecolortorgb</kbd></span
+                    >{<span class="angle">&langle;</span><i>color name</i
+                    ><span class="angle">&rangle;</span>}{<span class="angle"
+                      >&langle;</span
+                    ><i>macro</i><span class="angle">&rangle;</span>}</span
+                  >
+                  <a class="anchor-link" href="#pgf.back/pgfshadecolortorgb"
+                    >&para;</a
+                  >
+                </p>
+              </div>
+              <p>
+                This command takes <span class="angle">&langle;</span
+                ><i>color name</i><span class="angle">&rangle;</span> as input,
+                converts it to <span class="textsc">rgb</span> and stores the
+                color&rsquo;s red/green/blue components real numbers between 0.0
+                and 1.0 separated by spaces (which is exactly what you need if
+                you want to push it on a stack) in
+                <span class="angle">&langle;</span><i>macro</i
+                ><span class="angle">&rangle;</span>. This macro can then be
+                used inside the <span class="angle">&langle;</span
+                ><i>type 4 function</i
+                ><span class="angle">&rangle;</span> argument for
+                <span class="texttt">\pgfdeclarefunctionalshading</span>.
+              </p>
+
+              <figure class="example">
+                <div class="example-image"></div>
+
+                <div class="example-code">
+                  <button class="clipboardButton" type="button">copy</button>
+                  <code>
+                    <br />
+                    <span class="textcolor" style="color: #0000b2"
+                      ><a
+                        href="base-shadings#pgf.back/pgfdeclarefunctionalshading"
+                        >\pgfdeclarefunctionalshading</a
+                      ></span
+                    >[<span class="textcolor" style="color: #008000">mycol</span
+                    >]{<span class="textcolor" style="color: #000000"
+                      >sweep</span
+                    >}{<span class="textcolor" style="color: #0000b2"
+                      ><a href="base-points#pgf.back/pgfpoint"
+                        >\pgfpoint</a
+                      ></span
+                    >{<span class="textcolor" style="color: #000000">-1cm</span
+                    >}{<span class="textcolor" style="color: #000000">-1cm</span
+                    >}}<br />
+                    {<span class="textcolor" style="color: #0000b2"
+                      ><a href="base-points#pgf.back/pgfpoint"
+                        >\pgfpoint</a
+                      ></span
+                    >{<span class="textcolor" style="color: #000000">1cm</span
+                    >}{<span class="textcolor" style="color: #000000">1cm</span
+                    >}}{<span class="textcolor" style="color: #0000b2"
+                      ><a href="base-shadings#pgf.back/pgfshadecolortorgb"
+                        >\pgfshadecolortorgb</a
+                      ></span
+                    >{<span class="textcolor" style="color: #000000">mycol</span
+                    >}{<span class="textcolor" style="color: #0000b2"
+                      >\myrgb</span
+                    >}}{<br />
+                    &numsp;&numsp;<span class="textcolor" style="color: #000000"
+                      >2</span
+                    >
+                    <span class="textcolor" style="color: #000000"
+                      ><a href="oo#pgf.copy">copy</a></span
+                    >
+                    &numsp;&numsp;&numsp;&numsp;&numsp;&numsp;&numsp;<span
+                      class="example-code-comment"
+                      >% whirl</span
+                    ><br />
+                    &numsp;&numsp;<span class="example-code-comment"
+                      >% Calculate "safe" atan of position</span
+                    ><br />
+                    &numsp;&numsp;<span class="textcolor" style="color: #000000"
+                      >2</span
+                    >
+                    <span class="textcolor" style="color: #000000"
+                      ><a href="oo#pgf.copy">copy</a></span
+                    >
+                    <span class="textcolor" style="color: #000000">abs</span>
+                    <span class="textcolor" style="color: #000000">exch</span>
+                    <span class="textcolor" style="color: #000000">abs</span>
+                    <span class="textcolor" style="color: #000000">add</span>
+                    <span class="textcolor" style="color: #000000">0</span
+                    >.<span class="textcolor" style="color: #000000">0001</span>
+                    <span class="textcolor" style="color: #000000">ge</span>
+                    {&numsp;<span class="textcolor" style="color: #000000"
+                      >atan</span
+                    >
+                    }&numsp;{&numsp;<span
+                      class="textcolor"
+                      style="color: #000000"
+                      >pop</span
+                    >
+                    }&numsp;<span class="textcolor" style="color: #000000"
+                      >ifelse</span
+                    ><br />
+                    &numsp;&numsp;<span class="textcolor" style="color: #000000"
+                      >3</span
+                    >
+                    <span class="textcolor" style="color: #000000">1</span>
+                    <span class="textcolor" style="color: #000000">roll</span
+                    ><br />
+                    &numsp;&numsp;<span class="textcolor" style="color: #000000"
+                      >dup</span
+                    >
+                    <span class="textcolor" style="color: #000000">mul</span>
+                    <span class="textcolor" style="color: #000000">exch</span
+                    ><br />
+                    &numsp;&numsp;<span class="textcolor" style="color: #000000"
+                      >dup</span
+                    >
+                    <span class="textcolor" style="color: #000000">mul</span>
+                    <span class="textcolor" style="color: #000000">add</span>
+                    <span class="textcolor" style="color: #000000">sqrt</span
+                    ><br />
+                    &numsp;&numsp;<span class="textcolor" style="color: #000000"
+                      >30</span
+                    >
+                    <span class="textcolor" style="color: #000000">mul</span
+                    ><br />
+                    &numsp;&numsp;<span class="textcolor" style="color: #000000"
+                      >add</span
+                    ><br />
+                    &numsp;&numsp;<span class="textcolor" style="color: #000000"
+                      ><a href="tikz-paths#pgf.sin">sin</a></span
+                    ><br />
+                    &numsp;&numsp;<span class="textcolor" style="color: #000000"
+                      >1</span
+                    >
+                    <span class="textcolor" style="color: #000000">add</span>
+                    <span class="textcolor" style="color: #000000">2</span>
+                    <span class="textcolor" style="color: #000000">div</span
+                    ><br />
+                    &numsp;&numsp;<span class="textcolor" style="color: #000000"
+                      >dup</span
+                    ><br />
+                    &numsp;&numsp;<span class="textcolor" style="color: #0000b2"
+                      >\myrgb</span
+                    >&numsp;&numsp;&numsp;&numsp;&numsp;&numsp;&numsp;&numsp;<span
+                      class="example-code-comment"
+                      >% push mycol</span
+                    ><br />
+                    &numsp;&numsp;<span class="textcolor" style="color: #000000"
+                      >5</span
+                    >
+                    <span class="textcolor" style="color: #000000">4</span>
+                    <span class="textcolor" style="color: #000000">roll</span>
+                    &numsp;&numsp;&numsp;&numsp;&numsp;<span
+                      class="example-code-comment"
+                      >% multiply all components by calculated value</span
+                    ><br />
+                    &numsp;&numsp;<span class="textcolor" style="color: #000000"
+                      >mul</span
+                    ><br />
+                    &numsp;&numsp;<span class="textcolor" style="color: #000000"
+                      >3</span
+                    >
+                    <span class="textcolor" style="color: #000000">1</span>
+                    <span class="textcolor" style="color: #000000">roll</span
+                    ><br />
+                    &numsp;&numsp;<span class="textcolor" style="color: #000000"
+                      >3</span
+                    >
+                    <span class="textcolor" style="color: #000000">index</span
+                    ><br />
+                    &numsp;&numsp;<span class="textcolor" style="color: #000000"
+                      >mul</span
+                    ><br />
+                    &numsp;&numsp;<span class="textcolor" style="color: #000000"
+                      >3</span
+                    >
+                    <span class="textcolor" style="color: #000000">1</span>
+                    <span class="textcolor" style="color: #000000">roll</span
+                    ><br />
+                    &numsp;&numsp;<span class="textcolor" style="color: #000000"
+                      >4</span
+                    >
+                    <span class="textcolor" style="color: #000000">3</span>
+                    <span class="textcolor" style="color: #000000">roll</span
+                    ><br />
+                    &numsp;&numsp;<span class="textcolor" style="color: #000000"
+                      >mul</span
+                    ><br />
+                    &numsp;&numsp;<span class="textcolor" style="color: #000000"
+                      >3</span
+                    >
+                    <span class="textcolor" style="color: #000000">1</span>
+                    <span class="textcolor" style="color: #000000">roll</span
+                    ><br />
+                    }<br />
+                    <span class="textcolor" style="color: #0000b2"
+                      >\colorlet</span
+                    >{<span class="textcolor" style="color: #000000">mycol</span
+                    >}{<span class="textcolor" style="color: #000000"
+                      >white</span
+                    >}<span class="example-code-comment">%</span><br />
+                    <span class="textcolor" style="color: #0000b2"
+                      ><a href="base-shadings#pgf.back/pgfuseshading"
+                        >\pgfuseshading</a
+                      ></span
+                    >{<span class="textcolor" style="color: #000000">sweep</span
+                    >}<span class="example-code-comment">%</span><br />
+                    <span class="textcolor" style="color: #0000b2"
+                      >\colorlet</span
+                    >{<span class="textcolor" style="color: #000000">mycol</span
+                    >}{<span class="textcolor" style="color: #000000">red</span
+                    >}<span class="example-code-comment">%</span><br />
+                    <span class="textcolor" style="color: #0000b2"
+                      ><a href="base-shadings#pgf.back/pgfuseshading"
+                        >\pgfuseshading</a
+                      ></span
+                    >{<span class="textcolor" style="color: #000000">sweep</span
+                    >}<br />
+                  </code>
+                </div>
+              </figure>
+              <p>
+                In addition, three macros suffixed with
+                <span class="texttt">red</span>,
+                <span class="texttt">green</span> and
+                <span class="texttt">blue</span> are defined, which store the
+                individual components of <span class="angle">&langle;</span
+                ><i>color name</i><span class="angle">&rangle;</span>. These can
+                also be used in the <span class="angle">&langle;</span
+                ><i>type 4 function</i
+                ><span class="angle">&rangle;</span> argument.
+              </p>
+
+              <figure class="example">
+                <div class="example-image">
+                  <p>
+                    <span class="texttt">\mycol</span>=1.0 0.5 0.0
+                    <span class="texttt">\mycolred</span>=1.0
+                    <span class="texttt">\mycolgreen</span>=0.5
+                    <span class="texttt">\mycolblue</span>=0.0
+                  </p>
+                </div>
+
+                <div class="example-code">
+                  <button class="clipboardButton" type="button">copy</button>
+                  <code>
+                    <br />
+                    <span class="textcolor" style="color: #0000b2"
+                      ><a href="base-shadings#pgf.back/pgfshadecolortorgb"
+                        >\pgfshadecolortorgb</a
+                      ></span
+                    >{<span class="textcolor" style="color: #000000"
+                      >orange</span
+                    >}{<span class="textcolor" style="color: #0000b2"
+                      >\mycol</span
+                    >}<br />
+                    <span class="textcolor" style="color: #000000">|</span
+                    ><span class="textcolor" style="color: #0000b2">\mycol</span
+                    ><span class="textcolor" style="color: #000000">|=</span
+                    ><span class="textcolor" style="color: #0000b2">\mycol</span
+                    >&numsp;<span class="textcolor" style="color: #000000"
+                      >|</span
+                    ><span class="textcolor" style="color: #0000b2"
+                      >\mycolred</span
+                    ><span class="textcolor" style="color: #000000">|=</span
+                    ><span class="textcolor" style="color: #0000b2"
+                      >\mycolred</span
+                    >&numsp;<span class="textcolor" style="color: #000000"
+                      >|</span
+                    ><span class="textcolor" style="color: #0000b2"
+                      >\mycolgreen</span
+                    ><span class="textcolor" style="color: #000000">|=</span
+                    ><span class="textcolor" style="color: #0000b2"
+                      >\mycolgreen</span
+                    >&numsp;<span class="textcolor" style="color: #000000"
+                      >|</span
+                    ><span class="textcolor" style="color: #0000b2"
+                      >\mycolblue</span
+                    ><span class="textcolor" style="color: #000000">|=</span
+                    ><span class="textcolor" style="color: #0000b2"
+                      >\mycolblue</span
+                    ><br />
+                  </code>
+                </div>
+              </figure>
+            </div>
+
+            <figure class="example">
+              <div class="example-image"></div>
+
+              <div class="example-code">
+                <button class="clipboardButton" type="button">copy</button>
+                <code>
+                  <br />
+                  <span class="textcolor" style="color: #0000b2"
+                    ><a
+                      href="base-shadings#pgf.back/pgfdeclarefunctionalshading"
+                      >\pgfdeclarefunctionalshading</a
+                    ></span
+                  >[<span class="textcolor" style="color: #008000">col1</span
+                  >,<span class="textcolor" style="color: #008000">col2</span
+                  >,<span class="textcolor" style="color: #008000">col3</span
+                  >,<span class="textcolor" style="color: #008000">col4</span
+                  >]{<span class="textcolor" style="color: #000000"
+                    >bilinear</span
+                  >
+                  <span class="textcolor" style="color: #000000"
+                    >interpolation</span
+                  >}<br />
+                  {<span class="textcolor" style="color: #0000b2"
+                    ><a href="base-points#pgf.back/pgfpointorigin"
+                      >\pgfpointorigin</a
+                    ></span
+                  >}{<span class="textcolor" style="color: #0000b2"
+                    ><a href="base-points#pgf.back/pgfpoint">\pgfpoint</a></span
+                  >{<span class="textcolor" style="color: #000000">100bp</span
+                  >}{<span class="textcolor" style="color: #000000">100bp</span
+                  >}}<br />
+                  {<br />
+                  <span class="textcolor" style="color: #0000b2"
+                    ><a href="base-shadings#pgf.back/pgfshadecolortorgb"
+                      >\pgfshadecolortorgb</a
+                    ></span
+                  >{<span class="textcolor" style="color: #000000">col1</span
+                  >}{<span class="textcolor" style="color: #0000b2">\first</span
+                  >}<span class="textcolor" style="color: #0000b2"
+                    ><a href="base-shadings#pgf.back/pgfshadecolortorgb"
+                      >\pgfshadecolortorgb</a
+                    ></span
+                  >{<span class="textcolor" style="color: #000000">col2</span
+                  >}{<span class="textcolor" style="color: #0000b2"
+                    >\second</span
+                  >}<br />
+                  <span class="textcolor" style="color: #0000b2"
+                    ><a href="base-shadings#pgf.back/pgfshadecolortorgb"
+                      >\pgfshadecolortorgb</a
+                    ></span
+                  >{<span class="textcolor" style="color: #000000">col3</span
+                  >}{<span class="textcolor" style="color: #0000b2">\third</span
+                  >}<span class="textcolor" style="color: #0000b2"
+                    ><a href="base-shadings#pgf.back/pgfshadecolortorgb"
+                      >\pgfshadecolortorgb</a
+                    ></span
+                  >{<span class="textcolor" style="color: #000000">col4</span
+                  >}{<span class="textcolor" style="color: #0000b2"
+                    >\fourth</span
+                  >}<br />
+                  }{<br />
+                  &numsp;&numsp;<span class="textcolor" style="color: #000000"
+                    >100</span
+                  >
+                  <span class="textcolor" style="color: #000000">div</span>
+                  <span class="textcolor" style="color: #000000">exch</span>
+                  <span class="textcolor" style="color: #000000">100</span>
+                  <span class="textcolor" style="color: #000000">div</span>
+                  <span class="textcolor" style="color: #000000">2</span>
+                  <span class="textcolor" style="color: #000000"
+                    ><a href="oo#pgf.copy">copy</a></span
+                  >
+                  &numsp;&numsp;&numsp;&numsp;&numsp;&numsp;&numsp;&numsp;&numsp;&numsp;&numsp;&numsp;&numsp;&numsp;&numsp;&numsp;&numsp;&numsp;<span
+                    class="example-code-comment"
+                    >% Calculate y/100 x/100.</span
+                  ><br />
+                  &numsp;&numsp;<span class="textcolor" style="color: #000000"
+                    >neg</span
+                  >
+                  <span class="textcolor" style="color: #000000">1</span>
+                  <span class="textcolor" style="color: #000000">add</span>
+                  <span class="textcolor" style="color: #000000">exch</span>
+                  <span class="textcolor" style="color: #000000">neg</span>
+                  <span class="textcolor" style="color: #000000">1</span>
+                  <span class="textcolor" style="color: #000000">add</span>
+                  &numsp;&numsp;&numsp;&numsp;&numsp;&numsp;&numsp;&numsp;&numsp;&numsp;&numsp;&numsp;&numsp;&numsp;&numsp;&numsp;&numsp;&numsp;&numsp;&numsp;&numsp;<span
+                    class="example-code-comment"
+                    >% Calculate 1-y/100 1-x/100.</span
+                  ><br />
+                  &numsp;&numsp;<span class="textcolor" style="color: #000000"
+                    >3</span
+                  >
+                  <span class="textcolor" style="color: #000000">1</span>
+                  <span class="textcolor" style="color: #000000">roll</span>
+                  <span class="textcolor" style="color: #000000">2</span>
+                  <span class="textcolor" style="color: #000000"
+                    ><a href="oo#pgf.copy">copy</a></span
+                  >
+                  <span class="textcolor" style="color: #000000">exch</span>
+                  <span class="textcolor" style="color: #000000">5</span>
+                  <span class="textcolor" style="color: #000000">2</span>
+                  <span class="textcolor" style="color: #000000">roll</span>
+                  <span class="textcolor" style="color: #000000">6</span>
+                  <span class="textcolor" style="color: #000000"
+                    ><a href="oo#pgf.copy">copy</a></span
+                  >
+                  <span class="textcolor" style="color: #000000">6</span>
+                  <span class="textcolor" style="color: #000000"
+                    ><a href="oo#pgf.copy">copy</a></span
+                  >
+                  &numsp;&numsp;<span class="example-code-comment"
+                    >% Set up stack.</span
+                  ><br />
+                  &numsp;&numsp;<span class="textcolor" style="color: #0000b2"
+                    >\firstred</span
+                  >&numsp;<span class="textcolor" style="color: #000000"
+                    >mul</span
+                  >
+                  <span class="textcolor" style="color: #000000">exch</span>
+                  <span class="textcolor" style="color: #0000b2"
+                    >\secondred</span
+                  >&numsp;<span class="textcolor" style="color: #000000"
+                    >mul</span
+                  >
+                  <span class="textcolor" style="color: #000000">add</span>
+                  <span class="textcolor" style="color: #000000">mul</span>
+                  &numsp;&numsp;&numsp;&numsp;<span class="example-code-comment"
+                    >% Process red component.</span
+                  ><br />
+                  &numsp;&numsp;<span class="textcolor" style="color: #000000"
+                    >4</span
+                  >
+                  <span class="textcolor" style="color: #000000">1</span>
+                  <span class="textcolor" style="color: #000000">roll</span
+                  ><br />
+                  &numsp;&numsp;<span class="textcolor" style="color: #0000b2"
+                    >\thirdred</span
+                  >&numsp;<span class="textcolor" style="color: #000000"
+                    >mul</span
+                  >
+                  <span class="textcolor" style="color: #000000">exch</span>
+                  <span class="textcolor" style="color: #0000b2"
+                    >\fourthred</span
+                  >&numsp;<span class="textcolor" style="color: #000000"
+                    >mul</span
+                  >
+                  <span class="textcolor" style="color: #000000">add</span>
+                  <span class="textcolor" style="color: #000000">mul</span
+                  ><br />
+                  &numsp;&numsp;<span class="textcolor" style="color: #000000"
+                    >add</span
+                  ><br />
+                  &numsp;&numsp;<span class="textcolor" style="color: #000000"
+                    >13</span
+                  >
+                  <span class="textcolor" style="color: #000000">1</span>
+                  <span class="textcolor" style="color: #000000">roll</span
+                  ><br />
+                  &numsp;&numsp;<span class="textcolor" style="color: #0000b2"
+                    >\firstgreen</span
+                  >&numsp;<span class="textcolor" style="color: #000000"
+                    >mul</span
+                  >
+                  <span class="textcolor" style="color: #000000">exch</span>
+                  <span class="textcolor" style="color: #0000b2"
+                    >\secondgreen</span
+                  >&numsp;<span class="textcolor" style="color: #000000"
+                    >mul</span
+                  >
+                  <span class="textcolor" style="color: #000000">add</span>
+                  <span class="textcolor" style="color: #000000">mul</span>
+                  <span class="example-code-comment"
+                    >% Process green component.</span
+                  ><br />
+                  &numsp;&numsp;<span class="textcolor" style="color: #000000"
+                    >4</span
+                  >
+                  <span class="textcolor" style="color: #000000">1</span>
+                  <span class="textcolor" style="color: #000000">roll</span
+                  ><br />
+                  &numsp;&numsp;<span class="textcolor" style="color: #0000b2"
+                    >\thirdgreen</span
+                  >&numsp;<span class="textcolor" style="color: #000000"
+                    >mul</span
+                  >
+                  <span class="textcolor" style="color: #000000">exch</span>
+                  <span class="textcolor" style="color: #0000b2"
+                    >\fourthgreen</span
+                  >&numsp;<span class="textcolor" style="color: #000000"
+                    >mul</span
+                  >
+                  <span class="textcolor" style="color: #000000">add</span>
+                  <span class="textcolor" style="color: #000000">mul</span
+                  ><br />
+                  &numsp;&numsp;<span class="textcolor" style="color: #000000"
+                    >add</span
+                  ><br />
+                  &numsp;&numsp;<span class="textcolor" style="color: #000000"
+                    >7</span
+                  >
+                  <span class="textcolor" style="color: #000000">1</span>
+                  <span class="textcolor" style="color: #000000">roll</span
+                  ><br />
+                  &numsp;&numsp;<span class="textcolor" style="color: #0000b2"
+                    >\firstblue</span
+                  >&numsp;<span class="textcolor" style="color: #000000"
+                    >mul</span
+                  >
+                  <span class="textcolor" style="color: #000000">exch</span>
+                  <span class="textcolor" style="color: #0000b2"
+                    >\secondblue</span
+                  >&numsp;<span class="textcolor" style="color: #000000"
+                    >mul</span
+                  >
+                  <span class="textcolor" style="color: #000000">add</span>
+                  <span class="textcolor" style="color: #000000">mul</span>
+                  &numsp;&numsp;<span class="example-code-comment"
+                    >% Process blue component.</span
+                  ><br />
+                  &numsp;&numsp;<span class="textcolor" style="color: #000000"
+                    >4</span
+                  >
+                  <span class="textcolor" style="color: #000000">1</span>
+                  <span class="textcolor" style="color: #000000">roll</span
+                  ><br />
+                  &numsp;&numsp;<span class="textcolor" style="color: #0000b2"
+                    >\thirdblue</span
+                  >&numsp;<span class="textcolor" style="color: #000000"
+                    >mul</span
+                  >
+                  <span class="textcolor" style="color: #000000">exch</span>
+                  <span class="textcolor" style="color: #0000b2"
+                    >\fourthblue</span
+                  >&numsp;<span class="textcolor" style="color: #000000"
+                    >mul</span
+                  >
+                  <span class="textcolor" style="color: #000000">add</span>
+                  <span class="textcolor" style="color: #000000">mul</span
+                  ><br />
+                  &numsp;&numsp;<span class="textcolor" style="color: #000000"
+                    >add</span
+                  ><br />
+                  }<br />
+                  <br />
+                  <span class="textcolor" style="color: #0000b2">\colorlet</span
+                  >{<span class="textcolor" style="color: #000000">col1</span
+                  >}{<span class="textcolor" style="color: #000000">blue</span
+                  >}<br />
+                  <span class="textcolor" style="color: #0000b2">\colorlet</span
+                  >{<span class="textcolor" style="color: #000000">col2</span
+                  >}{<span class="textcolor" style="color: #000000">yellow</span
+                  >}<br />
+                  <span class="textcolor" style="color: #0000b2">\colorlet</span
+                  >{<span class="textcolor" style="color: #000000">col3</span
+                  >}{<span class="textcolor" style="color: #000000">red</span
+                  >}<br />
+                  <span class="textcolor" style="color: #0000b2">\colorlet</span
+                  >{<span class="textcolor" style="color: #000000">col4</span
+                  >}{<span class="textcolor" style="color: #000000">green</span
+                  >}<br />
+                  <span class="textcolor" style="color: #0000b2"
+                    ><a href="base-shadings#pgf.back/pgfuseshading"
+                      >\pgfuseshading</a
+                    ></span
+                  >{<span class="textcolor" style="color: #000000"
+                    >bilinear</span
+                  >
+                  <span class="textcolor" style="color: #000000"
+                    >interpolation</span
+                  >}<br />
+                </code>
+              </div>
+            </figure>
+
+            <div class="manualentry">
+              <div class="entryheadline">
+                <p>
+                  <a id="pgf.back/pgfshadecolortocmyk"></a>
+                  <span class="hl-def"
+                    ><span class="textcolor" style="color: #bf0000"
+                      ><kbd>\pgfshadecolortocmyk</kbd></span
+                    >{<span class="angle">&langle;</span><i>color name</i
+                    ><span class="angle">&rangle;</span>}{<span class="angle"
+                      >&langle;</span
+                    ><i>macro</i><span class="angle">&rangle;</span>}</span
+                  >
+                  <a class="anchor-link" href="#pgf.back/pgfshadecolortocmyk"
+                    >&para;</a
+                  >
+                </p>
+              </div>
+              <p>
+                This command takes <span class="angle">&langle;</span
+                ><i>color name</i><span class="angle">&rangle;</span> as input,
+                converts it to <span class="textsc">cmyk</span> and stores the
+                color&rsquo;s cyan/magenta/yellow/black components real numbers
+                between 0.0 and 1.0 separated by spaces.
+              </p>
+              <p>
+                In addition, four macros suffixed with
+                <span class="texttt">cyan</span>,
+                <span class="texttt">magenta</span>,
+                <span class="texttt">yellow</span> and
+                <span class="texttt">black</span> are defined, which store the
+                individual components of <span class="angle">&langle;</span
+                ><i>color name</i><span class="angle">&rangle;</span>.
+              </p>
+            </div>
+
+            <div class="manualentry">
+              <div class="entryheadline">
+                <p>
+                  <a id="pgf.back/pgfshadecolortogray"></a>
+                  <span class="hl-def"
+                    ><span class="textcolor" style="color: #bf0000"
+                      ><kbd>\pgfshadecolortogray</kbd></span
+                    >{<span class="angle">&langle;</span><i>color name</i
+                    ><span class="angle">&rangle;</span>}{<span class="angle"
+                      >&langle;</span
+                    ><i>macro</i><span class="angle">&rangle;</span>}</span
+                  >
+                  <a class="anchor-link" href="#pgf.back/pgfshadecolortogray"
+                    >&para;</a
+                  >
+                </p>
+              </div>
+              <p>
+                This command takes <span class="angle">&langle;</span
+                ><i>color name</i><span class="angle">&rangle;</span> as input
+                converts it to grayscale and stores the color&rsquo;s value as a
+                real number between 0.0 and 1.0.
+              </p>
+              <p>
+                Although it&rsquo;s not needed, for consistency a second macro
+                suffixed with <span class="texttt">gray</span> is also defined.
+              </p>
+            </div>
+          </div>
+          <p>
+            <span class="paragraph" id="autosec-8264"
+              >Color model independent functional shadings.</span
+            >
+            <a id="pgfmanual-autopage-8264"></a>
+          </p>
+
+          <p>
+            By nature, the PostScript code used in functional shadings must
+            output one of <span class="textsc">rgb</span>,
+            <span class="textsc">cmyk</span>, or grayscale data. Therefore,
+            <kbd>\pgfdeclarefunctionalshading</kbd> is <em>not</em>
+            portable across color models.
+          </p>
+
+          <p>
+            Take particular care that the same color model is in use at
+            declaration time and use time for functional shadings declared with
+            an optional argument as otherwise the PostScript data will not match
+            the declared color space and you will end up with a malformed PDF.
+          </p>
+
+          <p>
+            Having said this, it <em>is</em> possible to create portable
+            functional shadings by providing conditional code to append color
+            transformations to the PostScript data. A variety of
+            <kbd>\pgffuncshading*to*</kbd> (e.g.,
+            <kbd>\pgffuncshadingrgbtocmyk</kbd>) macros along with
+            <kbd>\ifpgfshadingmodel*</kbd> (e.g.,
+            <kbd>\ifpgfshadingmodelcmyk</kbd>) conditionals are provided to
+            assist with these transformations. Obviously, this will make the
+            PostScript code less efficient than if you work in your intended
+            color model.
+          </p>
+          <div class="center">
+            <div
+              class="minipage"
+              style="
+                vertical-align: bottom;
+                justify-content: flex-start;
+                width: 124pt;
+              "
+            >
+              <a id="pgfmanual-autopage-8266"></a>
+
+              <p>
+                <span class="texttt">xcolor</span>
+                <span class="texttt">rgb</span> model:
+              </p>
+            </div>
+
+            <span style="width: 57pt; display: inline-block"><!----></span>
+            <div
+              class="minipage"
+              style="
+                vertical-align: bottom;
+                justify-content: flex-start;
+                width: 124pt;
+              "
+            >
+              <a id="pgfmanual-autopage-8267"></a>
+
+              <p>
+                <span class="texttt">xcolor</span>
+                <span class="texttt">cmyk</span> model:
+              </p>
+            </div>
+
+            <span style="width: 57pt; display: inline-block"><!----></span>
+            <div
+              class="minipage"
+              style="
+                vertical-align: bottom;
+                justify-content: flex-start;
+                width: 124pt;
+              "
+            >
+              <a id="pgfmanual-autopage-8268"></a>
+
+              <p>
+                <span class="texttt">xcolor</span>
+                <span class="texttt">gray</span> model:
+              </p>
+            </div>
+          </div>
+
+          <figure class="example">
+            <div class="example-code">
+              <button class="clipboardButton" type="button">copy</button>
+
+              <code>
+                <br />
+                <span class="textcolor" style="color: #0000b2"
+                  ><a href="base-shadings#pgf.back/pgfdeclarefunctionalshading"
+                    >\pgfdeclarefunctionalshading</a
+                  ></span
+                >[<span class="textcolor" style="color: #008000">black</span
+                >]{<span class="textcolor" style="color: #000000"
+                  >portabletwospots</span
+                >}{<span class="textcolor" style="color: #0000b2"
+                  ><a href="base-points#pgf.back/pgfpointorigin"
+                    >\pgfpointorigin</a
+                  ></span
+                >}{<span class="textcolor" style="color: #0000b2"
+                  ><a href="base-points#pgf.back/pgfpoint">\pgfpoint</a></span
+                >{<span class="textcolor" style="color: #000000">3</span>.<span
+                  class="textcolor"
+                  style="color: #000000"
+                  >5cm</span
+                >}{<span class="textcolor" style="color: #000000">3</span>.<span
+                  class="textcolor"
+                  style="color: #000000"
+                  >5cm</span
+                >}}{}{<br />
+                &numsp;&numsp;<span class="textcolor" style="color: #000000"
+                  >2</span
+                >
+                <span class="textcolor" style="color: #000000"
+                  ><a href="oo#pgf.copy">copy</a></span
+                ><br />
+                &numsp;&numsp;<span class="textcolor" style="color: #000000"
+                  >45</span
+                >
+                <span class="textcolor" style="color: #000000">sub</span>
+                <span class="textcolor" style="color: #000000">dup</span>
+                <span class="textcolor" style="color: #000000">mul</span>
+                <span class="textcolor" style="color: #000000">exch</span><br />
+                &numsp;&numsp;<span class="textcolor" style="color: #000000"
+                  >40</span
+                >
+                <span class="textcolor" style="color: #000000">sub</span>
+                <span class="textcolor" style="color: #000000">dup</span>
+                <span class="textcolor" style="color: #000000">mul</span>
+                <span class="textcolor" style="color: #000000">0</span>.<span
+                  class="textcolor"
+                  style="color: #000000"
+                  >5</span
+                >
+                <span class="textcolor" style="color: #000000">mul</span>
+                <span class="textcolor" style="color: #000000">add</span>
+                <span class="textcolor" style="color: #000000">sqrt</span><br />
+                &numsp;&numsp;<span class="textcolor" style="color: #000000"
+                  >dup</span
+                >
+                <span class="textcolor" style="color: #000000">mul</span>
+                <span class="textcolor" style="color: #000000">neg</span>
+                <span class="textcolor" style="color: #000000">1</span>.<span
+                  class="textcolor"
+                  style="color: #000000"
+                  >0005</span
+                >
+                <span class="textcolor" style="color: #000000">exch</span>
+                <span class="textcolor" style="color: #000000">exp</span>
+                <span class="textcolor" style="color: #000000">1</span>.<span
+                  class="textcolor"
+                  style="color: #000000"
+                  >0</span
+                >
+                <span class="textcolor" style="color: #000000">exch</span>
+                <span class="textcolor" style="color: #000000">sub</span><br />
+                &numsp;&numsp;<span class="textcolor" style="color: #000000"
+                  >3</span
+                >
+                <span class="textcolor" style="color: #000000">1</span>
+                <span class="textcolor" style="color: #000000">roll</span><br />
+                &numsp;&numsp;<span class="textcolor" style="color: #000000"
+                  >70</span
+                >
+                <span class="textcolor" style="color: #000000">sub</span>
+                <span class="textcolor" style="color: #000000">dup</span>
+                <span class="textcolor" style="color: #000000">mul</span> .<span
+                  class="textcolor"
+                  style="color: #000000"
+                  >5</span
+                >
+                <span class="textcolor" style="color: #000000">mul</span>
+                <span class="textcolor" style="color: #000000">exch</span><br />
+                &numsp;&numsp;<span class="textcolor" style="color: #000000"
+                  >70</span
+                >
+                <span class="textcolor" style="color: #000000">sub</span>
+                <span class="textcolor" style="color: #000000">dup</span>
+                <span class="textcolor" style="color: #000000">mul</span>
+                <span class="textcolor" style="color: #000000">add</span>
+                <span class="textcolor" style="color: #000000">sqrt</span><br />
+                &numsp;&numsp;<span class="textcolor" style="color: #000000"
+                  >dup</span
+                >
+                <span class="textcolor" style="color: #000000">mul</span>
+                <span class="textcolor" style="color: #000000">neg</span>
+                <span class="textcolor" style="color: #000000">1</span>.<span
+                  class="textcolor"
+                  style="color: #000000"
+                  >002</span
+                >
+                <span class="textcolor" style="color: #000000">exch</span>
+                <span class="textcolor" style="color: #000000">exp</span>
+                <span class="textcolor" style="color: #000000">1</span>.<span
+                  class="textcolor"
+                  style="color: #000000"
+                  >0</span
+                >
+                <span class="textcolor" style="color: #000000">exch</span>
+                <span class="textcolor" style="color: #000000">sub</span><br />
+                &numsp;&numsp;<span class="textcolor" style="color: #000000"
+                  >1</span
+                >.<span class="textcolor" style="color: #000000">0</span>
+                <span class="textcolor" style="color: #000000">3</span>
+                <span class="textcolor" style="color: #000000">1</span>
+                <span class="textcolor" style="color: #000000">roll</span><br />
+                &numsp;&numsp;<span class="textcolor" style="color: #0000b2"
+                  ><a href="base-shadings#pgf.back/ifpgfshadingmodelcmyk"
+                    >\ifpgfshadingmodelcmyk</a
+                  ></span
+                ><br />
+                &numsp;&numsp;&numsp;&numsp;<span
+                  class="textcolor"
+                  style="color: #0000b2"
+                  ><a href="base-shadings#pgf.back/pgffuncshadingrgbtocmyk"
+                    >\pgffuncshadingrgbtocmyk</a
+                  ></span
+                ><br />
+                &numsp;&numsp;<span class="textcolor" style="color: #0000b2"
+                  >\fi</span
+                ><br />
+                &numsp;&numsp;<span class="textcolor" style="color: #0000b2"
+                  ><a href="base-shadings#pgf.back/ifpgfshadingmodelgray"
+                    >\ifpgfshadingmodelgray</a
+                  ></span
+                ><br />
+                &numsp;&numsp;&numsp;&numsp;<span
+                  class="textcolor"
+                  style="color: #0000b2"
+                  ><a href="base-shadings#pgf.back/pgffuncshadingrgbtogray"
+                    >\pgffuncshadingrgbtogray</a
+                  ></span
+                ><br />
+                &numsp;&numsp;<span class="textcolor" style="color: #0000b2"
+                  >\fi</span
+                ><br />
+                }<br />
+              </code>
+            </div>
+          </figure>
+
+          <div class="manualentry">
+            <div class="entryheadline">
+              <p>
+                <a id="pgf.back/pgffuncshadingrgbtocmyk"></a>
+                <span class="hl-def"
+                  ><span class="textcolor" style="color: #bf0000"
+                    ><kbd>\pgffuncshadingrgbtocmyk</kbd></span
+                  ></span
+                >
+                <a class="anchor-link" href="#pgf.back/pgffuncshadingrgbtocmyk"
+                  >&para;</a
+                >
+              </p>
+            </div>
+            <p>
+              Within the <span class="angle">&langle;</span
+              ><i>type 4 function</i
+              ><span class="angle">&rangle;</span> argument of
+              <kbd>\pgfdeclarefunctionalshading</kbd>, this command can be used
+              to convert the top 3 elements on the stack from
+              <span class="textsc">rgb</span> to
+              <span class="textsc">cmyk</span>. In combination with the
+              <kbd>\ifpgfshadingmodelcmyk</kbd> conditional this macro can be
+              used to make functional shading declarations more portable across
+              color models.
+            </p>
+          </div>
+
+          <div class="manualentry">
+            <div class="entryheadline">
+              <p>
+                <a id="pgf.back/pgffuncshadingrgbtogray"></a>
+                <span class="hl-def"
+                  ><span class="textcolor" style="color: #bf0000"
+                    ><kbd>\pgffuncshadingrgbtogray</kbd></span
+                  ></span
+                >
+                <a class="anchor-link" href="#pgf.back/pgffuncshadingrgbtogray"
+                  >&para;</a
+                >
+              </p>
+            </div>
+            <p>
+              Within the <span class="angle">&langle;</span
+              ><i>type 4 function</i
+              ><span class="angle">&rangle;</span> argument of
+              <kbd>\pgfdeclarefunctionalshading</kbd>, this command can be used
+              to convert the top 3 elements on the stack from
+              <span class="textsc">rgb</span> to grayscale. In combination with
+              the <kbd>\ifpgfshadingmodelgray</kbd> conditional this macro can
+              be used to make functional shading declarations more portable
+              across color models.
+            </p>
+          </div>
+
+          <div class="manualentry">
+            <div class="entryheadline">
+              <p>
+                <a id="pgf.back/pgffuncshadingcmyktorgb"></a>
+                <span class="hl-def"
+                  ><span class="textcolor" style="color: #bf0000"
+                    ><kbd>\pgffuncshadingcmyktorgb</kbd></span
+                  ></span
+                >
+                <a class="anchor-link" href="#pgf.back/pgffuncshadingcmyktorgb"
+                  >&para;</a
+                >
+              </p>
+            </div>
+            <p>
+              Within the <span class="angle">&langle;</span
+              ><i>type 4 function</i
+              ><span class="angle">&rangle;</span> argument of
+              <kbd>\pgfdeclarefunctionalshading</kbd>, this command can be used
+              to convert the top 4 elements on the stack from
+              <span class="textsc">cmyk</span> to
+              <span class="textsc">rgb</span>. In combination with the
+              <kbd>\ifpgfshadingmodelrgb</kbd> conditional this macro can be
+              used to make functional shading declarations more portable across
+              color models.
+            </p>
+          </div>
+
+          <div class="manualentry">
+            <div class="entryheadline">
+              <p>
+                <a id="pgf.back/pgffuncshadingcmyktogray"></a>
+                <span class="hl-def"
+                  ><span class="textcolor" style="color: #bf0000"
+                    ><kbd>\pgffuncshadingcmyktogray</kbd></span
+                  ></span
+                >
+                <a class="anchor-link" href="#pgf.back/pgffuncshadingcmyktogray"
+                  >&para;</a
+                >
+              </p>
+            </div>
+            <p>
+              Within the <span class="angle">&langle;</span
+              ><i>type 4 function</i
+              ><span class="angle">&rangle;</span> argument of
+              <kbd>\pgfdeclarefunctionalshading</kbd>, this command can be used
+              to convert the top 4 elements on the stack from
+              <span class="textsc">cmyk</span> to grayscale. In combination with
+              the <kbd>\ifpgfshadingmodelgray</kbd> conditional this macro can
+              be used to make functional shading declarations more portable
+              across color models.
+            </p>
+          </div>
+
+          <div class="manualentry">
+            <div class="entryheadline">
+              <p>
+                <a id="pgf.back/pgffuncshadinggraytorgb"></a>
+                <span class="hl-def"
+                  ><span class="textcolor" style="color: #bf0000"
+                    ><kbd>\pgffuncshadinggraytorgb</kbd></span
+                  ></span
+                >
+                <a class="anchor-link" href="#pgf.back/pgffuncshadinggraytorgb"
+                  >&para;</a
+                >
+              </p>
+            </div>
+            <p>
+              Within the <span class="angle">&langle;</span
+              ><i>type 4 function</i
+              ><span class="angle">&rangle;</span> argument of
+              <kbd>\pgfdeclarefunctionalshading</kbd>, this command can be used
+              to convert the top element on the stack from grayscale to
+              <span class="textsc">rgb</span>. In combination with the
+              <kbd>\ifpgfshadingmodelrgb</kbd> conditional this macro can be
+              used to make functional shading declarations more portable across
+              color models.
+            </p>
+          </div>
+
+          <div class="manualentry">
+            <div class="entryheadline">
+              <p>
+                <a id="pgf.back/pgffuncshadinggraytocmyk"></a>
+                <span class="hl-def"
+                  ><span class="textcolor" style="color: #bf0000"
+                    ><kbd>\pgffuncshadinggraytocmyk</kbd></span
+                  ></span
+                >
+                <a class="anchor-link" href="#pgf.back/pgffuncshadinggraytocmyk"
+                  >&para;</a
+                >
+              </p>
+            </div>
+            <p>
+              Within the <span class="angle">&langle;</span
+              ><i>type 4 function</i
+              ><span class="angle">&rangle;</span> argument of
+              <kbd>\pgfdeclarefunctionalshading</kbd>, this command can be used
+              to convert the top element on the stack from grayscale to
+              <span class="textsc">cmyk</span>. In combination with the
+              <kbd>\ifpgfshadingmodelcmyk</kbd> conditional this macro can be
+              used to make functional shading declarations more portable across
+              color models.
+            </p>
+          </div>
+
+          <div class="manualentry">
+            <div class="entryheadline">
+              <p>
+                <a id="pgf.back/ifpgfshadingmodelrgb"></a>
+                <span class="hl-def"
+                  ><span class="textcolor" style="color: #bf0000"
+                    ><kbd>\ifpgfshadingmodelrgb</kbd></span
+                  ></span
+                >
+                <a class="anchor-link" href="#pgf.back/ifpgfshadingmodelrgb"
+                  >&para;</a
+                >
+              </p>
+            </div>
+            <p>
+              Within the <span class="angle">&langle;</span
+              ><i>type 4 function</i
+              ><span class="angle">&rangle;</span> argument of
+              <kbd>\pgfdeclarefunctionalshading</kbd>, this command can be used
+              to test if the <span class="texttt">xcolor</span> color model is
+              <span class="texttt">rgb</span>
+              <em>at the time the shading is created</em>. This can be used to
+              ensure that the data output in the
+              <span class="angle">&langle;</span><i>type 4 function</i
+              ><span class="angle">&rangle;</span> correctly matches the active
+              color model.
+            </p>
+          </div>
+
+          <div class="manualentry">
+            <div class="entryheadline">
+              <p>
+                <a id="pgf.back/ifpgfshadingmodelcmyk"></a>
+                <span class="hl-def"
+                  ><span class="textcolor" style="color: #bf0000"
+                    ><kbd>\ifpgfshadingmodelcmyk</kbd></span
+                  ></span
+                >
+                <a class="anchor-link" href="#pgf.back/ifpgfshadingmodelcmyk"
+                  >&para;</a
+                >
+              </p>
+            </div>
+            <p>
+              Within the <span class="angle">&langle;</span
+              ><i>type 4 function</i
+              ><span class="angle">&rangle;</span> argument of
+              <kbd>\pgfdeclarefunctionalshading</kbd>, this command can be used
+              to test if the <span class="texttt">xcolor</span> color model is
+              <span class="texttt">cmyk</span>
+              <em>at the time the shading is created</em>. This can be used to
+              ensure that the data output in the
+              <span class="angle">&langle;</span><i>type 4 function</i
+              ><span class="angle">&rangle;</span> correctly matches the active
+              color model.
+            </p>
+          </div>
+
+          <div class="manualentry">
+            <div class="entryheadline">
+              <p>
+                <a id="pgf.back/ifpgfshadingmodelgray"></a>
+                <span class="hl-def"
+                  ><span class="textcolor" style="color: #bf0000"
+                    ><kbd>\ifpgfshadingmodelgray</kbd></span
+                  ></span
+                >
+                <a class="anchor-link" href="#pgf.back/ifpgfshadingmodelgray"
+                  >&para;</a
+                >
+              </p>
+            </div>
+            <p>
+              Within the <span class="angle">&langle;</span
+              ><i>type 4 function</i
+              ><span class="angle">&rangle;</span> argument of
+              <kbd>\pgfdeclarefunctionalshading</kbd>, this command can be used
+              to test if the <span class="texttt">xcolor</span> color model is
+              <span class="texttt">gray</span>
+              <em>at the time the shading is created</em>. This can be used to
+              ensure that the data output in the
+              <span class="angle">&langle;</span><i>type 4 function</i
+              ><span class="angle">&rangle;</span> correctly matches the active
+              color model.
+            </p>
+          </div>
+          <h5 id="autosec-8269">
+            <a id="section-shading-a-path"></a
+            ><span class="sectionnumber" id="sec-113.3">113.3&emsp;</span>Using
+            Shadings<a class="anchor-link" href="#sec-113.3">&para;</a>
+          </h5>
+          <a id="pgfmanual-autopage-8269"></a>
+
+          <div class="manualentry">
+            <div class="entryheadline">
+              <p>
+                <a id="pgf.back/pgfuseshading"></a>
+                <span class="hl-def"
+                  ><span class="textcolor" style="color: #bf0000"
+                    ><kbd>\pgfuseshading</kbd></span
+                  >{<span class="angle">&langle;</span><i>shading name</i
+                  ><span class="angle">&rangle;</span>}</span
+                >
+                <a class="anchor-link" href="#pgf.back/pgfuseshading">&para;</a>
+              </p>
+            </div>
+            <p>
+              Inserts a previously declared shading into the text. If you wish
+              to use it in a <span class="texttt">pgfpicture</span> environment,
+              you should put a <span class="texttt">\pgftext</span> around it.
+            </p>
+
+            <figure class="example">
+              <div class="example-image">
+                <p>
+                  <span class="lateximagesource" id="lateximage-pgfmanual-3297"
+                    ><!--
+   -->
+                    <img
+                      alt="(-tikz-&nbsp;diagram)"
+                      class="lateximage"
+                      height="48.147"
+                      loading="lazy"
+                      src="pgfmanual-images/image-3297.png"
+                      style
+                      width="67.052"
+                  /></span>
+                </p>
+              </div>
+
+              <div class="example-code">
+                <button class="clipboardButton" type="button">copy</button>
+                <code>
+                  <br />
+                  <span class="textcolor" style="color: #000000">\begin</span
+                  >{<span class="textcolor" style="color: #0000b2"
+                    ><a href="base-scopes#pgf.pgfpicture">pgfpicture</a></span
+                  >}<br />
+                  &numsp;&numsp;<span class="textcolor" style="color: #0000b2"
+                    ><a href="base-shadings#pgf.back/pgfdeclareverticalshading"
+                      >\pgfdeclareverticalshading</a
+                    ></span
+                  >{<span class="textcolor" style="color: #000000"
+                    >myshadingD</span
+                  >}<br />
+                  &numsp;&numsp;&numsp;&numsp;{<span
+                    class="textcolor"
+                    style="color: #000000"
+                    >20pt</span
+                  >}{<span class="textcolor" style="color: #000000"
+                    ><a href="tikz-actions#pgf.color">color</a></span
+                  ><span class="textcolor" style="color: #800080">(0pt)</span
+                  ><span class="textcolor" style="color: #000000">=</span
+                  ><span class="textcolor" style="color: #800080">(red)</span
+                  >;&numsp;<span class="textcolor" style="color: #000000"
+                    ><a href="tikz-actions#pgf.color">color</a></span
+                  ><span class="textcolor" style="color: #800080">(20pt)</span
+                  ><span class="textcolor" style="color: #000000">=</span
+                  ><span class="textcolor" style="color: #800080">(blue)</span
+                  >}<br />
+                  &numsp;&numsp;<span class="textcolor" style="color: #0000b2"
+                    ><a href="base-scopes#pgf.back/pgftext">\pgftext</a></span
+                  >[<span class="textcolor" style="color: #008000"
+                    ><a href="tikz-paths#pgf.at">at</a></span
+                  >=<span class="textcolor" style="color: #008000"
+                    ><span class="textcolor" style="color: #0000b2"
+                      ><a href="base-points#pgf.back/pgfpoint"
+                        >\pgfpoint</a
+                      ></span
+                    >{1cm}{0cm}</span
+                  >]&numsp;&numsp;{<span
+                    class="textcolor"
+                    style="color: #0000b2"
+                    ><a href="base-shadings#pgf.back/pgfuseshading"
+                      >\pgfuseshading</a
+                    ></span
+                  >{<span class="textcolor" style="color: #000000"
+                    >myshadingD</span
+                  >}}<br />
+                  &numsp;&numsp;<span class="textcolor" style="color: #0000b2"
+                    ><a href="base-scopes#pgf.back/pgftext">\pgftext</a></span
+                  >[<span class="textcolor" style="color: #008000"
+                    ><a href="tikz-paths#pgf.at">at</a></span
+                  >=<span class="textcolor" style="color: #008000"
+                    ><span class="textcolor" style="color: #0000b2"
+                      ><a href="base-points#pgf.back/pgfpoint"
+                        >\pgfpoint</a
+                      ></span
+                    >{2cm}{0.5cm}</span
+                  >]{<span class="textcolor" style="color: #0000b2"
+                    ><a href="base-shadings#pgf.back/pgfuseshading"
+                      >\pgfuseshading</a
+                    ></span
+                  >{<span class="textcolor" style="color: #000000"
+                    >myshadingD</span
+                  >}}<br />
+                  <span class="textcolor" style="color: #000000">\end</span
+                  >{<span class="textcolor" style="color: #0000b2"
+                    ><a href="base-scopes#pgf.pgfpicture">pgfpicture</a></span
+                  >}<br />
+                </code>
+              </div>
+            </figure>
+          </div>
+
+          <div class="manualentry">
+            <div class="entryheadline">
+              <p>
+                <a id="pgf.back/pgfshadepath"></a>
+                <span class="hl-def"
+                  ><span class="textcolor" style="color: #bf0000"
+                    ><kbd>\pgfshadepath</kbd></span
+                  >{<span class="angle">&langle;</span><i>shading name</i
+                  ><span class="angle">&rangle;</span>}{<span class="angle"
+                    >&langle;</span
+                  ><i>angle</i><span class="angle">&rangle;</span>}</span
+                >
+                <a class="anchor-link" href="#pgf.back/pgfshadepath">&para;</a>
+              </p>
+            </div>
+            <p>
+              This command must be used inside a
+              <span class="texttt">{pgfpicture}</span> environment. The effect
+              is a bit complex, so let us go over it step by step.
+            </p>
+            <p>
+              First, <span class="textsc">pgf</span> will set up a local scope.
+            </p>
+            <p>
+              Second, it uses the current path to clip everything inside this
+              scope. However, the current path is once more available after the
+              scope, so it can be used, for example, to stroke it.
+            </p>
+            <p>
+              Now, the <span class="angle">&langle;</span><i>shading name</i
+              ><span class="angle">&rangle;</span> should be a shading whose
+              width and height are 100 bp, that is, 100 big points.
+              <span class="textsc">pgf</span> has a look at the bounding box of
+              the current path. This bounding box is computed automatically when
+              a path is computed; however, it can sometimes be (quite a bit) too
+              large, especially when complicated curves are involved.
+            </p>
+            <p>
+              Inside the scope, the low-level transformation matrix is modified.
+              The center of the shading is translated (moved) such that it lies
+              on the center of the bounding box of the path. The low-level
+              coordinate system is also scaled such that the shading
+              &ldquo;covers&rdquo; the path (the details are a bit more complex,
+              see below). Then, the coordinate system is rotated by
+              <span class="angle">&langle;</span><i>angle</i
+              ><span class="angle">&rangle;</span>. Finally, if the macro
+              <span class="texttt">\pgfsetadditionalshadetransform</span> has
+              been used, an additional transformation is applied.
+            </p>
+            <p>
+              After everything has been set up, the shading is inserted. Due to
+              the transformations and clippings, the effect will be that the
+              shading seems to &ldquo;fill&rdquo; the path.
+            </p>
+            <p>
+              If both the path and the shadings were always rectangles and if
+              rotations were never involved, it would be easy to scale shadings
+              such they always cover the path. However, when a vertical shading
+              is rotated, it must obviously be &ldquo;magnified&rdquo; so that
+              it still covers the path. Things get worse when the path is not a
+              rectangle itself.
+            </p>
+            <p>
+              For these reasons, things work slightly differently &ldquo;in
+              reality&rdquo;. The shading is scaled and translated such that the
+              point \((50\mathrm {bp},50\mathrm {bp})\), which is the middle of
+              the shading, is at the middle of the path and such that the point
+              \((25\mathrm {bp},25\mathrm {bp})\) is at the lower left corner of
+              the path and that \((75\mathrm {bp},75\mathrm {bp})\) is at upper
+              right corner.
+            </p>
+            <p>
+              In other words, only the center quarter of the shading will
+              actually &ldquo;survive the clipping&rdquo; if the path is a
+              rectangle. If the path is not a rectangle, but, say, a circle,
+              even less is seen of the shading. Here is an example that
+              demonstrates this effect:
+            </p>
+
+            <figure class="example">
+              <div class="example-image">
+                <p>
+                  <span class="lateximagesource" id="lateximage-pgfmanual-3298"
+                    ><!--
+-->
+                    <img
+                      alt="(-tikz-&nbsp;diagram)"
+                      class="lateximage"
+                      height="78.818"
+                      loading="lazy"
+                      src="pgfmanual-images/image-3298.png"
+                      style
+                      width="381.170"
+                  /></span>
+                </p>
+              </div>
+
+              <div class="example-code">
+                <button class="clipboardButton" type="button">copy</button>
+                <code>
+                  <br />
+                  <span class="textcolor" style="color: #0000b2"
+                    ><a href="base-shadings#pgf.back/pgfdeclareverticalshading"
+                      >\pgfdeclareverticalshading</a
+                    ></span
+                  >{<span class="textcolor" style="color: #000000"
+                    >myshadingE</span
+                  >}{<span class="textcolor" style="color: #000000">100bp</span
+                  >}<br />
+                  &numsp;{<span class="textcolor" style="color: #000000"
+                    ><a href="tikz-actions#pgf.color">color</a></span
+                  ><span class="textcolor" style="color: #800080">(0bp)</span
+                  ><span class="textcolor" style="color: #000000">=</span
+                  ><span class="textcolor" style="color: #800080">(red)</span
+                  >;&numsp;<span class="textcolor" style="color: #000000"
+                    ><a href="tikz-actions#pgf.color">color</a></span
+                  ><span class="textcolor" style="color: #800080">(25bp)</span
+                  ><span class="textcolor" style="color: #000000">=</span
+                  ><span class="textcolor" style="color: #800080">(green)</span
+                  >;&numsp;&numsp;<span class="textcolor" style="color: #000000"
+                    ><a href="tikz-actions#pgf.color">color</a></span
+                  ><span class="textcolor" style="color: #800080">(75bp)</span
+                  ><span class="textcolor" style="color: #000000">=</span
+                  ><span class="textcolor" style="color: #800080">(blue)</span
+                  >;&numsp;&numsp;<span class="textcolor" style="color: #000000"
+                    ><a href="tikz-actions#pgf.color">color</a></span
+                  ><span class="textcolor" style="color: #800080">(100bp)</span
+                  ><span class="textcolor" style="color: #000000">=</span
+                  ><span class="textcolor" style="color: #800080">(black)</span
+                  >}<br />
+                  <span class="textcolor" style="color: #0000b2"
+                    ><a href="base-shadings#pgf.back/pgfuseshading"
+                      >\pgfuseshading</a
+                    ></span
+                  >{<span class="textcolor" style="color: #000000"
+                    >myshadingE</span
+                  >}<br />
+                  <span class="textcolor" style="color: #0000b2">\hskip</span
+                  >&numsp;<span class="textcolor" style="color: #000000"
+                    >1cm</span
+                  ><br />
+                  <span class="textcolor" style="color: #000000">\begin</span
+                  >{<span class="textcolor" style="color: #0000b2"
+                    ><a href="base-scopes#pgf.pgfpicture">pgfpicture</a></span
+                  >}<br />
+                  &numsp;&numsp;<span class="textcolor" style="color: #0000b2"
+                    ><a href="base-paths#pgf.back/pgfpathrectangle"
+                      >\pgfpathrectangle</a
+                    ></span
+                  >{<span class="textcolor" style="color: #0000b2"
+                    ><a href="base-points#pgf.back/pgfpointorigin"
+                      >\pgfpointorigin</a
+                    ></span
+                  >}{<span class="textcolor" style="color: #0000b2"
+                    ><a href="base-points#pgf.back/pgfpoint">\pgfpoint</a></span
+                  >{<span class="textcolor" style="color: #000000">2cm</span
+                  >}{<span class="textcolor" style="color: #000000">1cm</span
+                  >}}<br />
+                  &numsp;&numsp;<span class="textcolor" style="color: #0000b2"
+                    ><a href="base-shadings#pgf.back/pgfshadepath"
+                      >\pgfshadepath</a
+                    ></span
+                  >{<span class="textcolor" style="color: #000000"
+                    >myshadingE</span
+                  >}{<span class="textcolor" style="color: #000000">0</span
+                  >}<br />
+                  &numsp;&numsp;<span class="textcolor" style="color: #0000b2"
+                    ><a href="base-actions#pgf.back/pgfusepath"
+                      >\pgfusepath</a
+                    ></span
+                  >{<span class="textcolor" style="color: #000000">stroke</span
+                  >}<br />
+                  &numsp;&numsp;<span class="textcolor" style="color: #0000b2"
+                    ><a href="base-paths#pgf.back/pgfpathrectangle"
+                      >\pgfpathrectangle</a
+                    ></span
+                  >{<span class="textcolor" style="color: #0000b2"
+                    ><a href="base-points#pgf.back/pgfpoint">\pgfpoint</a></span
+                  >{<span class="textcolor" style="color: #000000">3cm</span
+                  >}{<span class="textcolor" style="color: #000000">0cm</span
+                  >}}{<span class="textcolor" style="color: #0000b2"
+                    ><a href="base-points#pgf.back/pgfpoint">\pgfpoint</a></span
+                  >{<span class="textcolor" style="color: #000000">1cm</span
+                  >}{<span class="textcolor" style="color: #000000">2cm</span
+                  >}}<br />
+                  &numsp;&numsp;<span class="textcolor" style="color: #0000b2"
+                    ><a href="base-shadings#pgf.back/pgfshadepath"
+                      >\pgfshadepath</a
+                    ></span
+                  >{<span class="textcolor" style="color: #000000"
+                    >myshadingE</span
+                  >}{<span class="textcolor" style="color: #000000">0</span
+                  >}<br />
+                  &numsp;&numsp;<span class="textcolor" style="color: #0000b2"
+                    ><a href="base-actions#pgf.back/pgfusepath"
+                      >\pgfusepath</a
+                    ></span
+                  >{<span class="textcolor" style="color: #000000">stroke</span
+                  >}<br />
+                  &numsp;&numsp;<span class="textcolor" style="color: #0000b2"
+                    ><a href="base-paths#pgf.back/pgfpathrectangle"
+                      >\pgfpathrectangle</a
+                    ></span
+                  >{<span class="textcolor" style="color: #0000b2"
+                    ><a href="base-points#pgf.back/pgfpoint">\pgfpoint</a></span
+                  >{<span class="textcolor" style="color: #000000">5cm</span
+                  >}{<span class="textcolor" style="color: #000000">0cm</span
+                  >}}{<span class="textcolor" style="color: #0000b2"
+                    ><a href="base-points#pgf.back/pgfpoint">\pgfpoint</a></span
+                  >{<span class="textcolor" style="color: #000000">2cm</span
+                  >}{<span class="textcolor" style="color: #000000">2cm</span
+                  >}}<br />
+                  &numsp;&numsp;<span class="textcolor" style="color: #0000b2"
+                    ><a href="base-shadings#pgf.back/pgfshadepath"
+                      >\pgfshadepath</a
+                    ></span
+                  >{<span class="textcolor" style="color: #000000"
+                    >myshadingE</span
+                  >}{<span class="textcolor" style="color: #000000">45</span
+                  >}<br />
+                  &numsp;&numsp;<span class="textcolor" style="color: #0000b2"
+                    ><a href="base-actions#pgf.back/pgfusepath"
+                      >\pgfusepath</a
+                    ></span
+                  >{<span class="textcolor" style="color: #000000">stroke</span
+                  >}<br />
+                  &numsp;&numsp;<span class="textcolor" style="color: #0000b2"
+                    ><a href="base-paths#pgf.back/pgfpathcircle"
+                      >\pgfpathcircle</a
+                    ></span
+                  >{<span class="textcolor" style="color: #0000b2"
+                    ><a href="base-points#pgf.back/pgfpoint">\pgfpoint</a></span
+                  >{<span class="textcolor" style="color: #000000">9cm</span
+                  >}{<span class="textcolor" style="color: #000000">1cm</span
+                  >}}{<span class="textcolor" style="color: #000000">1cm</span
+                  >}<br />
+                  &numsp;&numsp;<span class="textcolor" style="color: #0000b2"
+                    ><a href="base-shadings#pgf.back/pgfshadepath"
+                      >\pgfshadepath</a
+                    ></span
+                  >{<span class="textcolor" style="color: #000000"
+                    >myshadingE</span
+                  >}{<span class="textcolor" style="color: #000000">45</span
+                  >}<br />
+                  &numsp;&numsp;<span class="textcolor" style="color: #0000b2"
+                    ><a href="base-actions#pgf.back/pgfusepath"
+                      >\pgfusepath</a
+                    ></span
+                  >{<span class="textcolor" style="color: #000000">stroke</span
+                  >}<br />
+                  <span class="textcolor" style="color: #000000">\end</span
+                  >{<span class="textcolor" style="color: #0000b2"
+                    ><a href="base-scopes#pgf.pgfpicture">pgfpicture</a></span
+                  >}<br />
+                </code>
+              </div>
+            </figure>
+            <p>
+              As can be seen above in the last case, the &ldquo;hidden&rdquo;
+              part of the shading actually <em>can</em> become visible if the
+              shading is rotated. The reason is that it is scaled as if no
+              rotation took place, then the rotation is done.
+            </p>
+            <p>
+              The following graphics show which part of the shading are actually
+              shown:
+            </p>
+
+            <figure class="example">
+              <div class="example-image">
+                <p>
+                  <span class="lateximagesource" id="lateximage-pgfmanual-3299"
+                    ><!--
+first two applications third application fourth application
+-->
+                    <img
+                      alt="(-tikz-&nbsp;diagram)"
+                      class="lateximage"
+                      height="152.570"
+                      loading="lazy"
+                      src="pgfmanual-images/image-3299.png"
+                      style
+                      width="516.961"
+                  /></span>
+                </p>
+              </div>
+
+              <div class="example-code">
+                <button class="clipboardButton" type="button">copy</button>
+                <code>
+                  <br />
+                  <span class="textcolor" style="color: #0000b2"
+                    ><a href="base-shadings#pgf.back/pgfdeclareverticalshading"
+                      >\pgfdeclareverticalshading</a
+                    ></span
+                  >{<span class="textcolor" style="color: #000000"
+                    >myshadingF</span
+                  >}{<span class="textcolor" style="color: #000000">100bp</span
+                  >}<br />
+                  &numsp;{<span class="textcolor" style="color: #000000"
+                    ><a href="tikz-actions#pgf.color">color</a></span
+                  ><span class="textcolor" style="color: #800080">(0bp)</span
+                  ><span class="textcolor" style="color: #000000">=</span
+                  ><span class="textcolor" style="color: #800080">(red)</span
+                  >;&numsp;<span class="textcolor" style="color: #000000"
+                    ><a href="tikz-actions#pgf.color">color</a></span
+                  ><span class="textcolor" style="color: #800080">(25bp)</span
+                  ><span class="textcolor" style="color: #000000">=</span
+                  ><span class="textcolor" style="color: #800080">(green)</span
+                  >;&numsp;&numsp;<span class="textcolor" style="color: #000000"
+                    ><a href="tikz-actions#pgf.color">color</a></span
+                  ><span class="textcolor" style="color: #800080">(75bp)</span
+                  ><span class="textcolor" style="color: #000000">=</span
+                  ><span class="textcolor" style="color: #800080">(blue)</span
+                  >;&numsp;&numsp;<span class="textcolor" style="color: #000000"
+                    ><a href="tikz-actions#pgf.color">color</a></span
+                  ><span class="textcolor" style="color: #800080">(100bp)</span
+                  ><span class="textcolor" style="color: #000000">=</span
+                  ><span class="textcolor" style="color: #800080">(black)</span
+                  >}<br />
+                  <span class="textcolor" style="color: #000000">\begin</span
+                  >{<span class="textcolor" style="color: #0000b2"
+                    ><a href="tikz-scopes#pgf.tikzpicture">tikzpicture</a></span
+                  >}<br />
+                  &numsp;&numsp;<span class="textcolor" style="color: #0000b2"
+                    ><a href="tikz-actions#pgf.back/draw">\draw</a></span
+                  >&numsp;<span class="textcolor" style="color: #800080"
+                    >(50bp,50bp)</span
+                  >&numsp;<span class="textcolor" style="color: #000000"
+                    ><a href="tikz-coordinates#pgf.node">node</a></span
+                  >
+                  {<span class="textcolor" style="color: #0000b2"
+                    ><a href="base-shadings#pgf.back/pgfuseshading"
+                      >\pgfuseshading</a
+                    ></span
+                  >{<span class="textcolor" style="color: #000000"
+                    >myshadingF</span
+                  >}};<br />
+                  &numsp;&numsp;<span class="textcolor" style="color: #0000b2"
+                    ><a href="tikz-actions#pgf.back/draw">\draw</a></span
+                  >[<span class="textcolor" style="color: #008000">white</span
+                  >,<span class="textcolor" style="color: #008000"
+                    ><a href="tikz-actions#pgf.thick">thick</a></span
+                  >]&numsp;<span class="textcolor" style="color: #800080"
+                    >(25bp,25bp)</span
+                  >&numsp;<span class="textcolor" style="color: #000000"
+                    ><a href="tikz-paths#pgf.rectangle">rectangle</a></span
+                  >
+                  <span class="textcolor" style="color: #800080"
+                    >(75bp,75bp)</span
+                  >;<br />
+                  &numsp;&numsp;<span class="textcolor" style="color: #0000b2"
+                    ><a href="tikz-actions#pgf.back/draw">\draw</a></span
+                  >&numsp;<span class="textcolor" style="color: #800080"
+                    >(50bp,0bp)</span
+                  >&numsp;<span class="textcolor" style="color: #000000"
+                    ><a href="tikz-coordinates#pgf.node">node</a></span
+                  >[<span class="textcolor" style="color: #008000"
+                    ><a href="tikz-shapes#pgf.below">below</a></span
+                  >]&numsp;{<span class="textcolor" style="color: #000000"
+                    ><a href="gd-trees#pgf.first">first</a></span
+                  >
+                  <span class="textcolor" style="color: #000000">two</span>
+                  <span class="textcolor" style="color: #000000"
+                    >applications</span
+                  >};<br />
+                  <br />
+                  &numsp;&numsp;<span class="textcolor" style="color: #000000"
+                    >\begin</span
+                  >{<span class="textcolor" style="color: #0000b2"
+                    ><a href="tikz-scopes#pgf.scope">scope</a></span
+                  >}[<span class="textcolor" style="color: #008000"
+                    ><a href="tikz-transformations#pgf.xshift">xshift</a></span
+                  >=<span class="textcolor" style="color: #008000">5cm</span
+                  >]<br />
+                  &numsp;&numsp;&numsp;&numsp;<span
+                    class="textcolor"
+                    style="color: #0000b2"
+                    ><a href="tikz-actions#pgf.back/draw">\draw</a></span
+                  >&numsp;<span class="textcolor" style="color: #800080"
+                    >(50bp,50bp)</span
+                  >&numsp;<span class="textcolor" style="color: #000000"
+                    ><a href="tikz-coordinates#pgf.node">node</a></span
+                  >{<span class="textcolor" style="color: #0000b2"
+                    ><a href="base-shadings#pgf.back/pgfuseshading"
+                      >\pgfuseshading</a
+                    ></span
+                  >{<span class="textcolor" style="color: #000000"
+                    >myshadingF</span
+                  >}};<br />
+                  &numsp;&numsp;&numsp;&numsp;<span
+                    class="textcolor"
+                    style="color: #0000b2"
+                    ><a href="tikz-actions#pgf.back/draw">\draw</a></span
+                  >[<span class="textcolor" style="color: #008000"
+                    ><a href="tikz-transformations#pgf.rotate:around"
+                      >rotate around</a
+                    ></span
+                  >=<span class="textcolor" style="color: #008000"
+                    >{45:<span class="textcolor" style="color: #800080"
+                      >(50bp,50bp)</span
+                    >}</span
+                  >,<span class="textcolor" style="color: #008000">white</span
+                  >,<span class="textcolor" style="color: #008000"
+                    ><a href="tikz-actions#pgf.thick">thick</a></span
+                  >]&numsp;<span class="textcolor" style="color: #800080"
+                    >(25bp,25bp)</span
+                  >&numsp;<span class="textcolor" style="color: #000000"
+                    ><a href="tikz-paths#pgf.rectangle">rectangle</a></span
+                  >
+                  <span class="textcolor" style="color: #800080"
+                    >(75bp,75bp)</span
+                  >;<br />
+                  &numsp;&numsp;&numsp;&numsp;<span
+                    class="textcolor"
+                    style="color: #0000b2"
+                    ><a href="tikz-actions#pgf.back/draw">\draw</a></span
+                  >&numsp;<span class="textcolor" style="color: #800080"
+                    >(50bp,0bp)</span
+                  >&numsp;<span class="textcolor" style="color: #000000"
+                    ><a href="tikz-coordinates#pgf.node">node</a></span
+                  >[<span class="textcolor" style="color: #008000"
+                    ><a href="tikz-shapes#pgf.below">below</a></span
+                  >]&numsp;{<span class="textcolor" style="color: #000000"
+                    ><a href="gd-trees#pgf.third">third</a></span
+                  >
+                  <span class="textcolor" style="color: #000000"
+                    >application</span
+                  >};<br />
+                  &numsp;&numsp;<span class="textcolor" style="color: #000000"
+                    >\end</span
+                  >{<span class="textcolor" style="color: #0000b2"
+                    ><a href="tikz-scopes#pgf.scope">scope</a></span
+                  >}<br />
+                  <br />
+                  &numsp;&numsp;<span class="textcolor" style="color: #000000"
+                    >\begin</span
+                  >{<span class="textcolor" style="color: #0000b2"
+                    ><a href="tikz-scopes#pgf.scope">scope</a></span
+                  >}[<span class="textcolor" style="color: #008000"
+                    ><a href="tikz-transformations#pgf.xshift">xshift</a></span
+                  >=<span class="textcolor" style="color: #008000">10cm</span
+                  >]<br />
+                  &numsp;&numsp;&numsp;&numsp;<span
+                    class="textcolor"
+                    style="color: #0000b2"
+                    ><a href="tikz-actions#pgf.back/draw">\draw</a></span
+                  >&numsp;<span class="textcolor" style="color: #800080"
+                    >(50bp,50bp)</span
+                  >&numsp;<span class="textcolor" style="color: #000000"
+                    ><a href="tikz-coordinates#pgf.node">node</a></span
+                  >{<span class="textcolor" style="color: #0000b2"
+                    ><a href="base-shadings#pgf.back/pgfuseshading"
+                      >\pgfuseshading</a
+                    ></span
+                  >{<span class="textcolor" style="color: #000000"
+                    >myshadingF</span
+                  >}};<br />
+                  &numsp;&numsp;&numsp;&numsp;<span
+                    class="textcolor"
+                    style="color: #0000b2"
+                    ><a href="tikz-actions#pgf.back/draw">\draw</a></span
+                  >[<span class="textcolor" style="color: #008000">white</span
+                  >,<span class="textcolor" style="color: #008000"
+                    ><a href="tikz-actions#pgf.thick">thick</a></span
+                  >]&numsp;<span class="textcolor" style="color: #800080"
+                    >(50bp,50bp)</span
+                  >&numsp;<span class="textcolor" style="color: #000000"
+                    ><a href="tikz-paths#pgf.circle">circle</a></span
+                  >
+                  <span class="textcolor" style="color: #800080">(25bp)</span
+                  >;<br />
+                  &numsp;&numsp;&numsp;&numsp;<span
+                    class="textcolor"
+                    style="color: #0000b2"
+                    ><a href="tikz-actions#pgf.back/draw">\draw</a></span
+                  >&numsp;<span class="textcolor" style="color: #800080"
+                    >(50bp,0bp)</span
+                  >&numsp;<span class="textcolor" style="color: #000000"
+                    ><a href="tikz-coordinates#pgf.node">node</a></span
+                  >[<span class="textcolor" style="color: #008000"
+                    ><a href="tikz-shapes#pgf.below">below</a></span
+                  >]&numsp;{<span class="textcolor" style="color: #000000"
+                    ><a href="gd-trees#pgf.fourth">fourth</a></span
+                  >
+                  <span class="textcolor" style="color: #000000"
+                    >application</span
+                  >};<br />
+                  &numsp;&numsp;<span class="textcolor" style="color: #000000"
+                    >\end</span
+                  >{<span class="textcolor" style="color: #0000b2"
+                    ><a href="tikz-scopes#pgf.scope">scope</a></span
+                  >}<br />
+                  <span class="textcolor" style="color: #000000">\end</span
+                  >{<span class="textcolor" style="color: #0000b2"
+                    ><a href="tikz-scopes#pgf.tikzpicture">tikzpicture</a></span
+                  >}<br />
+                </code>
+              </div>
+            </figure>
+            <p>
+              An advantage of this approach is that when you rotate a radial
+              shading, no distortion is introduced:
+            </p>
+
+            <figure class="example">
+              <div class="example-image">
+                <p>
+                  <span class="lateximagesource" id="lateximage-pgfmanual-3300"
+                    ><!--
+-->
+                    <img
+                      alt="(-tikz-&nbsp;diagram)"
+                      class="lateximage"
+                      height="78.290"
+                      loading="lazy"
+                      src="pgfmanual-images/image-3300.png"
+                      style
+                      width="267.254"
+                  /></span>
+                </p>
+              </div>
+
+              <div class="example-code">
+                <button class="clipboardButton" type="button">copy</button>
+                <code>
+                  <br />
+                  <span class="textcolor" style="color: #0000b2"
+                    ><a href="base-shadings#pgf.back/pgfdeclareradialshading"
+                      >\pgfdeclareradialshading</a
+                    ></span
+                  >{<span class="textcolor" style="color: #000000"
+                    >ballshading</span
+                  >}{<span class="textcolor" style="color: #0000b2"
+                    ><a href="base-points#pgf.back/pgfpoint">\pgfpoint</a></span
+                  >{<span class="textcolor" style="color: #000000">-10bp</span
+                  >}{<span class="textcolor" style="color: #000000">10bp</span
+                  >}}<br />
+                  &numsp;{<span class="textcolor" style="color: #000000"
+                    ><a href="tikz-actions#pgf.color">color</a></span
+                  ><span class="textcolor" style="color: #800080">(0bp)</span
+                  ><span class="textcolor" style="color: #000000">=</span
+                  ><span class="textcolor" style="color: #800080"
+                    >(red!15!white)</span
+                  >;&numsp;<span class="textcolor" style="color: #000000"
+                    ><a href="tikz-actions#pgf.color">color</a></span
+                  ><span class="textcolor" style="color: #800080">(9bp)</span
+                  ><span class="textcolor" style="color: #000000">=</span
+                  ><span class="textcolor" style="color: #800080"
+                    >(red!75!white)</span
+                  >;<br />
+                  &numsp;<span class="textcolor" style="color: #000000"
+                    ><a href="tikz-actions#pgf.color">color</a></span
+                  ><span class="textcolor" style="color: #800080">(18bp)</span
+                  ><span class="textcolor" style="color: #000000">=</span
+                  ><span class="textcolor" style="color: #800080"
+                    >(red!70!black)</span
+                  >;&numsp;<span class="textcolor" style="color: #000000"
+                    ><a href="tikz-actions#pgf.color">color</a></span
+                  ><span class="textcolor" style="color: #800080">(25bp)</span
+                  ><span class="textcolor" style="color: #000000">=</span
+                  ><span class="textcolor" style="color: #800080"
+                    >(red!50!black)</span
+                  >;&numsp;<span class="textcolor" style="color: #000000"
+                    ><a href="tikz-actions#pgf.color">color</a></span
+                  ><span class="textcolor" style="color: #800080">(50bp)</span
+                  ><span class="textcolor" style="color: #000000">=</span
+                  ><span class="textcolor" style="color: #800080">(black)</span
+                  >}<br />
+                  <span class="textcolor" style="color: #0000b2"
+                    ><a href="base-shadings#pgf.back/pgfuseshading"
+                      >\pgfuseshading</a
+                    ></span
+                  >{<span class="textcolor" style="color: #000000"
+                    >ballshading</span
+                  >}<br />
+                  <span class="textcolor" style="color: #0000b2">\hskip</span
+                  >&numsp;<span class="textcolor" style="color: #000000"
+                    >1cm</span
+                  ><br />
+                  <span class="textcolor" style="color: #000000">\begin</span
+                  >{<span class="textcolor" style="color: #0000b2"
+                    ><a href="base-scopes#pgf.pgfpicture">pgfpicture</a></span
+                  >}<br />
+                  &numsp;&numsp;<span class="textcolor" style="color: #0000b2"
+                    ><a href="base-paths#pgf.back/pgfpathrectangle"
+                      >\pgfpathrectangle</a
+                    ></span
+                  >{<span class="textcolor" style="color: #0000b2"
+                    ><a href="base-points#pgf.back/pgfpointorigin"
+                      >\pgfpointorigin</a
+                    ></span
+                  >}{<span class="textcolor" style="color: #0000b2"
+                    ><a href="base-points#pgf.back/pgfpoint">\pgfpoint</a></span
+                  >{<span class="textcolor" style="color: #000000">1cm</span
+                  >}{<span class="textcolor" style="color: #000000">1cm</span
+                  >}}<br />
+                  &numsp;&numsp;<span class="textcolor" style="color: #0000b2"
+                    ><a href="base-shadings#pgf.back/pgfshadepath"
+                      >\pgfshadepath</a
+                    ></span
+                  >{<span class="textcolor" style="color: #000000"
+                    >ballshading</span
+                  >}{<span class="textcolor" style="color: #000000">0</span
+                  >}<br />
+                  &numsp;&numsp;<span class="textcolor" style="color: #0000b2"
+                    ><a href="base-actions#pgf.back/pgfusepath"
+                      >\pgfusepath</a
+                    ></span
+                  >{}<br />
+                  &numsp;&numsp;<span class="textcolor" style="color: #0000b2"
+                    ><a href="base-paths#pgf.back/pgfpathcircle"
+                      >\pgfpathcircle</a
+                    ></span
+                  >{<span class="textcolor" style="color: #0000b2"
+                    ><a href="base-points#pgf.back/pgfpoint">\pgfpoint</a></span
+                  >{<span class="textcolor" style="color: #000000">3cm</span
+                  >}{<span class="textcolor" style="color: #000000">0cm</span
+                  >}}{<span class="textcolor" style="color: #000000">1cm</span
+                  >}<br />
+                  &numsp;&numsp;<span class="textcolor" style="color: #0000b2"
+                    ><a href="base-shadings#pgf.back/pgfshadepath"
+                      >\pgfshadepath</a
+                    ></span
+                  >{<span class="textcolor" style="color: #000000"
+                    >ballshading</span
+                  >}{<span class="textcolor" style="color: #000000">0</span
+                  >}<br />
+                  &numsp;&numsp;<span class="textcolor" style="color: #0000b2"
+                    ><a href="base-actions#pgf.back/pgfusepath"
+                      >\pgfusepath</a
+                    ></span
+                  >{}<br />
+                  &numsp;&numsp;<span class="textcolor" style="color: #0000b2"
+                    ><a href="base-paths#pgf.back/pgfpathcircle"
+                      >\pgfpathcircle</a
+                    ></span
+                  >{<span class="textcolor" style="color: #0000b2"
+                    ><a href="base-points#pgf.back/pgfpoint">\pgfpoint</a></span
+                  >{<span class="textcolor" style="color: #000000">6cm</span
+                  >}{<span class="textcolor" style="color: #000000">0cm</span
+                  >}}{<span class="textcolor" style="color: #000000">1cm</span
+                  >}<br />
+                  &numsp;&numsp;<span class="textcolor" style="color: #0000b2"
+                    ><a href="base-shadings#pgf.back/pgfshadepath"
+                      >\pgfshadepath</a
+                    ></span
+                  >{<span class="textcolor" style="color: #000000"
+                    >ballshading</span
+                  >}{<span class="textcolor" style="color: #000000">45</span
+                  >}<br />
+                  &numsp;&numsp;<span class="textcolor" style="color: #0000b2"
+                    ><a href="base-actions#pgf.back/pgfusepath"
+                      >\pgfusepath</a
+                    ></span
+                  >{}<br />
+                  <span class="textcolor" style="color: #000000">\end</span
+                  >{<span class="textcolor" style="color: #0000b2"
+                    ><a href="base-scopes#pgf.pgfpicture">pgfpicture</a></span
+                  >}<br />
+                </code>
+              </div>
+            </figure>
+            <p>
+              If you specify a rotation of \(90^\circ \) and if the path is not
+              a square, but an elongated rectangle, the &ldquo;desired&rdquo;
+              effect results: The shading will exactly vary between the colors
+              at the 25bp and 75bp boundaries. Here is an example:
+            </p>
+
+            <figure class="example">
+              <div class="example-image">
+                <p>
+                  <span class="lateximagesource" id="lateximage-pgfmanual-3301"
+                    ><!--
+-->
+                    <img
+                      alt="(-tikz-&nbsp;diagram)"
+                      class="lateximage"
+                      height="40.993"
+                      loading="lazy"
+                      src="pgfmanual-images/image-3301.png"
+                      style
+                      width="305.563"
+                  /></span>
+                </p>
+              </div>
+
+              <div class="example-code">
+                <button class="clipboardButton" type="button">copy</button>
+                <code>
+                  <br />
+                  <span class="textcolor" style="color: #0000b2"
+                    ><a href="base-shadings#pgf.back/pgfdeclareverticalshading"
+                      >\pgfdeclareverticalshading</a
+                    ></span
+                  >{<span class="textcolor" style="color: #000000"
+                    >myshadingG</span
+                  >}{<span class="textcolor" style="color: #000000">100bp</span
+                  >}<br />
+                  &numsp;{<span class="textcolor" style="color: #000000"
+                    ><a href="tikz-actions#pgf.color">color</a></span
+                  ><span class="textcolor" style="color: #800080">(0bp)</span
+                  ><span class="textcolor" style="color: #000000">=</span
+                  ><span class="textcolor" style="color: #800080">(red)</span
+                  >;&numsp;<span class="textcolor" style="color: #000000"
+                    ><a href="tikz-actions#pgf.color">color</a></span
+                  ><span class="textcolor" style="color: #800080">(25bp)</span
+                  ><span class="textcolor" style="color: #000000">=</span
+                  ><span class="textcolor" style="color: #800080">(green)</span
+                  >;&numsp;&numsp;<span class="textcolor" style="color: #000000"
+                    ><a href="tikz-actions#pgf.color">color</a></span
+                  ><span class="textcolor" style="color: #800080">(75bp)</span
+                  ><span class="textcolor" style="color: #000000">=</span
+                  ><span class="textcolor" style="color: #800080">(blue)</span
+                  >;&numsp;&numsp;<span class="textcolor" style="color: #000000"
+                    ><a href="tikz-actions#pgf.color">color</a></span
+                  ><span class="textcolor" style="color: #800080">(100bp)</span
+                  ><span class="textcolor" style="color: #000000">=</span
+                  ><span class="textcolor" style="color: #800080">(black)</span
+                  >}<br />
+                  <span class="textcolor" style="color: #000000">\begin</span
+                  >{<span class="textcolor" style="color: #0000b2"
+                    ><a href="base-scopes#pgf.pgfpicture">pgfpicture</a></span
+                  >}<br />
+                  &numsp;&numsp;<span class="textcolor" style="color: #0000b2"
+                    ><a href="base-paths#pgf.back/pgfpathrectangle"
+                      >\pgfpathrectangle</a
+                    ></span
+                  >{<span class="textcolor" style="color: #0000b2"
+                    ><a href="base-points#pgf.back/pgfpointorigin"
+                      >\pgfpointorigin</a
+                    ></span
+                  >}{<span class="textcolor" style="color: #0000b2"
+                    ><a href="base-points#pgf.back/pgfpoint">\pgfpoint</a></span
+                  >{<span class="textcolor" style="color: #000000">2cm</span
+                  >}{<span class="textcolor" style="color: #000000">1cm</span
+                  >}}<br />
+                  &numsp;&numsp;<span class="textcolor" style="color: #0000b2"
+                    ><a href="base-shadings#pgf.back/pgfshadepath"
+                      >\pgfshadepath</a
+                    ></span
+                  >{<span class="textcolor" style="color: #000000"
+                    >myshadingG</span
+                  >}{<span class="textcolor" style="color: #000000">0</span
+                  >}<br />
+                  &numsp;&numsp;<span class="textcolor" style="color: #0000b2"
+                    ><a href="base-actions#pgf.back/pgfusepath"
+                      >\pgfusepath</a
+                    ></span
+                  >{<span class="textcolor" style="color: #000000">stroke</span
+                  >}<br />
+                  &numsp;&numsp;<span class="textcolor" style="color: #0000b2"
+                    ><a href="base-paths#pgf.back/pgfpathrectangle"
+                      >\pgfpathrectangle</a
+                    ></span
+                  >{<span class="textcolor" style="color: #0000b2"
+                    ><a href="base-points#pgf.back/pgfpoint">\pgfpoint</a></span
+                  >{<span class="textcolor" style="color: #000000">3cm</span
+                  >}{<span class="textcolor" style="color: #000000">0cm</span
+                  >}}{<span class="textcolor" style="color: #0000b2"
+                    ><a href="base-points#pgf.back/pgfpoint">\pgfpoint</a></span
+                  >{<span class="textcolor" style="color: #000000">2cm</span
+                  >}{<span class="textcolor" style="color: #000000">1cm</span
+                  >}}<br />
+                  &numsp;&numsp;<span class="textcolor" style="color: #0000b2"
+                    ><a href="base-shadings#pgf.back/pgfshadepath"
+                      >\pgfshadepath</a
+                    ></span
+                  >{<span class="textcolor" style="color: #000000"
+                    >myshadingG</span
+                  >}{<span class="textcolor" style="color: #000000">90</span
+                  >}<br />
+                  &numsp;&numsp;<span class="textcolor" style="color: #0000b2"
+                    ><a href="base-actions#pgf.back/pgfusepath"
+                      >\pgfusepath</a
+                    ></span
+                  >{<span class="textcolor" style="color: #000000">stroke</span
+                  >}<br />
+                  &numsp;&numsp;<span class="textcolor" style="color: #0000b2"
+                    ><a href="base-paths#pgf.back/pgfpathrectangle"
+                      >\pgfpathrectangle</a
+                    ></span
+                  >{<span class="textcolor" style="color: #0000b2"
+                    ><a href="base-points#pgf.back/pgfpoint">\pgfpoint</a></span
+                  >{<span class="textcolor" style="color: #000000">6cm</span
+                  >}{<span class="textcolor" style="color: #000000">0cm</span
+                  >}}{<span class="textcolor" style="color: #0000b2"
+                    ><a href="base-points#pgf.back/pgfpoint">\pgfpoint</a></span
+                  >{<span class="textcolor" style="color: #000000">2cm</span
+                  >}{<span class="textcolor" style="color: #000000">1cm</span
+                  >}}<br />
+                  &numsp;&numsp;<span class="textcolor" style="color: #0000b2"
+                    ><a href="base-shadings#pgf.back/pgfshadepath"
+                      >\pgfshadepath</a
+                    ></span
+                  >{<span class="textcolor" style="color: #000000"
+                    >myshadingG</span
+                  >}{<span class="textcolor" style="color: #000000">45</span
+                  >}<br />
+                  &numsp;&numsp;<span class="textcolor" style="color: #0000b2"
+                    ><a href="base-actions#pgf.back/pgfusepath"
+                      >\pgfusepath</a
+                    ></span
+                  >{<span class="textcolor" style="color: #000000">stroke</span
+                  >}<br />
+                  <span class="textcolor" style="color: #000000">\end</span
+                  >{<span class="textcolor" style="color: #0000b2"
+                    ><a href="base-scopes#pgf.pgfpicture">pgfpicture</a></span
+                  >}<br />
+                </code>
+              </div>
+            </figure>
+            <p>
+              As a final example, let us define a &ldquo;rainbow spectrum&rdquo;
+              shading for use with <span class="tikzname">TikZ</span>.
+            </p>
+
+            <figure class="example">
+              <div class="example-image">
+                <p>
+                  <span class="lateximagesource" id="lateximage-pgfmanual-3302"
+                    ><!--
+pride
+   -->
+                    <img
+                      alt="(-tikz-&nbsp;diagram)"
+                      class="lateximage"
+                      height="78.266"
+                      loading="lazy"
+                      src="pgfmanual-images/image-3302.png"
+                      style
+                      width="153.878"
+                  /></span>
+                </p>
+              </div>
+
+              <div class="example-code">
+                <button class="clipboardButton" type="button">copy</button>
+                <code>
+                  <br />
+                  <span class="textcolor" style="color: #0000b2"
+                    ><a href="base-shadings#pgf.back/pgfdeclareverticalshading"
+                      >\pgfdeclareverticalshading</a
+                    ></span
+                  >{<span class="textcolor" style="color: #000000">rainbow</span
+                  >}{<span class="textcolor" style="color: #000000">100bp</span
+                  >}<br />
+                  &numsp;{<span class="textcolor" style="color: #000000"
+                    ><a href="tikz-actions#pgf.color">color</a></span
+                  ><span class="textcolor" style="color: #800080">(0bp)</span
+                  ><span class="textcolor" style="color: #000000">=</span
+                  ><span class="textcolor" style="color: #800080">(red)</span
+                  >;&numsp;<span class="textcolor" style="color: #000000"
+                    ><a href="tikz-actions#pgf.color">color</a></span
+                  ><span class="textcolor" style="color: #800080">(25bp)</span
+                  ><span class="textcolor" style="color: #000000">=</span
+                  ><span class="textcolor" style="color: #800080">(red)</span
+                  >;&numsp;<span class="textcolor" style="color: #000000"
+                    ><a href="tikz-actions#pgf.color">color</a></span
+                  ><span class="textcolor" style="color: #800080">(35bp)</span
+                  ><span class="textcolor" style="color: #000000">=</span
+                  ><span class="textcolor" style="color: #800080">(yellow)</span
+                  >;<br />
+                  &numsp;&numsp;<span class="textcolor" style="color: #000000"
+                    ><a href="tikz-actions#pgf.color">color</a></span
+                  ><span class="textcolor" style="color: #800080">(45bp)</span
+                  ><span class="textcolor" style="color: #000000">=</span
+                  ><span class="textcolor" style="color: #800080">(green)</span
+                  >;&numsp;<span class="textcolor" style="color: #000000"
+                    ><a href="tikz-actions#pgf.color">color</a></span
+                  ><span class="textcolor" style="color: #800080">(55bp)</span
+                  ><span class="textcolor" style="color: #000000">=</span
+                  ><span class="textcolor" style="color: #800080">(cyan)</span
+                  >;&numsp;<span class="textcolor" style="color: #000000"
+                    ><a href="tikz-actions#pgf.color">color</a></span
+                  ><span class="textcolor" style="color: #800080">(65bp)</span
+                  ><span class="textcolor" style="color: #000000">=</span
+                  ><span class="textcolor" style="color: #800080">(blue)</span
+                  >;<br />
+                  &numsp;&numsp;<span class="textcolor" style="color: #000000"
+                    ><a href="tikz-actions#pgf.color">color</a></span
+                  ><span class="textcolor" style="color: #800080">(75bp)</span
+                  ><span class="textcolor" style="color: #000000">=</span
+                  ><span class="textcolor" style="color: #800080">(violet)</span
+                  >;&numsp;<span class="textcolor" style="color: #000000"
+                    ><a href="tikz-actions#pgf.color">color</a></span
+                  ><span class="textcolor" style="color: #800080">(100bp)</span
+                  ><span class="textcolor" style="color: #000000">=</span
+                  ><span class="textcolor" style="color: #800080">(violet)</span
+                  >}<br />
+                  <span class="textcolor" style="color: #000000">\begin</span
+                  >{<span class="textcolor" style="color: #0000b2"
+                    ><a href="tikz-scopes#pgf.tikzpicture">tikzpicture</a></span
+                  >}[<span class="textcolor" style="color: #008000"
+                    ><a href="tikz-actions#pgf.shading">shading</a></span
+                  >=<span class="textcolor" style="color: #008000">rainbow</span
+                  >]<br />
+                  &numsp;&numsp;<span class="textcolor" style="color: #0000b2"
+                    ><a href="tikz-actions#pgf.back/shade">\shade</a></span
+                  >&numsp;<span class="textcolor" style="color: #800080"
+                    >(0,0)</span
+                  >&numsp;<span class="textcolor" style="color: #000000"
+                    ><a href="tikz-paths#pgf.rectangle">rectangle</a></span
+                  >
+                  <span class="textcolor" style="color: #000000"
+                    ><a href="tikz-coordinates#pgf.node">node</a></span
+                  >[<span class="textcolor" style="color: #008000">white</span
+                  >]&numsp;{<span class="textcolor" style="color: #0000b2"
+                    >\textsc</span
+                  >{<span class="textcolor" style="color: #000000">pride</span
+                  >}}&numsp;<span class="textcolor" style="color: #800080"
+                    >(2,1)</span
+                  >;<br />
+                  &numsp;&numsp;<span class="textcolor" style="color: #0000b2"
+                    ><a href="tikz-actions#pgf.back/shade">\shade</a></span
+                  >[<span class="textcolor" style="color: #008000"
+                    ><a href="tikz-actions#pgf.shading:angle"
+                      >shading angle</a
+                    ></span
+                  >=<span class="textcolor" style="color: #008000">90</span
+                  >]&numsp;<span class="textcolor" style="color: #800080"
+                    >(3,0)</span
+                  >&numsp;<span class="textcolor" style="color: #000000"
+                    ><a href="tikz-paths#pgf.rectangle">rectangle</a></span
+                  >
+                  <span class="textcolor" style="color: #000000">+</span
+                  ><span class="textcolor" style="color: #800080">(1,2)</span
+                  >;<br />
+                  <span class="textcolor" style="color: #000000">\end</span
+                  >{<span class="textcolor" style="color: #0000b2"
+                    ><a href="tikz-scopes#pgf.tikzpicture">tikzpicture</a></span
+                  >}<br />
+                </code>
+              </div>
+            </figure>
+            <p>
+              Note that rainbow shadings are <em>way</em> too colorful in almost
+              all applications.
+            </p>
+          </div>
+
+          <div class="manualentry">
+            <div class="entryheadline">
+              <p>
+                <a id="pgf.back/pgfsetadditionalshadetransform"></a>
+                <span class="hl-def"
+                  ><span class="textcolor" style="color: #bf0000"
+                    ><kbd>\pgfsetadditionalshadetransform</kbd></span
+                  >{<span class="angle">&langle;</span><i>transformation</i
+                  ><span class="angle">&rangle;</span>}</span
+                >
+                <a
+                  class="anchor-link"
+                  href="#pgf.back/pgfsetadditionalshadetransform"
+                  >&para;</a
+                >
+              </p>
+            </div>
+            <p>
+              This command allows you to specify an additional transformation
+              that should be applied to shadings when the
+              <span class="texttt">\pgfshadepath</span> command is used. The
+              <span class="angle">&langle;</span><i>transformation</i
+              ><span class="angle">&rangle;</span> should be transformation code
+              like <span class="texttt">\pgftransformrotate{20}</span>.
+            </p>
+          </div>
+        </section>
+      </main>
+
+      <footer>
+        <div class_="footer-left">
+          <a href="https://github.com/pgf-tikz/pgf">Github</a> &middot;
+          <a href="/license">License</a> &middot;
+          <a href="https://ctan.org/pkg/pgf">CTAN</a> &middot;
+          <a href="https://pgf-tikz.github.io/pgf/pgfmanual.pdf">PDF version</a>
+          &middot;
+          <a href="https://github.com/DominikPeters/pgf-tikz-html-manual"
+            >About this HTML version</a
+          >
+        </div>
+        <div class_="footer-right">
+          <em>Manual last updated: 2022-04-23</em>
+        </div>
+      </footer>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/@docsearch/js@alpha"></script>
+    <script>
+      docsearch({
+        apiKey: "ae66ec3fc9df4b52b4d6f24fc8508fd3",
+        indexName: "tikz.dev",
+        appId: "Q70NNMA9GC",
+        container: "#search",
+      });
+    </script>
+  </body>
+</html>

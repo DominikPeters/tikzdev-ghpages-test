@@ -1,0 +1,2762 @@
+<!DOCTYPE html>
+<html lang="en-US">
+  <head>
+    <meta charset="utf-8" />
+    <meta content="LaTeX Lwarp package" name="generator" />
+    <meta content="width=device-width, initial-scale=1.0" name="viewport" />
+    <!--[if lt IE 9]>
+      <script src="http://html5shiv.googlecode.com/svn/trunk/html5.js"></script>
+    <![endif]-->
+    <title>Three Point Perspective Drawing Library - PGF/TikZ Manual</title>
+    <link href="style.css" rel="stylesheet" type="text/css" />
+
+    <script>
+      // Lwarp MathJax emulation code
+      //
+      // Based on code by Davide P. Cervone.
+      // Equation numbering: https://github.com/mathjax/MathJax/issues/2427
+      // Starred and ifnextchar macros: https://github.com/mathjax/MathJax/issues/2428
+      // \left, \right delimiters: https://github.com/mathjax/MathJax/issues/2535
+      //
+      // Modified by Brian Dunn to adjust equation numbering and add subequations.
+      //
+      // LaTeX can use \seteqnumber{subequations?}{section}{number} before each equation.
+      // subequations? is 0 usually, 1 if inside subequations.
+      // section is a string printed as-is, or empty.
+      // number is auto-incremented by MathJax between equations.
+      //
+      MathJax = {
+        subequations: "0",
+        section: "",
+        loader: {
+          load: ["[tex]/tagformat", "[tex]/textmacros"],
+        },
+        startup: {
+          ready() {
+            // These would be replaced by import commands if you wanted to make
+            // a proper extension.
+            const Configuration =
+              MathJax._.input.tex.Configuration.Configuration;
+            const CommandMap = MathJax._.input.tex.SymbolMap.CommandMap;
+            const Macro = MathJax._.input.tex.Symbol.Macro;
+            const TexError = MathJax._.input.tex.TexError.default;
+            const ParseUtil = MathJax._.input.tex.ParseUtil.default;
+            const expandable = MathJax._.util.Options.expandable;
+
+            // Insert the replacement string into the TeX string, and check
+            // that there haven't been too many maxro substitutions (prevents
+            // infinite loops).
+            const useArgument = (parser, text) => {
+              parser.string = ParseUtil.addArgs(
+                parser,
+                text,
+                parser.string.slice(parser.i)
+              );
+              parser.i = 0;
+              if (
+                ++parser.macroCount > parser.configuration.options.maxMacros
+              ) {
+                throw new TexError(
+                  "MaxMacroSub1",
+                  "MathJax maximum macro substitution count exceeded; " +
+                    "is there a recursive macro call?"
+                );
+              }
+            };
+
+            // Create the command map for:
+            // \ifstar, \ifnextchar, \ifblank, \ifstrequal, \seteqnumber
+            new CommandMap(
+              "Lwarp-macros",
+              {
+                ifstar: "IfstarFunction",
+                ifnextchar: "IfnextcharFunction",
+                ifblank: "IfblankFunction",
+                ifstrequal: "IfstrequalFunction",
+                seteqnumber: "SeteqnumberFunction",
+              },
+              {
+                // This function implements an ifstar macro.
+                IfstarFunction(parser, name) {
+                  const resultstar = parser.GetArgument(name);
+                  const resultnostar = parser.GetArgument(name);
+                  const star = parser.GetStar(); // true if there is a *
+                  useArgument(parser, star ? resultstar : resultnostar);
+                },
+
+                // This function implements an ifnextchar macro.
+                IfnextcharFunction(parser, name) {
+                  let whichchar = parser.GetArgument(name);
+                  if (whichchar.match(/^(?:0x[0-9A-F]+|[0-9]+)$/i)) {
+                    // $ syntax highlighting
+                    whichchar = String.fromCodePoint(parseInt(whichchar));
+                  }
+                  const resultnextchar = parser.GetArgument(name);
+                  const resultnotnextchar = parser.GetArgument(name);
+                  const gotchar = parser.GetNext() === whichchar;
+                  useArgument(
+                    parser,
+                    gotchar ? resultnextchar : resultnotnextchar
+                  );
+                },
+
+                // This function implements an ifblank macro.
+                IfblankFunction(parser, name) {
+                  const blankarg = parser.GetArgument(name);
+                  const resultblank = parser.GetArgument(name);
+                  const resultnotblank = parser.GetArgument(name);
+                  const isblank = blankarg.trim() == "";
+                  useArgument(parser, isblank ? resultblank : resultnotblank);
+                },
+
+                // This function implements an ifstrequal macro.
+                IfstrequalFunction(parser, name) {
+                  const strequalfirst = parser.GetArgument(name);
+                  const strequalsecond = parser.GetArgument(name);
+                  const resultequal = parser.GetArgument(name);
+                  const resultnotequal = parser.GetArgument(name);
+                  const isequal = strequalfirst == strequalsecond;
+                  useArgument(parser, isequal ? resultequal : resultnotequal);
+                },
+
+                // This function modifies the equation numbers.
+                SeteqnumberFunction(parser, name) {
+                  // Get the macro parameters
+                  const star = parser.GetStar(); // true if there is a *
+                  const optBrackets = parser.GetBrackets(name); // contents of optional brackets
+                  const newsubequations = parser.GetArgument(name); // the subequations argument
+                  const neweqsection = parser.GetArgument(name); // the eq section argument
+                  const neweqnumber = parser.GetArgument(name); // the eq number argument
+                  MathJax.config.subequations = newsubequations; // a string with boolean meaning
+                  MathJax.config.section = neweqsection; // a string with numeric meaning
+                  parser.tags.counter = parser.tags.allCounter = neweqnumber;
+                },
+              }
+            );
+
+            // Create the Lwarp-macros package
+            Configuration.create("Lwarp-macros", {
+              handler: { macro: ["Lwarp-macros"] },
+            });
+
+            MathJax.startup.defaultReady();
+
+            // For forward references:
+            MathJax.startup.input[0].preFilters.add(({ math }) => {
+              if (math.inputData.recompile) {
+                MathJax.config.subequations =
+                  math.inputData.recompile.subequations;
+                MathJax.config.section = math.inputData.recompile.section;
+              }
+            });
+            MathJax.startup.input[0].postFilters.add(({ math }) => {
+              if (math.inputData.recompile) {
+                math.inputData.recompile.subequations =
+                  MathJax.config.subequations;
+                math.inputData.recompile.section = MathJax.config.section;
+              }
+            });
+
+            // For \left, \right with unicode-math:
+            const { DelimiterMap } = MathJax._.input.tex.SymbolMap;
+            const { Symbol } = MathJax._.input.tex.Symbol;
+            const { MapHandler } = MathJax._.input.tex.MapHandler;
+            const delimiter = MapHandler.getMap("delimiter");
+            delimiter.add("\\lBrack", new Symbol("\\lBrack", "\u27E6"));
+            delimiter.add("\\rBrack", new Symbol("\\rBrack", "\u27E7"));
+            delimiter.add("\\lAngle", new Symbol("\\lAngle", "\u27EA"));
+            delimiter.add("\\rAngle", new Symbol("\\rAngle", "\u27EB"));
+            delimiter.add("\\lbrbrak", new Symbol("\\lbrbrak", "\u2772"));
+            delimiter.add("\\rbrbrak", new Symbol("\\rbrbrak", "\u2773"));
+            delimiter.add("\\lbag", new Symbol("\\lbag", "\u27C5"));
+            delimiter.add("\\rbag", new Symbol("\\rbag", "\u27C6"));
+            delimiter.add(
+              "\\llparenthesis",
+              new Symbol("\\llparenthesis", "\u2987")
+            );
+            delimiter.add(
+              "\\rrparenthesis",
+              new Symbol("\\rrparenthesis", "\u2988")
+            );
+            delimiter.add("\\llangle", new Symbol("\\llangle", "\u2989"));
+            delimiter.add("\\rrangle", new Symbol("\\rrangle", "\u298A"));
+            delimiter.add("\\Lbrbrak", new Symbol("\\Lbrbrak", "\u27EC"));
+            delimiter.add("\\Rbrbrak", new Symbol("\\Rbrbrak", "\u27ED"));
+            delimiter.add("\\lBrace", new Symbol("\\lBrace", "\u2983"));
+            delimiter.add("\\rBrace", new Symbol("\\rBrace", "\u2984"));
+            delimiter.add("\\lParen", new Symbol("\\lParen", "\u2985"));
+            delimiter.add("\\rParen", new Symbol("\\rParen", "\u2986"));
+            delimiter.add("\\lbrackubar", new Symbol("\\lbrackubar", "\u298B"));
+            delimiter.add("\\rbrackubar", new Symbol("\\rbrackubar", "\u298C"));
+            delimiter.add(
+              "\\lbrackultick",
+              new Symbol("\\lbrackultick", "\u298D")
+            );
+            delimiter.add(
+              "\\rbracklrtick",
+              new Symbol("\\rbracklrtick", "\u298E")
+            );
+            delimiter.add(
+              "\\lbracklltick",
+              new Symbol("\\lbracklltick", "\u298F")
+            );
+            delimiter.add(
+              "\\rbrackurtick",
+              new Symbol("\\rbrackurtick", "\u2990")
+            );
+            delimiter.add("\\langledot", new Symbol("\\langledot", "\u2991"));
+            delimiter.add("\\rangledot", new Symbol("\\rangledot", "\u2992"));
+            delimiter.add("\\lparenless", new Symbol("\\lparenless", "\u2993"));
+            delimiter.add("\\rparengtr", new Symbol("\\rparengtr", "\u2994"));
+            delimiter.add("\\Lparengtr", new Symbol("\\Lparengtr", "\u2995"));
+            delimiter.add("\\Rparenless", new Symbol("\\Rparenless", "\u2996"));
+            delimiter.add("\\lblkbrbrak", new Symbol("\\lblkbrbrak", "\u2997"));
+            delimiter.add("\\rblkbrbrak", new Symbol("\\rblkbrbrak", "\u2998"));
+            delimiter.add("\\lvzigzag", new Symbol("\\lvzigzag", "\u29D8"));
+            delimiter.add("\\rvzigzag", new Symbol("\\rvzigzag", "\u29D9"));
+            delimiter.add("\\Lvzigzag", new Symbol("\\Lvzigzag", "\u29DA"));
+            delimiter.add("\\Rvzigzag", new Symbol("\\Rvzigzag", "\u29DB"));
+            delimiter.add(
+              "\\lcurvyangle",
+              new Symbol("\\lcurvyangle", "\u29FC")
+            );
+            delimiter.add(
+              "\\rcurvyangle",
+              new Symbol("\\rcurvyangle", "\u29FD")
+            );
+            delimiter.add("\\Vvert", new Symbol("\\Vvert", "\u2980"));
+          }, // ready
+        }, // startup
+
+        tex: {
+          packages: { "[+]": ["tagformat", "Lwarp-macros", "textmacros"] },
+          tags: "ams",
+          tagformat: {
+            number: function (n) {
+              if (MathJax.config.subequations == 0)
+                return MathJax.config.section + n;
+              else return MathJax.config.section + String.fromCharCode(96 + n);
+            },
+          },
+        },
+      };
+    </script>
+
+    <script
+      async
+      id="MathJax-script"
+      src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-chtml.js"
+    ></script>
+
+    <script src="pgfmanual.js"></script>
+
+    <link href="https://unpkg.com/@docsearch/css@alpha" rel="stylesheet" />
+    <link href="/favicon-16x16.png" rel="icon" sizes="16x16" type="image/png" />
+    <link href="/favicon-32x32.png" rel="icon" sizes="32x32" type="image/png" />
+    <link
+      href="/apple-touch-icon.png"
+      rel="apple-touch-icon"
+      sizes="180x180"
+      type="image/png"
+    />
+    <link href="/site.webmanifest" rel="manifest" />
+  </head>
+  <body>
+    <a id="pgfmanual-autopage-6005"></a>
+
+    <div class="bodyandsidetoc grid-container">
+      <header>
+        <strong><a href="/">PGF/Ti<i>k</i>Z Manual</a></strong>
+        <div id="search"></div>
+      </header>
+      <div class="sidetoccontainer" id="local-toc-container">
+        <nav class="sidetoc">
+          <div class="sidetoctitle"><p>On this page</p></div>
+          <div class="sidetoccontents">
+            <p>
+              <a class="tocsubsection" href="#sec-63.1">Coordinate Systems</a>
+            </p>
+            <p>
+              <a class="tocsubsection" href="#sec-63.2">Setting the view</a>
+            </p>
+            <p>
+              <a class="tocsubsection" href="#sec-63.3"
+                >Defining the perspective</a
+              >
+            </p>
+            <p><a class="tocsubsection" href="#sec-63.4">Shortcomings</a></p>
+            <p><a class="tocsubsection" href="#sec-63.5">Examples</a></p>
+          </div>
+        </nav>
+      </div>
+      <div class="sidetoccontainer" id="chapter-toc-container">
+        <nav class="sidetoc">
+          <div class="sidetoctitle">
+            <p>
+              <span class="sidetocthetitle"
+                >The <span class="tikzname">TikZ</span> and PGF Packages<br />
+                Manual for version 3.1.9a</span
+              >
+            </p>
+
+            <p>Contents</p>
+          </div>
+
+          <div class="sidetoccontents">
+            <p></p>
+
+            <p>
+              <a class="linkintro" href="/">Introduction</a>
+            </p>
+
+            <p>
+              <a class="tocpart" href="tutorials-guidelines"
+                >Tutorials and Guidelines</a
+              >
+            </p>
+
+            <p>
+              <a class="tocpart" href="install"
+                >Installation and Configuration</a
+              >
+            </p>
+
+            <p>
+              <a class="tocpart" href="tikz">Ti<em>k</em>Z</a>
+            </p>
+
+            <p>
+              <a class="tocpart" href="gd">Graph Drawing</a>
+            </p>
+
+            <p class="current-part">
+              <a class="tocpart" href="libraries">Libraries</a>
+            </p>
+
+            <p class="current-part">
+              <a class="tocsection" href="library-3d"
+                >Three Dimensional Drawing Library</a
+              >
+            </p>
+
+            <p class="current-part">
+              <a class="tocsection" href="library-angle">Angle Library</a>
+            </p>
+
+            <p class="current-part">
+              <a class="tocsection" href="library-arrows">Arrow Tip Library</a>
+            </p>
+
+            <p class="current-part">
+              <a class="tocsection" href="library-automata"
+                >Automata Drawing Library</a
+              >
+            </p>
+
+            <p class="current-part">
+              <a class="tocsection" href="library-babel">Babel Library</a>
+            </p>
+
+            <p class="current-part">
+              <a class="tocsection" href="library-backgrounds"
+                >Background Library</a
+              >
+            </p>
+
+            <p class="current-part">
+              <a class="tocsection" href="library-calc">Calc Library</a>
+            </p>
+
+            <p class="current-part">
+              <a class="tocsection" href="library-calender">Calendar Library</a>
+            </p>
+
+            <p class="current-part">
+              <a class="tocsection" href="library-chains">Chains</a>
+            </p>
+
+            <p class="current-part">
+              <a class="tocsection" href="library-circuits"
+                >Circuit Libraries</a
+              >
+            </p>
+
+            <p class="current-part">
+              <a class="tocsection" href="library-decorations"
+                >Decoration Library</a
+              >
+            </p>
+
+            <p class="current-part">
+              <a class="tocsection" href="library-er"
+                >Entity-Relationship Diagram Drawing Library</a
+              >
+            </p>
+
+            <p class="current-part">
+              <a class="tocsection" href="library-external"
+                >Externalization Library</a
+              >
+            </p>
+
+            <p class="current-part">
+              <a class="tocsection" href="library-fadings">Fading Library</a>
+            </p>
+
+            <p class="current-part">
+              <a class="tocsection" href="library-fit">Fitting Library</a>
+            </p>
+
+            <p class="current-part">
+              <a class="tocsection" href="library-fixedpoint"
+                >Fixed Point Arithmetic Library</a
+              >
+            </p>
+
+            <p class="current-part">
+              <a class="tocsection" href="library-fpu"
+                >Floating Point Unit Library</a
+              >
+            </p>
+
+            <p class="current-part">
+              <a class="tocsection" href="library-lsystems"
+                >Lindenmayer System Drawing Library</a
+              >
+            </p>
+
+            <p class="current-part">
+              <a class="tocsection" href="library-math">Math Library</a>
+            </p>
+
+            <p class="current-part">
+              <a class="tocsection" href="library-matrix">Matrix Library</a>
+            </p>
+
+            <p class="current-part">
+              <a class="tocsection" href="library-mindmaps"
+                >Mindmap Drawing Library</a
+              >
+            </p>
+
+            <p class="current-part">
+              <a class="tocsection" href="library-folding"
+                >Paper-Folding Diagrams Library</a
+              >
+            </p>
+
+            <p class="current-part">
+              <a class="tocsection" href="library-patterns">Pattern Library</a>
+            </p>
+
+            <p class="current current-part">
+              <a class="tocsection" href="library-perspective"
+                >Three Point Perspective Drawing Library</a
+              >
+            </p>
+
+            <p class="current-part">
+              <a class="tocsection" href="library-petri"
+                >Petri-Net Drawing Library</a
+              >
+            </p>
+
+            <p class="current-part">
+              <a class="tocsection" href="library-plot-handlers"
+                >Plot Handler Library</a
+              >
+            </p>
+
+            <p class="current-part">
+              <a class="tocsection" href="library-plot-marks"
+                >Plot Mark Library</a
+              >
+            </p>
+
+            <p class="current-part">
+              <a class="tocsection" href="library-profiler">Profiler Library</a>
+            </p>
+
+            <p class="current-part">
+              <a class="tocsection" href="library-shadings">Shadings Library</a>
+            </p>
+
+            <p class="current-part">
+              <a class="tocsection" href="library-shadows">Shadows Library</a>
+            </p>
+
+            <p class="current-part">
+              <a class="tocsection" href="library-shapes">Shape Library</a>
+            </p>
+
+            <p class="current-part">
+              <a class="tocsection" href="library-spy"
+                >Spy Library: Magnifying Parts of Pictures</a
+              >
+            </p>
+
+            <p class="current-part">
+              <a class="tocsection" href="library-svg-path">SVG-Path Library</a>
+            </p>
+
+            <p class="current-part">
+              <a class="tocsection" href="library-edges">To Path Library</a>
+            </p>
+
+            <p class="current-part">
+              <a class="tocsection" href="library-through">Through Library</a>
+            </p>
+
+            <p class="current-part">
+              <a class="tocsection" href="library-trees">Tree Library</a>
+            </p>
+
+            <p class="current-part">
+              <a class="tocsection" href="library-turtle"
+                >Turtle Graphics Library</a
+              >
+            </p>
+
+            <p class="current-part">
+              <a class="tocsection" href="library-views">Views Library</a>
+            </p>
+
+            <p>
+              <a class="tocpart" href="dv">Data Visualization</a>
+            </p>
+
+            <p>
+              <a class="tocpart" href="utilities">Utilities</a>
+            </p>
+
+            <p>
+              <a class="tocpart" href="math"
+                >Mathematical and Object-Oriented Engines</a
+              >
+            </p>
+
+            <p>
+              <a class="tocpart" href="base">The Basic Layer</a>
+            </p>
+
+            <p>
+              <a class="tocpart" href="pgfsys">The System Layer</a>
+            </p>
+          </div>
+        </nav>
+      </div>
+
+      <main class="bodycontainer">
+        <section class="textbody">
+          <h1>
+            The <span class="tikzname">TikZ</span> and PGF Packages<br />
+            Manual for version 3.1.9a
+          </h1>
+          <h2 class="inserted">Libraries</h2>
+
+          <!--MathJax customizations:-->
+
+          <div class="hidden">
+            \(\newcommand{\footnotename}{footnote}\) \(\def \LWRfootnote {1}\)
+            \(\newcommand {\footnote }[2][\LWRfootnote ]{{}^{\mathrm {#1}}}\)
+            \(\newcommand {\footnotemark }[1][\LWRfootnote ]{{}^{\mathrm
+            {#1}}}\) \(\let \LWRorighspace \hspace \) \(\renewcommand {\hspace
+            }{\ifstar \LWRorighspace \LWRorighspace }\) \(\newcommand
+            {\mathnormal }[1]{{#1}}\) \(\newcommand \ensuremath [1]{#1}\)
+            \(\newcommand {\LWRframebox }[2][]{\fbox {#2}} \newcommand
+            {\framebox }[1][]{\LWRframebox } \) \(\newcommand {\setlength
+            }[2]{}\) \(\newcommand {\addtolength }[2]{}\) \(\newcommand
+            {\setcounter }[2]{}\) \(\newcommand {\addtocounter }[2]{}\)
+            \(\newcommand {\arabic }[1]{}\) \(\newcommand {\number }[1]{}\)
+            \(\newcommand {\noalign }[1]{\text {#1}\notag \\}\) \(\newcommand
+            {\cline }[1]{}\) \(\newcommand {\directlua }[1]{\text
+            {(directlua)}}\) \(\newcommand {\luatexdirectlua }[1]{\text
+            {(directlua)}}\) \(\newcommand {\protect }{}\) \(\def
+            \LWRabsorbnumber #1 {}\) \(\def \LWRabsorbquotenumber "#1 {}\)
+            \(\newcommand {\LWRabsorboption }[1][]{}\) \(\newcommand
+            {\LWRabsorbtwooptions }[1][]{\LWRabsorboption }\) \(\def \mathchar
+            {\ifnextchar "\LWRabsorbquotenumber \LWRabsorbnumber }\) \(\def
+            \mathcode #1={\mathchar }\) \(\let \delcode \mathcode \) \(\let
+            \delimiter \mathchar \) \(\def \oe {\unicode {x0153}}\) \(\def \OE
+            {\unicode {x0152}}\) \(\def \ae {\unicode {x00E6}}\) \(\def \AE
+            {\unicode {x00C6}}\) \(\def \aa {\unicode {x00E5}}\) \(\def \AA
+            {\unicode {x00C5}}\) \(\def \o {\unicode {x00F8}}\) \(\def \O
+            {\unicode {x00D8}}\) \(\def \l {\unicode {x0142}}\) \(\def \L
+            {\unicode {x0141}}\) \(\def \ss {\unicode {x00DF}}\) \(\def \SS
+            {\unicode {x1E9E}}\) \(\def \dag {\unicode {x2020}}\) \(\def \ddag
+            {\unicode {x2021}}\) \(\def \P {\unicode {x00B6}}\) \(\def
+            \copyright {\unicode {x00A9}}\) \(\def \pounds {\unicode {x00A3}}\)
+            \(\let \LWRref \ref \) \(\renewcommand {\ref }{\ifstar \LWRref
+            \LWRref }\) \( \newcommand {\multicolumn }[3]{#3}\) \(\require
+            {textcomp}\) \( \newcommand {\meta }[1]{\langle \textit {#1}\rangle
+            } \) \(\newcommand {\intertext }[1]{\text {#1}\notag \\}\) \(\let
+            \Hat \hat \) \(\let \Check \check \) \(\let \Tilde \tilde \) \(\let
+            \Acute \acute \) \(\let \Grave \grave \) \(\let \Dot \dot \) \(\let
+            \Ddot \ddot \) \(\let \Breve \breve \) \(\let \Bar \bar \) \(\let
+            \Vec \vec \)
+          </div>
+
+          <p></p>
+          <h4 id="autosec-6006">
+            <span class="sectionnumber">63&emsp;</span>Three Point Perspective
+            Drawing Library
+          </h4>
+          <a id="pgfmanual-autopage-6006"></a>
+          <a id="pgfmanual-autofile-68"></a>
+
+          <p>
+            <em>by Max Snippe</em>
+          </p>
+
+          <div class="manualentry">
+            <div class="entryheadline">
+              <p>
+                <a id="pgf.perspective"></a>
+                <span class="hl-def"
+                  ><b><span class="tikzname">TikZ</span> Library</b>
+                  <kbd
+                    ><span class="textcolor" style="color: #bf0000"
+                      >perspective</span
+                    ></kbd
+                  ></span
+                >
+                <a class="anchor-link" href="#pgf.perspective">&para;</a>
+              </p>
+            </div>
+
+            <p>
+              <kbd
+                >\usetikzlibrary{<span class="textcolor" style="color: #bf0000"
+                  >perspective</span
+                >} %
+                <span class="latexlogofont"
+                  ><span class="latexlogo"
+                    >L<span class="latexlogosup">a</span>T<span
+                      class="latexlogosub"
+                      >e</span
+                    >X</span
+                  ></span
+                >
+                and plain
+                <span class="latexlogofont"
+                  ><span class="latexlogo"
+                    >T<span class="latexlogosub">e</span>X</span
+                  ></span
+                ></kbd
+              ><br />
+              <kbd
+                >\usetikzlibrary[<span class="textcolor" style="color: #bf0000"
+                  >perspective</span
+                >] % Con<span class="latexlogofont"
+                  ><span class="latexlogo"
+                    >T<span class="latexlogosub">e</span>X</span
+                  ></span
+                >t</kbd
+              ><br />
+              <br />
+              This library provides tools for perspective drawing with one, two,
+              or three vanishing points.
+            </p>
+          </div>
+          <h5 id="autosec-6008">
+            <span class="sectionnumber" id="sec-63.1">63.1&emsp;</span
+            >Coordinate Systems<a class="anchor-link" href="#sec-63.1"
+              >&para;</a
+            >
+          </h5>
+          <a id="pgfmanual-autopage-6008"></a>
+
+          <div class="manualentry">
+            <div class="entryheadline">
+              <p>
+                <a id="pgf.three:point:perspective"></a>
+                <span class="hl-def"
+                  ><b>Coordinate system</b>
+                  <kbd
+                    ><span class="textcolor" style="color: #bf0000"
+                      >three point perspective</span
+                    ></kbd
+                  ></span
+                >
+                <a class="anchor-link" href="#pgf.three:point:perspective"
+                  >&para;</a
+                >
+              </p>
+            </div>
+            <p>
+              The <span class="texttt">three point perspective</span> coordinate
+              system is very similar to the
+              <span class="texttt">xyz</span> coordinate system, save that it
+              will display the provided coordinates with a perspective
+              projection.
+            </p>
+
+            <div class="manualentry">
+              <div class="entryheadline">
+                <p>
+                  <span class="hl-def"
+                    ><kbd
+                      ><span class="keyname"
+                        ><span class="textcolor" style="color: #bf0000"
+                          >/tikz/cs/x</span
+                        ></span
+                      >=</kbd
+                    ><span class="angle">&langle;</span><i>number</i
+                    ><span class="angle">&rangle;</span> </span
+                  ><span class="hl-default"
+                    >(no default, initially <kbd>0</kbd>)</span
+                  >
+                </p>
+              </div>
+              <p>
+                The \(x\) component of the coordinate. Should be given
+                <em>without</em> unit.
+              </p>
+            </div>
+
+            <div class="manualentry">
+              <div class="entryheadline">
+                <p>
+                  <span class="hl-def"
+                    ><kbd
+                      ><span class="keyname"
+                        ><span class="textcolor" style="color: #bf0000"
+                          >/tikz/cs/y</span
+                        ></span
+                      >=</kbd
+                    ><span class="angle">&langle;</span><i>number</i
+                    ><span class="angle">&rangle;</span> </span
+                  ><span class="hl-default"
+                    >(no default, initially <kbd>0</kbd>)</span
+                  >
+                </p>
+              </div>
+              <p>Same as <span class="texttt">x</span>.</p>
+            </div>
+
+            <div class="manualentry">
+              <div class="entryheadline">
+                <p>
+                  <span class="hl-def"
+                    ><kbd
+                      ><span class="keyname"
+                        ><span class="textcolor" style="color: #bf0000"
+                          >/tikz/cs/z</span
+                        ></span
+                      >=</kbd
+                    ><span class="angle">&langle;</span><i>number</i
+                    ><span class="angle">&rangle;</span> </span
+                  ><span class="hl-default"
+                    >(no default, initially <kbd>0</kbd>)</span
+                  >
+                </p>
+              </div>
+              <p>Same as <span class="texttt">x</span>.</p>
+            </div>
+          </div>
+
+          <div class="manualentry">
+            <div class="entryheadline">
+              <p>
+                <a id="pgf.tpp"></a>
+                <span class="hl-def"
+                  ><b>Coordinate system</b>
+                  <kbd
+                    ><span class="textcolor" style="color: #bf0000"
+                      >tpp</span
+                    ></kbd
+                  ></span
+                >
+                <a class="anchor-link" href="#pgf.tpp">&para;</a>
+              </p>
+            </div>
+            <p>
+              The <span class="texttt">tpp</span> coordinate system is an alias
+              for the
+              <span class="texttt">three point perspective</span> coordinate
+              system.
+            </p>
+          </div>
+          <h5 id="autosec-6009">
+            <span class="sectionnumber" id="sec-63.2">63.2&emsp;</span>Setting
+            the view<a class="anchor-link" href="#sec-63.2">&para;</a>
+          </h5>
+          <a id="pgfmanual-autopage-6009"></a>
+
+          <div class="manualentry">
+            <div class="entryheadline">
+              <p>
+                <a id="pgf./tikz/3d:view"></a><a id="pgf.3d:view"></a>
+                <span class="hl-def"
+                  ><kbd
+                    ><span class="keyname"
+                      ><span class="textcolor" style="color: #bf0000"
+                        >/tikz/3d view</span
+                      ></span
+                    ><span class="textcolor" style="color: #008000"
+                      >=</span
+                    ></kbd
+                  ><span class="textcolor" style="color: #008000"
+                    >{<span class="angle">&langle;</span><i>azimuth</i
+                    ><span class="angle">&rangle;</span>}{<span class="angle"
+                      >&langle;</span
+                    ><i>elevation</i><span class="angle">&rangle;</span>}
+                  </span></span
+                ><span class="hl-default">(default <kbd>{-30}{15}</kbd>)</span>
+                <a class="anchor-link" href="#pgf./tikz/3d:view">&para;</a>
+              </p>
+            </div>
+            <p>
+              With the <span class="texttt">3d view</span> option, the
+              projection of the 3D coordinates on the 2D page is defined. It is
+              determined by rotating the coordinate system by \(-\meta
+              {azimuth}\) around the \(z\)-axis, and by
+              <span class="angle">&langle;</span><i>elevation</i
+              ><span class="angle">&rangle;</span> around the (new) \(x\)-axis,
+              as shown below.
+            </p>
+            <p>
+              <span class="lateximagesource" id="lateximage-pgfmanual-2468"
+                ><!--
+    z
+
+
+
+        &langle;elevation&rangle;
+y
+
+                    x
+
+
+    &langle;azimuth&rangle;
+-->
+                <img
+                  alt="(-tikz-&nbsp;diagram)"
+                  class="lateximage"
+                  height="163.394"
+                  loading="lazy"
+                  src="pgfmanual-images/image-2468.png"
+                  style
+                  width="307.034"
+              /></span>
+            </p>
+            <p>
+              For example, when both <span class="angle">&langle;</span
+              ><i>azimuth</i><span class="angle">&rangle;</span> and
+              <span class="angle">&langle;</span><i>elevation</i
+              ><span class="angle">&rangle;</span> are 0\(^\circ \), \(+z\) will
+              be pointing upward, and \(+x\) will be pointing right. The default
+              is as shown below.
+            </p>
+
+            <figure class="example">
+              <div class="example-image">
+                <p>
+                  <span class="lateximagesource" id="lateximage-pgfmanual-2469"
+                    ><!--
+    z
+
+y x
+   -->
+                    <img
+                      alt="(-tikz-&nbsp;diagram)"
+                      class="lateximage"
+                      height="85.922"
+                      loading="lazy"
+                      src="pgfmanual-images/image-2469.png"
+                      style
+                      width="78.458"
+                  /></span>
+                </p>
+              </div>
+
+              <div class="example-code">
+                <button class="clipboardButton" type="button">copy</button>
+                <code>
+                  <span class="c- preamble">\usetikzlibrary {perspective} </span
+                  ><br />
+                  <span class="textcolor" style="color: #000000">\begin</span
+                  >{<span class="textcolor" style="color: #0000b2"
+                    ><a href="tikz-scopes#pgf.tikzpicture">tikzpicture</a></span
+                  >}[<span class="textcolor" style="color: #008000"
+                    ><a href="library-perspective#pgf.3d:view">3d view</a></span
+                  >]<br />
+                  &numsp;&numsp;<span class="textcolor" style="color: #0000b2"
+                    ><a href="tikz-actions#pgf.back/draw">\draw</a></span
+                  >[<span class="textcolor" style="color: #008000"
+                    ><a href="tikz-graphs#pgf.-&gt;">-&gt;</a></span
+                  >]&numsp;<span class="textcolor" style="color: #800080"
+                    >(-1,0,0)</span
+                  >&numsp;<span class="textcolor" style="color: #000000"
+                    ><a href="tikz-paths#pgf.--">--</a></span
+                  >
+                  <span class="textcolor" style="color: #800080">(1,0,0)</span
+                  >&numsp;<span class="textcolor" style="color: #000000"
+                    ><a href="tikz-coordinates#pgf.node">node</a></span
+                  >[<span class="textcolor" style="color: #008000"
+                    ><a href="tikz-shapes#pgf.pos">pos</a></span
+                  >=<span class="textcolor" style="color: #008000">1.1</span
+                  >]{<span class="textcolor" style="color: #000000"
+                    ><a href="tikz-coordinates#pgf.x">x</a></span
+                  >};<br />
+                  &numsp;&numsp;<span class="textcolor" style="color: #0000b2"
+                    ><a href="tikz-actions#pgf.back/draw">\draw</a></span
+                  >[<span class="textcolor" style="color: #008000"
+                    ><a href="tikz-graphs#pgf.-&gt;">-&gt;</a></span
+                  >]&numsp;<span class="textcolor" style="color: #800080"
+                    >(0,-1,0)</span
+                  >&numsp;<span class="textcolor" style="color: #000000"
+                    ><a href="tikz-paths#pgf.--">--</a></span
+                  >
+                  <span class="textcolor" style="color: #800080">(0,1,0)</span
+                  >&numsp;<span class="textcolor" style="color: #000000"
+                    ><a href="tikz-coordinates#pgf.node">node</a></span
+                  >[<span class="textcolor" style="color: #008000"
+                    ><a href="tikz-shapes#pgf.pos">pos</a></span
+                  >=<span class="textcolor" style="color: #008000">1.1</span
+                  >]{<span class="textcolor" style="color: #000000"
+                    ><a href="tikz-coordinates#pgf.y">y</a></span
+                  >};<br />
+                  &numsp;&numsp;<span class="textcolor" style="color: #0000b2"
+                    ><a href="tikz-actions#pgf.back/draw">\draw</a></span
+                  >[<span class="textcolor" style="color: #008000"
+                    ><a href="tikz-graphs#pgf.-&gt;">-&gt;</a></span
+                  >]&numsp;<span class="textcolor" style="color: #800080"
+                    >(0,0,-1)</span
+                  >&numsp;<span class="textcolor" style="color: #000000"
+                    ><a href="tikz-paths#pgf.--">--</a></span
+                  >
+                  <span class="textcolor" style="color: #800080">(0,0,1)</span
+                  >&numsp;<span class="textcolor" style="color: #000000"
+                    ><a href="tikz-coordinates#pgf.node">node</a></span
+                  >[<span class="textcolor" style="color: #008000"
+                    ><a href="tikz-shapes#pgf.pos">pos</a></span
+                  >=<span class="textcolor" style="color: #008000">1.1</span
+                  >]{<span class="textcolor" style="color: #000000"
+                    ><a href="tikz-coordinates#pgf.z">z</a></span
+                  >};<br />
+                  <span class="textcolor" style="color: #000000">\end</span
+                  >{<span class="textcolor" style="color: #0000b2"
+                    ><a href="tikz-scopes#pgf.tikzpicture">tikzpicture</a></span
+                  >}<br />
+                </code>
+              </div>
+            </figure>
+          </div>
+
+          <div class="manualentry">
+            <div class="entryheadline">
+              <p>
+                <a id="pgf./tikz/isometric:view"></a
+                ><a id="pgf.isometric:view"></a>
+                <span class="hl-def"
+                  ><kbd
+                    ><span class="keyname"
+                      ><span class="textcolor" style="color: #bf0000"
+                        >/tikz/isometric view</span
+                      ></span
+                    ></kbd
+                  ></span
+                ><span class="hl-default">(style, no value)</span>
+                <a class="anchor-link" href="#pgf./tikz/isometric:view"
+                  >&para;</a
+                >
+              </p>
+            </div>
+            <p>
+              A special kind of <span class="texttt">3d view</span> is
+              isometric, which can be set with the
+              <span class="texttt">isometric view</span> style. It simply sets
+              <span class="texttt">3d view={-45}{35.26}</span>. The value for
+              <span class="angle">&langle;</span><i>elevation</i
+              ><span class="angle">&rangle;</span> is determined with \(\arctan
+              (1/\sqrt {2})\). In isometric projection the angle between any
+              pair of axes is 120\(^\circ \), as shown below.
+            </p>
+
+            <figure class="example">
+              <div class="example-image">
+                <p>
+                  <span class="lateximagesource" id="lateximage-pgfmanual-2470"
+                    ><!--
+    z
+y x
+-->
+                    <img
+                      alt="(-tikz-&nbsp;diagram)"
+                      class="lateximage"
+                      height="73.514"
+                      loading="lazy"
+                      src="pgfmanual-images/image-2470.png"
+                      style
+                      width="74.282"
+                  /></span>
+                </p>
+              </div>
+
+              <div class="example-code">
+                <button class="clipboardButton" type="button">copy</button>
+                <code>
+                  <span class="c- preamble">\usetikzlibrary {perspective} </span
+                  ><br />
+                  <span class="textcolor" style="color: #000000">\begin</span
+                  >{<span class="textcolor" style="color: #0000b2"
+                    ><a href="tikz-scopes#pgf.tikzpicture">tikzpicture</a></span
+                  >}[<span class="textcolor" style="color: #008000"
+                    ><a href="library-perspective#pgf.isometric:view"
+                      >isometric view</a
+                    ></span
+                  >]<br />
+                  &numsp;&numsp;<span class="textcolor" style="color: #0000b2"
+                    ><a href="tikz-actions#pgf.back/draw">\draw</a></span
+                  >[<span class="textcolor" style="color: #008000"
+                    ><a href="tikz-graphs#pgf.-&gt;">-&gt;</a></span
+                  >]&numsp;<span class="textcolor" style="color: #800080"
+                    >(-1,0,0)</span
+                  >&numsp;<span class="textcolor" style="color: #000000"
+                    ><a href="tikz-paths#pgf.--">--</a></span
+                  >
+                  <span class="textcolor" style="color: #800080">(1,0,0)</span
+                  >&numsp;<span class="textcolor" style="color: #000000"
+                    ><a href="tikz-coordinates#pgf.node">node</a></span
+                  >[<span class="textcolor" style="color: #008000"
+                    ><a href="tikz-shapes#pgf.pos">pos</a></span
+                  >=<span class="textcolor" style="color: #008000">1.1</span
+                  >]{<span class="textcolor" style="color: #000000"
+                    ><a href="tikz-coordinates#pgf.x">x</a></span
+                  >};<br />
+                  &numsp;&numsp;<span class="textcolor" style="color: #0000b2"
+                    ><a href="tikz-actions#pgf.back/draw">\draw</a></span
+                  >[<span class="textcolor" style="color: #008000"
+                    ><a href="tikz-graphs#pgf.-&gt;">-&gt;</a></span
+                  >]&numsp;<span class="textcolor" style="color: #800080"
+                    >(0,-1,0)</span
+                  >&numsp;<span class="textcolor" style="color: #000000"
+                    ><a href="tikz-paths#pgf.--">--</a></span
+                  >
+                  <span class="textcolor" style="color: #800080">(0,1,0)</span
+                  >&numsp;<span class="textcolor" style="color: #000000"
+                    ><a href="tikz-coordinates#pgf.node">node</a></span
+                  >[<span class="textcolor" style="color: #008000"
+                    ><a href="tikz-shapes#pgf.pos">pos</a></span
+                  >=<span class="textcolor" style="color: #008000">1.1</span
+                  >]{<span class="textcolor" style="color: #000000"
+                    ><a href="tikz-coordinates#pgf.y">y</a></span
+                  >};<br />
+                  &numsp;&numsp;<span class="textcolor" style="color: #0000b2"
+                    ><a href="tikz-actions#pgf.back/draw">\draw</a></span
+                  >[<span class="textcolor" style="color: #008000"
+                    ><a href="tikz-graphs#pgf.-&gt;">-&gt;</a></span
+                  >]&numsp;<span class="textcolor" style="color: #800080"
+                    >(0,0,-1)</span
+                  >&numsp;<span class="textcolor" style="color: #000000"
+                    ><a href="tikz-paths#pgf.--">--</a></span
+                  >
+                  <span class="textcolor" style="color: #800080">(0,0,1)</span
+                  >&numsp;<span class="textcolor" style="color: #000000"
+                    ><a href="tikz-coordinates#pgf.node">node</a></span
+                  >[<span class="textcolor" style="color: #008000"
+                    ><a href="tikz-shapes#pgf.pos">pos</a></span
+                  >=<span class="textcolor" style="color: #008000">1.1</span
+                  >]{<span class="textcolor" style="color: #000000"
+                    ><a href="tikz-coordinates#pgf.z">z</a></span
+                  >};<br />
+                  <span class="textcolor" style="color: #000000">\end</span
+                  >{<span class="textcolor" style="color: #0000b2"
+                    ><a href="tikz-scopes#pgf.tikzpicture">tikzpicture</a></span
+                  >}<br />
+                </code>
+              </div>
+            </figure>
+          </div>
+          <h5 id="autosec-6016">
+            <span class="sectionnumber" id="sec-63.3">63.3&emsp;</span>Defining
+            the perspective<a class="anchor-link" href="#sec-63.3">&para;</a>
+          </h5>
+          <a id="pgfmanual-autopage-6016"></a>
+
+          <p>
+            In this section, the following example cuboid will be used with
+            various scaling. As a reference, the axes will be shown too, without
+            perspective projection.
+          </p>
+
+          <figure class="example">
+            <div class="example-image">
+              <p>
+                <span class="lateximagesource" id="lateximage-pgfmanual-2471"
+                  ><!--
+    z
+
+
+
+y
+        x
+   -->
+                  <img
+                    alt="(-tikz-&nbsp;diagram)"
+                    class="lateximage"
+                    height="120.698"
+                    loading="lazy"
+                    src="pgfmanual-images/image-2471.png"
+                    style
+                    width="126.314"
+                /></span>
+              </p>
+            </div>
+
+            <div class="example-code">
+              <button class="clipboardButton" type="button">copy</button>
+
+              <code>
+                <span class="c- preamble">\usetikzlibrary {perspective} </span
+                ><br />
+                <span class="textcolor" style="color: #0000b2">\newcommand</span
+                ><span class="textcolor" style="color: #0000b2"
+                  >\simplecuboid</span
+                >[<span class="textcolor" style="color: #008000">3</span>]{<span
+                  class="example-code-comment"
+                  >%</span
+                ><br />
+                &numsp;&numsp;<span class="textcolor" style="color: #0000b2"
+                  ><a href="tikz-actions#pgf.back/fill">\fill</a></span
+                >[<span class="textcolor" style="color: #008000"
+                  >gray!80!white</span
+                >]&numsp;<span class="textcolor" style="color: #800080"
+                  >(tpp cs:x=0,y=0,z=#3)</span
+                ><br />
+                &numsp;&numsp;&numsp;&numsp;<span
+                  class="textcolor"
+                  style="color: #000000"
+                  ><a href="tikz-paths#pgf.--">--</a></span
+                >
+                <span class="textcolor" style="color: #800080"
+                  >(tpp cs:x=0,y=#2,z=#3)</span
+                ><br />
+                &numsp;&numsp;&numsp;&numsp;<span
+                  class="textcolor"
+                  style="color: #000000"
+                  ><a href="tikz-paths#pgf.--">--</a></span
+                >
+                <span class="textcolor" style="color: #800080"
+                  >(tpp cs:x=#1,y=#2,z=#3)</span
+                ><br />
+                &numsp;&numsp;&numsp;&numsp;<span
+                  class="textcolor"
+                  style="color: #000000"
+                  ><a href="tikz-paths#pgf.--">--</a></span
+                >
+                <span class="textcolor" style="color: #800080"
+                  >(tpp cs:x=#1,y=0,z=#3)</span
+                >&numsp;<span class="textcolor" style="color: #000000"
+                  ><a href="tikz-paths#pgf.--">--</a></span
+                >
+                <span class="textcolor" style="color: #000000"
+                  ><a href="tikz-graphs#pgf.cycle">cycle</a></span
+                >;<br />
+                &numsp;&numsp;<span class="textcolor" style="color: #0000b2"
+                  ><a href="tikz-actions#pgf.back/fill">\fill</a></span
+                >[<span class="textcolor" style="color: #008000">gray</span
+                >]&numsp;&numsp;<span class="textcolor" style="color: #800080"
+                  >(tpp cs:x=0,y=0,z=0)</span
+                ><br />
+                &numsp;&numsp;&numsp;&numsp;<span
+                  class="textcolor"
+                  style="color: #000000"
+                  ><a href="tikz-paths#pgf.--">--</a></span
+                >
+                <span class="textcolor" style="color: #800080"
+                  >(tpp cs:x=0,y=0,z=#3)</span
+                ><br />
+                &numsp;&numsp;&numsp;&numsp;<span
+                  class="textcolor"
+                  style="color: #000000"
+                  ><a href="tikz-paths#pgf.--">--</a></span
+                >
+                <span class="textcolor" style="color: #800080"
+                  >(tpp cs:x=0,y=#2,z=#3)</span
+                ><br />
+                &numsp;&numsp;&numsp;&numsp;<span
+                  class="textcolor"
+                  style="color: #000000"
+                  ><a href="tikz-paths#pgf.--">--</a></span
+                >
+                <span class="textcolor" style="color: #800080"
+                  >(tpp cs:x=0,y=#2,z=0)</span
+                >&numsp;<span class="textcolor" style="color: #000000"
+                  ><a href="tikz-paths#pgf.--">--</a></span
+                >
+                <span class="textcolor" style="color: #000000"
+                  ><a href="tikz-graphs#pgf.cycle">cycle</a></span
+                >;<br />
+                &numsp;&numsp;<span class="textcolor" style="color: #0000b2"
+                  ><a href="tikz-actions#pgf.back/fill">\fill</a></span
+                >[<span class="textcolor" style="color: #008000"
+                  >gray!50!white</span
+                >]&numsp;<span class="textcolor" style="color: #800080"
+                  >(tpp cs:x=0,y=0,z=0)</span
+                ><br />
+                &numsp;&numsp;&numsp;&numsp;<span
+                  class="textcolor"
+                  style="color: #000000"
+                  ><a href="tikz-paths#pgf.--">--</a></span
+                >
+                <span class="textcolor" style="color: #800080"
+                  >(tpp cs:x=0,y=0,z=#3)</span
+                ><br />
+                &numsp;&numsp;&numsp;&numsp;<span
+                  class="textcolor"
+                  style="color: #000000"
+                  ><a href="tikz-paths#pgf.--">--</a></span
+                >
+                <span class="textcolor" style="color: #800080"
+                  >(tpp cs:x=#1,y=0,z=#3)</span
+                ><br />
+                &numsp;&numsp;&numsp;&numsp;<span
+                  class="textcolor"
+                  style="color: #000000"
+                  ><a href="tikz-paths#pgf.--">--</a></span
+                >
+                <span class="textcolor" style="color: #800080"
+                  >(tpp cs:x=#1,y=0,z=0)</span
+                >&numsp;<span class="textcolor" style="color: #000000"
+                  ><a href="tikz-paths#pgf.--">--</a></span
+                >
+                <span class="textcolor" style="color: #000000"
+                  ><a href="tikz-graphs#pgf.cycle">cycle</a></span
+                >;}<br />
+                <span class="textcolor" style="color: #0000b2">\newcommand</span
+                >{<span class="textcolor" style="color: #0000b2"
+                  >\simpleaxes</span
+                >}[<span class="textcolor" style="color: #008000">3</span
+                >]{<span class="example-code-comment">%</span><br />
+                &numsp;&numsp;<span class="textcolor" style="color: #0000b2"
+                  ><a href="tikz-actions#pgf.back/draw">\draw</a></span
+                >[<span class="textcolor" style="color: #008000"
+                  ><a href="tikz-graphs#pgf.-&gt;">-&gt;</a></span
+                >]&numsp;<span class="textcolor" style="color: #800080"
+                  >(-0.5,0,0)</span
+                >&numsp;<span class="textcolor" style="color: #000000"
+                  ><a href="tikz-paths#pgf.--">--</a></span
+                >
+                <span class="textcolor" style="color: #800080">(#1,0,0)</span
+                >&numsp;<span class="textcolor" style="color: #000000"
+                  ><a href="tikz-coordinates#pgf.node">node</a></span
+                >[<span class="textcolor" style="color: #008000"
+                  ><a href="tikz-shapes#pgf.pos">pos</a></span
+                >=<span class="textcolor" style="color: #008000">1.1</span
+                >]{<span class="textcolor" style="color: #000000"
+                  ><a href="tikz-coordinates#pgf.x">x</a></span
+                >};<br />
+                &numsp;&numsp;<span class="textcolor" style="color: #0000b2"
+                  ><a href="tikz-actions#pgf.back/draw">\draw</a></span
+                >[<span class="textcolor" style="color: #008000"
+                  ><a href="tikz-graphs#pgf.-&gt;">-&gt;</a></span
+                >]&numsp;<span class="textcolor" style="color: #800080"
+                  >(0,-0.5,0)</span
+                >&numsp;<span class="textcolor" style="color: #000000"
+                  ><a href="tikz-paths#pgf.--">--</a></span
+                >
+                <span class="textcolor" style="color: #800080">(0,#2,0)</span
+                >&numsp;<span class="textcolor" style="color: #000000"
+                  ><a href="tikz-coordinates#pgf.node">node</a></span
+                >[<span class="textcolor" style="color: #008000"
+                  ><a href="tikz-shapes#pgf.pos">pos</a></span
+                >=<span class="textcolor" style="color: #008000">1.1</span
+                >]{<span class="textcolor" style="color: #000000"
+                  ><a href="tikz-coordinates#pgf.y">y</a></span
+                >};<br />
+                &numsp;&numsp;<span class="textcolor" style="color: #0000b2"
+                  ><a href="tikz-actions#pgf.back/draw">\draw</a></span
+                >[<span class="textcolor" style="color: #008000"
+                  ><a href="tikz-graphs#pgf.-&gt;">-&gt;</a></span
+                >]&numsp;<span class="textcolor" style="color: #800080"
+                  >(0,0,-0.5)</span
+                >&numsp;<span class="textcolor" style="color: #000000"
+                  ><a href="tikz-paths#pgf.--">--</a></span
+                >
+                <span class="textcolor" style="color: #800080">(0,0,#3)</span
+                >&numsp;<span class="textcolor" style="color: #000000"
+                  ><a href="tikz-coordinates#pgf.node">node</a></span
+                >[<span class="textcolor" style="color: #008000"
+                  ><a href="tikz-shapes#pgf.pos">pos</a></span
+                >=<span class="textcolor" style="color: #008000">1.1</span
+                >]{<span class="textcolor" style="color: #000000"
+                  ><a href="tikz-coordinates#pgf.z">z</a></span
+                >};}<br />
+                <br />
+                <span class="textcolor" style="color: #000000">\begin</span
+                >{<span class="textcolor" style="color: #0000b2"
+                  ><a href="tikz-scopes#pgf.tikzpicture">tikzpicture</a></span
+                >}[<span class="textcolor" style="color: #008000"
+                  ><a href="library-perspective#pgf.3d:view">3d view</a></span
+                >]<br />
+                &numsp;&numsp;<span class="textcolor" style="color: #0000b2"
+                  >\simplecuboid</span
+                >{<span class="textcolor" style="color: #000000">2</span>}{<span
+                  class="textcolor"
+                  style="color: #000000"
+                  >2</span
+                >}{<span class="textcolor" style="color: #000000">2</span
+                >}<br />
+                &numsp;&numsp;<span class="textcolor" style="color: #0000b2"
+                  >\simpleaxes</span
+                >{<span class="textcolor" style="color: #000000">2</span>}{<span
+                  class="textcolor"
+                  style="color: #000000"
+                  >2</span
+                >}{<span class="textcolor" style="color: #000000">2</span
+                >}<br />
+                <span class="textcolor" style="color: #000000">\end</span>{<span
+                  class="textcolor"
+                  style="color: #0000b2"
+                  ><a href="tikz-scopes#pgf.tikzpicture">tikzpicture</a></span
+                >}<br />
+              </code>
+            </div>
+          </figure>
+
+          <div class="hidden"></div>
+
+          <div class="manualentry">
+            <div class="entryheadline">
+              <p>
+                <a id="pgf./tikz/perspective"></a>
+                <span class="hl-def"
+                  ><kbd
+                    ><span class="keyname"
+                      ><span class="textcolor" style="color: #bf0000"
+                        >/tikz/perspective</span
+                      ></span
+                    ><span class="textcolor" style="color: #008000"
+                      >=</span
+                    ></kbd
+                  ><span class="textcolor" style="color: #008000"
+                    ><span class="angle">&langle;</span><i>vanishing points</i
+                    ><span class="angle">&rangle;</span>
+                  </span></span
+                ><span class="hl-default"
+                  >(default
+                  <kbd>p={(10,0,0)},q={(0,10,0)},r={(0,0,20)}</kbd>)</span
+                >
+                <a class="anchor-link" href="#pgf./tikz/perspective">&para;</a>
+              </p>
+            </div>
+            <p>
+              The &lsquo;strength&rsquo; of the perspective can be determined by
+              setting the location of the vanishing points. The default values
+              have a stronger perspective towards \(x\) and \(y\) than towards
+              \(z\), as shown below.
+            </p>
+
+            <figure class="example">
+              <div class="example-image">
+                <p>
+                  <span class="lateximagesource" id="lateximage-pgfmanual-2472"
+                    ><!--
+    z
+
+
+
+y
+        x
+   -->
+                    <img
+                      alt="(-tikz-&nbsp;diagram)"
+                      class="lateximage"
+                      height="106.010"
+                      loading="lazy"
+                      src="pgfmanual-images/image-2472.png"
+                      style
+                      width="126.314"
+                  /></span>
+                </p>
+              </div>
+
+              <div class="example-code">
+                <button class="clipboardButton" type="button">copy</button>
+                <code>
+                  <span class="c- preamble">\usetikzlibrary {perspective} </span
+                  ><br />
+                  <span class="textcolor" style="color: #000000">\begin</span
+                  >{<span class="textcolor" style="color: #0000b2"
+                    ><a href="tikz-scopes#pgf.tikzpicture">tikzpicture</a></span
+                  >}[<span class="textcolor" style="color: #008000"
+                    ><a href="library-perspective#pgf.3d:view">3d view</a></span
+                  >,<span class="textcolor" style="color: #008000"
+                    ><a href="library-perspective#pgf.perspective"
+                      >perspective</a
+                    ></span
+                  >]<br />
+                  &numsp;&numsp;<span class="textcolor" style="color: #0000b2"
+                    >\simplecuboid</span
+                  >{<span class="textcolor" style="color: #000000">2</span
+                  >}{<span class="textcolor" style="color: #000000">2</span
+                  >}{<span class="textcolor" style="color: #000000">2</span
+                  >}<br />
+                  &numsp;&numsp;<span class="textcolor" style="color: #0000b2"
+                    >\simpleaxes</span
+                  >{<span class="textcolor" style="color: #000000">2</span
+                  >}{<span class="textcolor" style="color: #000000">2</span
+                  >}{<span class="textcolor" style="color: #000000">2</span
+                  >}<br />
+                  <span class="textcolor" style="color: #000000">\end</span
+                  >{<span class="textcolor" style="color: #0000b2"
+                    ><a href="tikz-scopes#pgf.tikzpicture">tikzpicture</a></span
+                  >}<br />
+                </code>
+              </div>
+            </figure>
+            <p>
+              From this example it also shows that the maximum dimensions of the
+              cuboid are no longer 2 by 2 by 2. This is inherent to the
+              perspective projection.
+            </p>
+
+            <div class="manualentry">
+              <div class="entryheadline">
+                <p>
+                  <a id="pgf./tikz/perspective/p"></a><a id="pgf.p"></a>
+                  <span class="hl-def"
+                    ><kbd
+                      ><span class="keyname"
+                        ><span class="textcolor" style="color: #bf0000"
+                          >/tikz/perspective/p</span
+                        ></span
+                      >=</kbd
+                    >{<span class="angle">&langle;</span><i>x,y,z</i
+                    ><span class="angle">&rangle;</span>} </span
+                  ><span class="hl-default"
+                    >(no default, initially <kbd>(0,0,0)</kbd>)</span
+                  >
+                  <a class="anchor-link" href="#pgf./tikz/perspective/p"
+                    >&para;</a
+                  >
+                </p>
+              </div>
+              <p>
+                The location of the vanishing point that determines the
+                &lsquo;strength&rsquo; of the perspective in \(x\)-direction can
+                be set with the <span class="texttt">p</span> key.
+              </p>
+
+              <figure class="example">
+                <div class="example-image">
+                  <p>
+                    <span
+                      class="lateximagesource"
+                      id="lateximage-pgfmanual-2473"
+                      ><!--
+    z
+
+
+
+y
+        x
+-->
+                      <img
+                        alt="(-tikz-&nbsp;diagram)"
+                        class="lateximage"
+                        height="110.906"
+                        loading="lazy"
+                        src="pgfmanual-images/image-2473.png"
+                        style
+                        width="126.314"
+                    /></span>
+                  </p>
+                </div>
+
+                <div class="example-code">
+                  <button class="clipboardButton" type="button">copy</button>
+                  <code>
+                    <span class="c- preamble"
+                      >\usetikzlibrary {perspective} </span
+                    ><br />
+                    <span class="textcolor" style="color: #000000">\begin</span
+                    >{<span class="textcolor" style="color: #0000b2"
+                      ><a href="tikz-scopes#pgf.tikzpicture"
+                        >tikzpicture</a
+                      ></span
+                    >}[<br />
+                    &numsp;&numsp;<span class="textcolor" style="color: #008000"
+                      ><a href="library-perspective#pgf.3d:view"
+                        >3d view</a
+                      ></span
+                    >,<br />
+                    &numsp;&numsp;<span class="textcolor" style="color: #008000"
+                      ><a href="library-perspective#pgf.perspective"
+                        >perspective</a
+                      ></span
+                    >=<span class="textcolor" style="color: #008000"
+                      >{<br />
+                      &numsp;&numsp;&numsp;&numsp;<a
+                        href="library-perspective#pgf.p"
+                        >p</a
+                      >
+                      = {<span class="textcolor" style="color: #800080"
+                        >(5,0,0)</span
+                      >}}</span
+                    >]<br />
+                    &numsp;&numsp;<span class="textcolor" style="color: #0000b2"
+                      >\simplecuboid</span
+                    >{<span class="textcolor" style="color: #000000">2</span
+                    >}{<span class="textcolor" style="color: #000000">2</span
+                    >}{<span class="textcolor" style="color: #000000">2</span
+                    >}<br />
+                    &numsp;&numsp;<span class="textcolor" style="color: #0000b2"
+                      >\simpleaxes</span
+                    >{<span class="textcolor" style="color: #000000">2</span
+                    >}{<span class="textcolor" style="color: #000000">2</span
+                    >}{<span class="textcolor" style="color: #000000">2</span
+                    >}<br />
+                    <span class="textcolor" style="color: #000000">\end</span
+                    >{<span class="textcolor" style="color: #0000b2"
+                      ><a href="tikz-scopes#pgf.tikzpicture"
+                        >tikzpicture</a
+                      ></span
+                    >}<br />
+                  </code>
+                </div>
+              </figure>
+              <p>
+                Note also that when only <span class="texttt">p</span> is
+                provided, the perspective in \(y\) and \(z\) direction is turned
+                off.
+              </p>
+              <p>
+                To turn off the perspective in \(x\)-direction, one must set the
+                \(x\) component of <span class="texttt">p</span> to
+                <kbd>0</kbd> (e.g. <span class="texttt">p={(0,a,b)}</span>,
+                where <kbd>a</kbd> and <kbd>b</kbd> can be any number and will
+                be ignored). Or one can provide
+                <span class="texttt">q</span> and
+                <span class="texttt">r</span> and omit
+                <span class="texttt">p</span>.
+              </p>
+              <p>
+                By changing the \(y\) and \(z\) components of
+                <span class="texttt">p</span>, one can achieve various effects.
+              </p>
+
+              <figure class="example">
+                <div class="example-image">
+                  <p>
+                    <span
+                      class="lateximagesource"
+                      id="lateximage-pgfmanual-2474"
+                      ><!--
+    z
+
+
+
+y
+        x
+-->
+                      <img
+                        alt="(-tikz-&nbsp;diagram)"
+                        class="lateximage"
+                        height="110.906"
+                        loading="lazy"
+                        src="pgfmanual-images/image-2474.png"
+                        style
+                        width="126.314"
+                    /></span>
+                  </p>
+                </div>
+
+                <div class="example-code">
+                  <button class="clipboardButton" type="button">copy</button>
+                  <code>
+                    <span class="c- preamble"
+                      >\usetikzlibrary {perspective} </span
+                    ><br />
+                    <span class="textcolor" style="color: #000000">\begin</span
+                    >{<span class="textcolor" style="color: #0000b2"
+                      ><a href="tikz-scopes#pgf.tikzpicture"
+                        >tikzpicture</a
+                      ></span
+                    >}[<br />
+                    &numsp;&numsp;<span class="textcolor" style="color: #008000"
+                      ><a href="library-perspective#pgf.3d:view"
+                        >3d view</a
+                      ></span
+                    >,<br />
+                    &numsp;&numsp;<span class="textcolor" style="color: #008000"
+                      ><a href="library-perspective#pgf.perspective"
+                        >perspective</a
+                      ></span
+                    >=<span class="textcolor" style="color: #008000"
+                      >{<br />
+                      &numsp;&numsp;&numsp;&numsp;<a
+                        href="library-perspective#pgf.p"
+                        >p</a
+                      >
+                      = {<span class="textcolor" style="color: #800080"
+                        >(5,0,1)</span
+                      >}}</span
+                    >]<br />
+                    &numsp;&numsp;<span class="textcolor" style="color: #0000b2"
+                      >\simplecuboid</span
+                    >{<span class="textcolor" style="color: #000000">2</span
+                    >}{<span class="textcolor" style="color: #000000">2</span
+                    >}{<span class="textcolor" style="color: #000000">2</span
+                    >}<br />
+                    &numsp;&numsp;<span class="textcolor" style="color: #0000b2"
+                      >\simpleaxes</span
+                    >{<span class="textcolor" style="color: #000000">2</span
+                    >}{<span class="textcolor" style="color: #000000">2</span
+                    >}{<span class="textcolor" style="color: #000000">2</span
+                    >}<br />
+                    <span class="textcolor" style="color: #000000">\end</span
+                    >{<span class="textcolor" style="color: #0000b2"
+                      ><a href="tikz-scopes#pgf.tikzpicture"
+                        >tikzpicture</a
+                      ></span
+                    >}<br />
+                  </code>
+                </div>
+              </figure>
+
+              <figure class="example">
+                <div class="example-image">
+                  <p>
+                    <span
+                      class="lateximagesource"
+                      id="lateximage-pgfmanual-2475"
+                      ><!--
+    z
+
+
+
+y
+        x
+-->
+                      <img
+                        alt="(-tikz-&nbsp;diagram)"
+                        class="lateximage"
+                        height="110.906"
+                        loading="lazy"
+                        src="pgfmanual-images/image-2475.png"
+                        style
+                        width="126.314"
+                    /></span>
+                  </p>
+                </div>
+
+                <div class="example-code">
+                  <button class="clipboardButton" type="button">copy</button>
+                  <code>
+                    <span class="c- preamble"
+                      >\usetikzlibrary {perspective} </span
+                    ><br />
+                    <span class="textcolor" style="color: #000000">\begin</span
+                    >{<span class="textcolor" style="color: #0000b2"
+                      ><a href="tikz-scopes#pgf.tikzpicture"
+                        >tikzpicture</a
+                      ></span
+                    >}[<br />
+                    &numsp;&numsp;<span class="textcolor" style="color: #008000"
+                      ><a href="library-perspective#pgf.3d:view"
+                        >3d view</a
+                      ></span
+                    >,<br />
+                    &numsp;&numsp;<span class="textcolor" style="color: #008000"
+                      ><a href="library-perspective#pgf.perspective"
+                        >perspective</a
+                      ></span
+                    >=<span class="textcolor" style="color: #008000"
+                      >{<br />
+                      &numsp;&numsp;&numsp;&numsp;<a
+                        href="library-perspective#pgf.p"
+                        >p</a
+                      >
+                      = {<span class="textcolor" style="color: #800080"
+                        >(5,1,0)</span
+                      >}}</span
+                    >]<br />
+                    &numsp;&numsp;<span class="textcolor" style="color: #0000b2"
+                      >\simplecuboid</span
+                    >{<span class="textcolor" style="color: #000000">2</span
+                    >}{<span class="textcolor" style="color: #000000">2</span
+                    >}{<span class="textcolor" style="color: #000000">2</span
+                    >}<br />
+                    &numsp;&numsp;<span class="textcolor" style="color: #0000b2"
+                      >\simpleaxes</span
+                    >{<span class="textcolor" style="color: #000000">2</span
+                    >}{<span class="textcolor" style="color: #000000">2</span
+                    >}{<span class="textcolor" style="color: #000000">2</span
+                    >}<br />
+                    <span class="textcolor" style="color: #000000">\end</span
+                    >{<span class="textcolor" style="color: #0000b2"
+                      ><a href="tikz-scopes#pgf.tikzpicture"
+                        >tikzpicture</a
+                      ></span
+                    >}<br />
+                  </code>
+                </div>
+              </figure>
+
+              <figure class="example">
+                <div class="example-image">
+                  <p>
+                    <span
+                      class="lateximagesource"
+                      id="lateximage-pgfmanual-2476"
+                      ><!--
+    z
+
+
+
+y
+        x
+   -->
+                      <img
+                        alt="(-tikz-&nbsp;diagram)"
+                        class="lateximage"
+                        height="110.906"
+                        loading="lazy"
+                        src="pgfmanual-images/image-2476.png"
+                        style
+                        width="126.314"
+                    /></span>
+                  </p>
+                </div>
+
+                <div class="example-code">
+                  <button class="clipboardButton" type="button">copy</button>
+                  <code>
+                    <span class="c- preamble"
+                      >\usetikzlibrary {perspective} </span
+                    ><br />
+                    <span class="textcolor" style="color: #000000">\begin</span
+                    >{<span class="textcolor" style="color: #0000b2"
+                      ><a href="tikz-scopes#pgf.tikzpicture"
+                        >tikzpicture</a
+                      ></span
+                    >}[<br />
+                    &numsp;&numsp;<span class="textcolor" style="color: #008000"
+                      ><a href="library-perspective#pgf.3d:view"
+                        >3d view</a
+                      ></span
+                    >,<br />
+                    &numsp;&numsp;<span class="textcolor" style="color: #008000"
+                      ><a href="library-perspective#pgf.perspective"
+                        >perspective</a
+                      ></span
+                    >=<span class="textcolor" style="color: #008000"
+                      >{<br />
+                      &numsp;&numsp;&numsp;&numsp;<a
+                        href="library-perspective#pgf.p"
+                        >p</a
+                      >
+                      = {<span class="textcolor" style="color: #800080"
+                        >(5,1,1)</span
+                      >}}</span
+                    >]<br />
+                    &numsp;&numsp;<span class="textcolor" style="color: #0000b2"
+                      >\simplecuboid</span
+                    >{<span class="textcolor" style="color: #000000">2</span
+                    >}{<span class="textcolor" style="color: #000000">2</span
+                    >}{<span class="textcolor" style="color: #000000">2</span
+                    >}<br />
+                    &numsp;&numsp;<span class="textcolor" style="color: #0000b2"
+                      >\simpleaxes</span
+                    >{<span class="textcolor" style="color: #000000">2</span
+                    >}{<span class="textcolor" style="color: #000000">2</span
+                    >}{<span class="textcolor" style="color: #000000">2</span
+                    >}<br />
+                    <span class="textcolor" style="color: #000000">\end</span
+                    >{<span class="textcolor" style="color: #0000b2"
+                      ><a href="tikz-scopes#pgf.tikzpicture"
+                        >tikzpicture</a
+                      ></span
+                    >}<br />
+                  </code>
+                </div>
+              </figure>
+            </div>
+
+            <div class="manualentry">
+              <div class="entryheadline">
+                <p>
+                  <a id="pgf./tikz/perspective/q"></a><a id="pgf.q"></a>
+                  <span class="hl-def"
+                    ><kbd
+                      ><span class="keyname"
+                        ><span class="textcolor" style="color: #bf0000"
+                          >/tikz/perspective/q</span
+                        ></span
+                      >=</kbd
+                    >{<span class="angle">&langle;</span><i>x,y,z</i
+                    ><span class="angle">&rangle;</span>} </span
+                  ><span class="hl-default"
+                    >(no default, initially <kbd>(0,0,0)</kbd>)</span
+                  >
+                  <a class="anchor-link" href="#pgf./tikz/perspective/q"
+                    >&para;</a
+                  >
+                </p>
+              </div>
+              <p>
+                Similar to <span class="texttt">p</span>, but can be turned off
+                by setting its \(y\) component to <kbd>0</kbd>.
+              </p>
+
+              <figure class="example">
+                <div class="example-image">
+                  <p>
+                    <span
+                      class="lateximagesource"
+                      id="lateximage-pgfmanual-2477"
+                      ><!--
+    z
+
+
+
+y
+        x
+   -->
+                      <img
+                        alt="(-tikz-&nbsp;diagram)"
+                        class="lateximage"
+                        height="106.010"
+                        loading="lazy"
+                        src="pgfmanual-images/image-2477.png"
+                        style
+                        width="126.314"
+                    /></span>
+                  </p>
+                </div>
+
+                <div class="example-code">
+                  <button class="clipboardButton" type="button">copy</button>
+                  <code>
+                    <span class="c- preamble"
+                      >\usetikzlibrary {perspective} </span
+                    ><br />
+                    <span class="textcolor" style="color: #000000">\begin</span
+                    >{<span class="textcolor" style="color: #0000b2"
+                      ><a href="tikz-scopes#pgf.tikzpicture"
+                        >tikzpicture</a
+                      ></span
+                    >}[<br />
+                    &numsp;&numsp;<span class="textcolor" style="color: #008000"
+                      ><a href="library-perspective#pgf.3d:view"
+                        >3d view</a
+                      ></span
+                    >,<br />
+                    &numsp;&numsp;<span class="textcolor" style="color: #008000"
+                      ><a href="library-perspective#pgf.perspective"
+                        >perspective</a
+                      ></span
+                    >=<span class="textcolor" style="color: #008000"
+                      >{<br />
+                      &numsp;&numsp;&numsp;&numsp;<a
+                        href="library-perspective#pgf.q"
+                        >q</a
+                      >
+                      = {<span class="textcolor" style="color: #800080"
+                        >(0,5,0)</span
+                      >}}</span
+                    >]<br />
+                    &numsp;&numsp;<span class="textcolor" style="color: #0000b2"
+                      >\simplecuboid</span
+                    >{<span class="textcolor" style="color: #000000">2</span
+                    >}{<span class="textcolor" style="color: #000000">2</span
+                    >}{<span class="textcolor" style="color: #000000">2</span
+                    >}<br />
+                    &numsp;&numsp;<span class="textcolor" style="color: #0000b2"
+                      >\simpleaxes</span
+                    >{<span class="textcolor" style="color: #000000">2</span
+                    >}{<span class="textcolor" style="color: #000000">2</span
+                    >}{<span class="textcolor" style="color: #000000">2</span
+                    >}<br />
+                    <span class="textcolor" style="color: #000000">\end</span
+                    >{<span class="textcolor" style="color: #0000b2"
+                      ><a href="tikz-scopes#pgf.tikzpicture"
+                        >tikzpicture</a
+                      ></span
+                    >}<br />
+                  </code>
+                </div>
+              </figure>
+            </div>
+
+            <div class="manualentry">
+              <div class="entryheadline">
+                <p>
+                  <a id="pgf./tikz/perspective/r"></a><a id="pgf.r"></a>
+                  <span class="hl-def"
+                    ><kbd
+                      ><span class="keyname"
+                        ><span class="textcolor" style="color: #bf0000"
+                          >/tikz/perspective/r</span
+                        ></span
+                      >=</kbd
+                    >{<span class="angle">&langle;</span><i>x,y,z</i
+                    ><span class="angle">&rangle;</span>} </span
+                  ><span class="hl-default"
+                    >(no default, initially <kbd>(0,0,0)</kbd>)</span
+                  >
+                  <a class="anchor-link" href="#pgf./tikz/perspective/r"
+                    >&para;</a
+                  >
+                </p>
+              </div>
+              <p>
+                Similar to <span class="texttt">p</span>, but can be turned off
+                by setting its \(z\) component to <kbd>0</kbd>.
+              </p>
+
+              <figure class="example">
+                <div class="example-image">
+                  <p>
+                    <span
+                      class="lateximagesource"
+                      id="lateximage-pgfmanual-2478"
+                      ><!--
+    z
+
+
+
+y
+        x
+-->
+                      <img
+                        alt="(-tikz-&nbsp;diagram)"
+                        class="lateximage"
+                        height="106.010"
+                        loading="lazy"
+                        src="pgfmanual-images/image-2478.png"
+                        style
+                        width="126.314"
+                    /></span>
+                  </p>
+                </div>
+
+                <div class="example-code">
+                  <button class="clipboardButton" type="button">copy</button>
+                  <code>
+                    <span class="c- preamble"
+                      >\usetikzlibrary {perspective} </span
+                    ><br />
+                    <span class="textcolor" style="color: #000000">\begin</span
+                    >{<span class="textcolor" style="color: #0000b2"
+                      ><a href="tikz-scopes#pgf.tikzpicture"
+                        >tikzpicture</a
+                      ></span
+                    >}[<br />
+                    &numsp;&numsp;<span class="textcolor" style="color: #008000"
+                      ><a href="library-perspective#pgf.3d:view"
+                        >3d view</a
+                      ></span
+                    >,<br />
+                    &numsp;&numsp;<span class="textcolor" style="color: #008000"
+                      ><a href="library-perspective#pgf.perspective"
+                        >perspective</a
+                      ></span
+                    >=<span class="textcolor" style="color: #008000"
+                      >{<br />
+                      &numsp;&numsp;&numsp;&numsp;<a
+                        href="library-perspective#pgf.r"
+                        >r</a
+                      >
+                      = {<span class="textcolor" style="color: #800080"
+                        >(0,0,5)</span
+                      >}}</span
+                    >]<br />
+                    &numsp;&numsp;<span class="textcolor" style="color: #0000b2"
+                      >\simplecuboid</span
+                    >{<span class="textcolor" style="color: #000000">2</span
+                    >}{<span class="textcolor" style="color: #000000">2</span
+                    >}{<span class="textcolor" style="color: #000000">2</span
+                    >}<br />
+                    &numsp;&numsp;<span class="textcolor" style="color: #0000b2"
+                      >\simpleaxes</span
+                    >{<span class="textcolor" style="color: #000000">2</span
+                    >}{<span class="textcolor" style="color: #000000">2</span
+                    >}{<span class="textcolor" style="color: #000000">2</span
+                    >}<br />
+                    <span class="textcolor" style="color: #000000">\end</span
+                    >{<span class="textcolor" style="color: #0000b2"
+                      ><a href="tikz-scopes#pgf.tikzpicture"
+                        >tikzpicture</a
+                      ></span
+                    >}<br />
+                  </code>
+                </div>
+              </figure>
+            </div>
+          </div>
+          <h5 id="autosec-6033">
+            <span class="sectionnumber" id="sec-63.4">63.4&emsp;</span
+            >Shortcomings<a class="anchor-link" href="#sec-63.4">&para;</a>
+          </h5>
+          <a id="pgfmanual-autopage-6033"></a>
+
+          <p>
+            Currently a number of things are not working, mostly due to the fact
+            that PGF uses a 2D coordinate system underwater, and perspective
+            projection is a non-linear affine transformation which needs to be
+            aware of all three coordinates. These three coordinates are
+            currently lost when processing a 3D coordinate. The issues include,
+            but possibly are not limited to:
+          </p>
+          <ul style="list-style-type: none">
+            <li>
+              <p>
+                &bull; Keys like <span class="texttt">shift</span>,
+                <span class="texttt">xshift</span>,
+                <span class="texttt">yshift</span> are not working
+              </p>
+            </li>
+            <li>
+              <p>
+                &bull; Keys like <span class="texttt">rotate around x</span>,
+                <span class="texttt">rotate around y</span>, and
+                <span class="texttt">rotate around z</span> are not working
+              </p>
+            </li>
+            <li>
+              <p>&bull; Units are not working</p>
+            </li>
+            <li>
+              <p>
+                &bull; Most keys from the <span class="texttt">3d</span> library
+                are unsupported, e.g. all the
+                <span class="texttt">canvas is .. plane</span> keys.
+              </p>
+            </li>
+          </ul>
+          <h5 id="autosec-6034">
+            <span class="sectionnumber" id="sec-63.5">63.5&emsp;</span
+            >Examples<a class="anchor-link" href="#sec-63.5">&para;</a>
+          </h5>
+          <a id="pgfmanual-autopage-6034"></a>
+
+          <p>
+            An <span class="texttt">r</span> that lies &lsquo;below&rsquo; your
+            drawing can mimic a macro effect.
+          </p>
+
+          <figure class="example">
+            <div class="example-image">
+              <p>
+                <span class="lateximagesource" id="lateximage-pgfmanual-2479"
+                  ><!--
+-->
+                  <img
+                    alt="(-tikz-&nbsp;diagram)"
+                    class="lateximage"
+                    height="101.450"
+                    loading="lazy"
+                    src="pgfmanual-images/image-2479.png"
+                    style
+                    width="109.610"
+                /></span>
+              </p>
+            </div>
+
+            <div class="example-code">
+              <button class="clipboardButton" type="button">copy</button>
+
+              <code>
+                <span class="c- preamble">\usetikzlibrary {perspective} </span
+                ><br />
+                <span class="textcolor" style="color: #000000">\begin</span
+                >{<span class="textcolor" style="color: #0000b2"
+                  ><a href="tikz-scopes#pgf.tikzpicture">tikzpicture</a></span
+                >}[<br />
+                &numsp;&numsp;<span class="textcolor" style="color: #008000"
+                  ><a href="library-perspective#pgf.isometric:view"
+                    >isometric view</a
+                  ></span
+                >,<br />
+                &numsp;&numsp;<span class="textcolor" style="color: #008000"
+                  ><a href="library-perspective#pgf.perspective"
+                    >perspective</a
+                  ></span
+                >=<span class="textcolor" style="color: #008000"
+                  >{<br />
+                  &numsp;&numsp;&numsp;&numsp;<a
+                    href="library-perspective#pgf.p"
+                    >p</a
+                  >
+                  = {<span class="textcolor" style="color: #800080"
+                    >(8,0,0)</span
+                  >},<br />
+                  &numsp;&numsp;&numsp;&numsp;<a
+                    href="library-perspective#pgf.q"
+                    >q</a
+                  >
+                  = {<span class="textcolor" style="color: #800080"
+                    >(0,8,0)</span
+                  >},<br />
+                  &numsp;&numsp;&numsp;&numsp;<a
+                    href="library-perspective#pgf.r"
+                    >r</a
+                  >
+                  = {<span class="textcolor" style="color: #800080"
+                    >(0,0,-8)</span
+                  >}}</span
+                >]<br />
+                <br />
+                &numsp;&numsp;<span class="textcolor" style="color: #0000b2"
+                  >\simplecuboid</span
+                >{<span class="textcolor" style="color: #000000">2</span>}{<span
+                  class="textcolor"
+                  style="color: #000000"
+                  >2</span
+                >}{<span class="textcolor" style="color: #000000">2</span
+                >}<br />
+                <br />
+                <span class="textcolor" style="color: #000000">\end</span>{<span
+                  class="textcolor"
+                  style="color: #0000b2"
+                  ><a href="tikz-scopes#pgf.tikzpicture">tikzpicture</a></span
+                >}<br />
+              </code>
+            </div>
+          </figure>
+
+          <p>
+            A peculiar phenomenon inherent to perspective drawing, is that
+            however great your coordinate will become in the direction of the
+            vanishing point, it will never reach it.
+          </p>
+
+          <figure class="example">
+            <div class="example-image">
+              <p>
+                <span class="lateximagesource" id="lateximage-pgfmanual-2480"
+                  ><!--
+p
+-->
+                  <img
+                    alt="(-tikz-&nbsp;diagram)"
+                    class="lateximage"
+                    height="81.002"
+                    loading="lazy"
+                    src="pgfmanual-images/image-2480.png"
+                    style
+                    width="149.594"
+                /></span>
+              </p>
+            </div>
+
+            <div class="example-code">
+              <button class="clipboardButton" type="button">copy</button>
+
+              <code>
+                <span class="c- preamble">\usetikzlibrary {perspective} </span
+                ><br />
+                <span class="textcolor" style="color: #000000">\begin</span
+                >{<span class="textcolor" style="color: #0000b2"
+                  ><a href="tikz-scopes#pgf.tikzpicture">tikzpicture</a></span
+                >}[<br />
+                &numsp;&numsp;<span class="textcolor" style="color: #008000"
+                  ><a href="library-perspective#pgf.isometric:view"
+                    >isometric view</a
+                  ></span
+                >,<br />
+                &numsp;&numsp;<span class="textcolor" style="color: #008000"
+                  ><a href="library-perspective#pgf.perspective"
+                    >perspective</a
+                  ></span
+                >=<span class="textcolor" style="color: #008000"
+                  >{<br />
+                  &numsp;&numsp;&numsp;&numsp;<a
+                    href="library-perspective#pgf.p"
+                    >p</a
+                  >
+                  = {<span class="textcolor" style="color: #800080"
+                    >(4,0,0)</span
+                  >},<br />
+                  &numsp;&numsp;&numsp;&numsp;<a
+                    href="library-perspective#pgf.q"
+                    >q</a
+                  >
+                  = {<span class="textcolor" style="color: #800080"
+                    >(0,4,0)</span
+                  >}}</span
+                >]<br />
+                <br />
+                &numsp;&numsp;&numsp;&numsp;<span
+                  class="textcolor"
+                  style="color: #0000b2"
+                  ><a href="tikz-shapes#pgf.back/node">\node</a></span
+                >[<span class="textcolor" style="color: #008000"
+                  ><a href="tikz-actions#pgf.fill">fill</a></span
+                >=<span class="textcolor" style="color: #008000">red</span
+                >,<span class="textcolor" style="color: #008000"
+                  ><a href="tikz-paths#pgf.circle">circle</a></span
+                >,<span class="textcolor" style="color: #008000"
+                  ><a href="tikz-shapes#pgf.inner:sep">inner sep</a></span
+                >=<span class="textcolor" style="color: #008000">1.5pt</span
+                >,<span class="textcolor" style="color: #008000"
+                  ><a href="tikz-shapes#pgf.label">label</a></span
+                >=<span class="textcolor" style="color: #008000">above:p</span
+                >]&numsp;<span class="textcolor" style="color: #000000"
+                  ><a href="tikz-paths#pgf.at">at</a></span
+                >
+                <span class="textcolor" style="color: #800080">(4,0,0)</span
+                >{};<br />
+                <br />
+                &numsp;&numsp;&numsp;&numsp;<span
+                  class="textcolor"
+                  style="color: #0000b2"
+                  ><a href="pgffor#pgf.back/foreach">\foreach</a></span
+                >&numsp;<span class="textcolor" style="color: #0000b2">\i</span
+                >&numsp;<span class="textcolor" style="color: #000000"
+                  ><a href="library-edges#pgf.in">in</a></span
+                >
+                {<span class="textcolor" style="color: #000000">0</span
+                >,...,<span class="textcolor" style="color: #000000">100</span
+                >}{<br />
+                &numsp;&numsp;&numsp;&numsp;&numsp;&numsp;<span
+                  class="textcolor"
+                  style="color: #0000b2"
+                  ><a href="tikz-actions#pgf.back/filldraw">\filldraw</a></span
+                >[<span class="textcolor" style="color: #008000">fill </span>=
+                <span class="textcolor" style="color: #008000">gray</span
+                >]&numsp;<span class="textcolor" style="color: #800080"
+                  >(tpp cs:x=\i,y=0,z=0)</span
+                ><br />
+                &numsp;&numsp;&numsp;&numsp;&numsp;&numsp;&numsp;&numsp;<span
+                  class="textcolor"
+                  style="color: #000000"
+                  ><a href="tikz-paths#pgf.--">--</a></span
+                >
+                <span class="textcolor" style="color: #800080"
+                  >(tpp cs:x=\i+0.5,y=0,z=0)</span
+                ><br />
+                &numsp;&numsp;&numsp;&numsp;&numsp;&numsp;&numsp;&numsp;<span
+                  class="textcolor"
+                  style="color: #000000"
+                  ><a href="tikz-paths#pgf.--">--</a></span
+                >
+                <span class="textcolor" style="color: #800080"
+                  >(tpp cs:x=\i+0.5,y=2,z=0)</span
+                ><br />
+                &numsp;&numsp;&numsp;&numsp;&numsp;&numsp;&numsp;&numsp;<span
+                  class="textcolor"
+                  style="color: #000000"
+                  ><a href="tikz-paths#pgf.--">--</a></span
+                >
+                <span class="textcolor" style="color: #800080"
+                  >(tpp cs:x=\i,y=2,z=0)</span
+                ><br />
+                &numsp;&numsp;&numsp;&numsp;&numsp;&numsp;&numsp;&numsp;<span
+                  class="textcolor"
+                  style="color: #000000"
+                  ><a href="tikz-paths#pgf.--">--</a></span
+                >
+                <span class="textcolor" style="color: #000000"
+                  ><a href="tikz-graphs#pgf.cycle">cycle</a></span
+                >;}<br />
+                <span class="textcolor" style="color: #000000">\end</span>{<span
+                  class="textcolor"
+                  style="color: #0000b2"
+                  ><a href="tikz-scopes#pgf.tikzpicture">tikzpicture</a></span
+                >}<br />
+              </code>
+            </div>
+          </figure>
+
+          <p>
+            Even for simple examples, the added perspective might add another
+            &lsquo;dimension&rsquo; to your drawing. In this case, two vanishing
+            points give a more intuitive result then three would.
+          </p>
+
+          <figure class="example">
+            <div class="example-image">
+              <p>
+                <span class="lateximagesource" id="lateximage-pgfmanual-2481"
+                  ><!--
+-->
+                  <img
+                    alt="(-tikz-&nbsp;diagram)"
+                    class="lateximage"
+                    height="107.426"
+                    loading="lazy"
+                    src="pgfmanual-images/image-2481.png"
+                    style
+                    width="139.166"
+                /></span>
+              </p>
+            </div>
+
+            <div class="example-code">
+              <button class="clipboardButton" type="button">copy</button>
+
+              <code>
+                <span class="c- preamble">\usetikzlibrary {perspective} </span
+                ><br />
+                <span class="textcolor" style="color: #000000">\begin</span
+                >{<span class="textcolor" style="color: #0000b2"
+                  ><a href="tikz-scopes#pgf.tikzpicture">tikzpicture</a></span
+                >}[<br />
+                &numsp;&numsp;<span class="textcolor" style="color: #008000"
+                  ><a href="tikz-arrows#pgf.scale">scale</a></span
+                >=<span class="textcolor" style="color: #008000">0.7</span
+                >,<br />
+                &numsp;&numsp;<span class="textcolor" style="color: #008000"
+                  ><a href="library-perspective#pgf.3d:view">3d view</a></span
+                >,<br />
+                &numsp;&numsp;<span class="textcolor" style="color: #008000"
+                  ><a href="library-perspective#pgf.perspective"
+                    >perspective</a
+                  ></span
+                >=<span class="textcolor" style="color: #008000"
+                  >{<br />
+                  &numsp;&numsp;&numsp;&numsp;<a
+                    href="library-perspective#pgf.p"
+                    >p</a
+                  >
+                  = {<span class="textcolor" style="color: #800080"
+                    >(20,0,0)</span
+                  >},<br />
+                  &numsp;&numsp;&numsp;&numsp;<a
+                    href="library-perspective#pgf.q"
+                    >q</a
+                  >
+                  = {<span class="textcolor" style="color: #800080"
+                    >(0,20,0)</span
+                  >}}</span
+                >]<br />
+                <br />
+                &numsp;&numsp;<span class="textcolor" style="color: #0000b2"
+                  ><a href="tikz-actions#pgf.back/filldraw">\filldraw</a></span
+                >[<span class="textcolor" style="color: #008000"
+                  ><a href="tikz-actions#pgf.fill">fill</a></span
+                >=<span class="textcolor" style="color: #008000">brown</span
+                >]&numsp;<span class="textcolor" style="color: #800080"
+                  >(tpp cs:x=0,y=0,z=0)</span
+                ><br />
+                &numsp;&numsp;&numsp;&numsp;<span
+                  class="textcolor"
+                  style="color: #000000"
+                  ><a href="tikz-paths#pgf.--">--</a></span
+                >
+                <span class="textcolor" style="color: #800080"
+                  >(tpp cs:x=0,y=4,z=0)</span
+                ><br />
+                &numsp;&numsp;&numsp;&numsp;<span
+                  class="textcolor"
+                  style="color: #000000"
+                  ><a href="tikz-paths#pgf.--">--</a></span
+                >
+                <span class="textcolor" style="color: #800080"
+                  >(tpp cs:x=0,y=4,z=2)</span
+                ><br />
+                &numsp;&numsp;&numsp;&numsp;<span
+                  class="textcolor"
+                  style="color: #000000"
+                  ><a href="tikz-paths#pgf.--">--</a></span
+                >
+                <span class="textcolor" style="color: #800080"
+                  >(tpp cs:x=0,y=2,z=4)</span
+                ><br />
+                &numsp;&numsp;&numsp;&numsp;<span
+                  class="textcolor"
+                  style="color: #000000"
+                  ><a href="tikz-paths#pgf.--">--</a></span
+                >
+                <span class="textcolor" style="color: #800080"
+                  >(tpp cs:x=0,y=0,z=2)</span
+                >&numsp;<span class="textcolor" style="color: #000000"
+                  ><a href="tikz-paths#pgf.--">--</a></span
+                >
+                <span class="textcolor" style="color: #000000"
+                  ><a href="tikz-graphs#pgf.cycle">cycle</a></span
+                >;<br />
+                &numsp;&numsp;<span class="textcolor" style="color: #0000b2"
+                  ><a href="tikz-actions#pgf.back/filldraw">\filldraw</a></span
+                >[<span class="textcolor" style="color: #008000"
+                  ><a href="tikz-actions#pgf.fill">fill</a></span
+                >=<span class="textcolor" style="color: #008000"
+                  >red!70!black</span
+                >]&numsp;<span class="textcolor" style="color: #800080"
+                  >(tpp cs:x=0,y=0,z=2)</span
+                ><br />
+                &numsp;&numsp;&numsp;&numsp;<span
+                  class="textcolor"
+                  style="color: #000000"
+                  ><a href="tikz-paths#pgf.--">--</a></span
+                >
+                <span class="textcolor" style="color: #800080"
+                  >(tpp cs:x=5,y=0,z=2)</span
+                ><br />
+                &numsp;&numsp;&numsp;&numsp;<span
+                  class="textcolor"
+                  style="color: #000000"
+                  ><a href="tikz-paths#pgf.--">--</a></span
+                >
+                <span class="textcolor" style="color: #800080"
+                  >(tpp cs:x=5,y=2,z=4)</span
+                ><br />
+                &numsp;&numsp;&numsp;&numsp;<span
+                  class="textcolor"
+                  style="color: #000000"
+                  ><a href="tikz-paths#pgf.--">--</a></span
+                >
+                <span class="textcolor" style="color: #800080"
+                  >(tpp cs:x=0,y=2,z=4)</span
+                >&numsp;<span class="textcolor" style="color: #000000"
+                  ><a href="tikz-paths#pgf.--">--</a></span
+                >
+                <span class="textcolor" style="color: #000000"
+                  ><a href="tikz-graphs#pgf.cycle">cycle</a></span
+                >;<br />
+                &numsp;&numsp;<span class="textcolor" style="color: #0000b2"
+                  ><a href="tikz-actions#pgf.back/filldraw">\filldraw</a></span
+                >[<span class="textcolor" style="color: #008000"
+                  ><a href="tikz-actions#pgf.fill">fill</a></span
+                >=<span class="textcolor" style="color: #008000"
+                  >brown!80!white</span
+                >]&numsp;<span class="textcolor" style="color: #800080"
+                  >(tpp cs:x=0,y=0,z=0)</span
+                ><br />
+                &numsp;&numsp;&numsp;&numsp;<span
+                  class="textcolor"
+                  style="color: #000000"
+                  ><a href="tikz-paths#pgf.--">--</a></span
+                >
+                <span class="textcolor" style="color: #800080"
+                  >(tpp cs:x=0,y=0,z=2)</span
+                ><br />
+                &numsp;&numsp;&numsp;&numsp;<span
+                  class="textcolor"
+                  style="color: #000000"
+                  ><a href="tikz-paths#pgf.--">--</a></span
+                >
+                <span class="textcolor" style="color: #800080"
+                  >(tpp cs:x=5,y=0,z=2)</span
+                ><br />
+                &numsp;&numsp;&numsp;&numsp;<span
+                  class="textcolor"
+                  style="color: #000000"
+                  ><a href="tikz-paths#pgf.--">--</a></span
+                >
+                <span class="textcolor" style="color: #800080"
+                  >(tpp cs:x=5,y=0,z=0)</span
+                >&numsp;<span class="textcolor" style="color: #000000"
+                  ><a href="tikz-paths#pgf.--">--</a></span
+                >
+                <span class="textcolor" style="color: #000000"
+                  ><a href="tikz-graphs#pgf.cycle">cycle</a></span
+                >;<br />
+                <span class="textcolor" style="color: #000000">\end</span>{<span
+                  class="textcolor"
+                  style="color: #0000b2"
+                  ><a href="tikz-scopes#pgf.tikzpicture">tikzpicture</a></span
+                >}<br />
+              </code>
+            </div>
+          </figure>
+
+          <p>
+            With the vanishing points nearby, the distortion of parallel lines
+            becomes very strong. This might lead to
+            <kbd>Dimension too large</kbd> errors.
+          </p>
+
+          <figure class="example">
+            <div class="example-image">
+              <p>
+                <span class="lateximagesource" id="lateximage-pgfmanual-2482"
+                  ><!--
+    r
+
+
+
+
+q
+
+        p
+-->
+                  <img
+                    alt="(-tikz-&nbsp;diagram)"
+                    class="lateximage"
+                    height="309.650"
+                    loading="lazy"
+                    src="pgfmanual-images/image-2482.png"
+                    style
+                    width="448.658"
+                /></span>
+              </p>
+            </div>
+
+            <div class="example-code">
+              <button class="clipboardButton" type="button">copy</button>
+
+              <code>
+                <span class="c- preamble">\usetikzlibrary {perspective} </span
+                ><br />
+                <span class="textcolor" style="color: #000000">\begin</span
+                >{<span class="textcolor" style="color: #0000b2"
+                  ><a href="tikz-scopes#pgf.tikzpicture">tikzpicture</a></span
+                >}[<br />
+                &numsp;&numsp;<span class="textcolor" style="color: #008000"
+                  ><a href="library-perspective#pgf.3d:view">3d view</a></span
+                >,<br />
+                &numsp;&numsp;<span class="textcolor" style="color: #008000"
+                  ><a href="library-perspective#pgf.perspective"
+                    >perspective</a
+                  ></span
+                >=<span class="textcolor" style="color: #008000"
+                  >{<br />
+                  &numsp;&numsp;&numsp;&numsp;<a
+                    href="library-perspective#pgf.p"
+                    >p</a
+                  >
+                  = {<span class="textcolor" style="color: #800080"
+                    >(2,0,0)</span
+                  >},<br />
+                  &numsp;&numsp;&numsp;&numsp;<a
+                    href="library-perspective#pgf.q"
+                    >q</a
+                  >
+                  = {<span class="textcolor" style="color: #800080"
+                    >(0,2,0)</span
+                  >},<br />
+                  &numsp;&numsp;&numsp;&numsp;<a
+                    href="library-perspective#pgf.r"
+                    >r</a
+                  >
+                  = {<span class="textcolor" style="color: #800080"
+                    >(0,0,2)</span
+                  >}}</span
+                >,<br />
+                &numsp;&numsp;<span class="textcolor" style="color: #008000"
+                  ><a href="tikz-arrows#pgf.scale">scale</a></span
+                >=<span class="textcolor" style="color: #008000">4</span>,<br />
+                &numsp;&numsp;<span class="textcolor" style="color: #008000"
+                  >vanishing point</span
+                >/<span class="textcolor" style="color: #0000b2"
+                  ><a href="pgfkeys#pgf./handlers/.style">.style</a></span
+                >={<span class="textcolor" style="color: #008000"
+                  ><a href="tikz-actions#pgf.fill">fill</a></span
+                >,<span class="textcolor" style="color: #008000"
+                  ><a href="tikz-paths#pgf.circle">circle</a></span
+                >,<span class="textcolor" style="color: #008000"
+                  ><a href="tikz-shapes#pgf.inner:sep">inner sep</a></span
+                >=<span class="textcolor" style="color: #008000">2pt}</span
+                >]<br />
+                <br />
+                &numsp;&numsp;<span class="textcolor" style="color: #0000b2"
+                  >\simplecuboid</span
+                >{<span class="textcolor" style="color: #000000">3</span>}{<span
+                  class="textcolor"
+                  style="color: #000000"
+                  >1</span
+                >}{<span class="textcolor" style="color: #000000">2</span
+                >}<br />
+                <br />
+                &numsp;&numsp;<span class="textcolor" style="color: #0000b2"
+                  ><a href="tikz-shapes#pgf.back/node">\node</a></span
+                >[<span class="textcolor" style="color: #008000"
+                  >vanishing point</span
+                >,<span class="textcolor" style="color: #008000">label </span>=
+                <span class="textcolor" style="color: #008000">right:p</span
+                >]&numsp;<span class="textcolor" style="color: #800080"
+                  >(p)</span
+                >&numsp;<span class="textcolor" style="color: #000000"
+                  ><a href="tikz-paths#pgf.at">at</a></span
+                >
+                <span class="textcolor" style="color: #800080">(2,0,0)</span
+                >{};<br />
+                &numsp;&numsp;<span class="textcolor" style="color: #0000b2"
+                  ><a href="tikz-shapes#pgf.back/node">\node</a></span
+                >[<span class="textcolor" style="color: #008000"
+                  >vanishing point</span
+                >,<span class="textcolor" style="color: #008000">label </span>=
+                <span class="textcolor" style="color: #008000">left:q</span
+                >]&numsp;<span class="textcolor" style="color: #800080"
+                  >(q)</span
+                >&numsp;<span class="textcolor" style="color: #000000"
+                  ><a href="tikz-paths#pgf.at">at</a></span
+                >
+                <span class="textcolor" style="color: #800080">(0,2,0)</span
+                >{};<br />
+                &numsp;&numsp;<span class="textcolor" style="color: #0000b2"
+                  ><a href="tikz-shapes#pgf.back/node">\node</a></span
+                >[<span class="textcolor" style="color: #008000"
+                  >vanishing point</span
+                >,<span class="textcolor" style="color: #008000">label </span>=
+                <span class="textcolor" style="color: #008000">above:r</span
+                >]&numsp;<span class="textcolor" style="color: #800080"
+                  >(r)</span
+                >&numsp;<span class="textcolor" style="color: #000000"
+                  ><a href="tikz-paths#pgf.at">at</a></span
+                >
+                <span class="textcolor" style="color: #800080">(0,0,2)</span
+                >{};<br />
+                <br />
+                &numsp;&numsp;<span class="textcolor" style="color: #000000"
+                  >\begin</span
+                >{<span class="textcolor" style="color: #0000b2"
+                  ><a href="tikz-scopes#pgf.scope">scope</a></span
+                >}[<span class="textcolor" style="color: #008000"
+                  ><a href="tikz-actions#pgf.dotted">dotted</a></span
+                >]<br />
+                &numsp;&numsp;&numsp;&numsp;<span
+                  class="textcolor"
+                  style="color: #0000b2"
+                  ><a href="pgffor#pgf.back/foreach">\foreach</a></span
+                >&numsp;<span class="textcolor" style="color: #0000b2"
+                  ><a href="tikz-paths#pgf.back/y">\y</a></span
+                >&numsp;<span class="textcolor" style="color: #000000"
+                  ><a href="library-edges#pgf.in">in</a></span
+                >
+                {<span class="textcolor" style="color: #000000">0</span>,<span
+                  class="textcolor"
+                  style="color: #000000"
+                  >1</span
+                >}{<br />
+                &numsp;&numsp;&numsp;&numsp;&numsp;&numsp;<span
+                  class="textcolor"
+                  style="color: #0000b2"
+                  ><a href="pgffor#pgf.back/foreach">\foreach</a></span
+                >&numsp;<span class="textcolor" style="color: #0000b2">\z</span
+                >&numsp;<span class="textcolor" style="color: #000000"
+                  ><a href="library-edges#pgf.in">in</a></span
+                >
+                {<span class="textcolor" style="color: #000000">0</span>,<span
+                  class="textcolor"
+                  style="color: #000000"
+                  >2</span
+                >}{<br />
+                &numsp;&numsp;&numsp;&numsp;&numsp;&numsp;&numsp;&numsp;<span
+                  class="textcolor"
+                  style="color: #0000b2"
+                  ><a href="tikz-actions#pgf.back/draw">\draw</a></span
+                >&numsp;<span class="textcolor" style="color: #800080"
+                  >(tpp cs:x=0,y=\y,z=\z)</span
+                >&numsp;<span class="textcolor" style="color: #000000"
+                  ><a href="tikz-paths#pgf.--">--</a></span
+                >
+                <span class="textcolor" style="color: #800080">(p.center)</span
+                >;}}<br />
+                &numsp;&numsp;&numsp;&numsp;<span
+                  class="textcolor"
+                  style="color: #0000b2"
+                  ><a href="pgffor#pgf.back/foreach">\foreach</a></span
+                >&numsp;<span class="textcolor" style="color: #0000b2"
+                  ><a href="tikz-paths#pgf.back/x">\x</a></span
+                >&numsp;<span class="textcolor" style="color: #000000"
+                  ><a href="library-edges#pgf.in">in</a></span
+                >
+                {<span class="textcolor" style="color: #000000">0</span>,<span
+                  class="textcolor"
+                  style="color: #000000"
+                  >3</span
+                >}{<br />
+                &numsp;&numsp;&numsp;&numsp;&numsp;&numsp;<span
+                  class="textcolor"
+                  style="color: #0000b2"
+                  ><a href="pgffor#pgf.back/foreach">\foreach</a></span
+                >&numsp;<span class="textcolor" style="color: #0000b2">\z</span
+                >&numsp;<span class="textcolor" style="color: #000000"
+                  ><a href="library-edges#pgf.in">in</a></span
+                >
+                {<span class="textcolor" style="color: #000000">0</span>,<span
+                  class="textcolor"
+                  style="color: #000000"
+                  >2</span
+                >}{<br />
+                &numsp;&numsp;&numsp;&numsp;&numsp;&numsp;&numsp;&numsp;<span
+                  class="textcolor"
+                  style="color: #0000b2"
+                  ><a href="tikz-actions#pgf.back/draw">\draw</a></span
+                >&numsp;<span class="textcolor" style="color: #800080"
+                  >(tpp cs:x=\x,y=0,z=\z)</span
+                >&numsp;<span class="textcolor" style="color: #000000"
+                  ><a href="tikz-paths#pgf.--">--</a></span
+                >
+                <span class="textcolor" style="color: #800080">(q.center)</span
+                >;}}<br />
+                &numsp;&numsp;&numsp;&numsp;<span
+                  class="textcolor"
+                  style="color: #0000b2"
+                  ><a href="pgffor#pgf.back/foreach">\foreach</a></span
+                >&numsp;<span class="textcolor" style="color: #0000b2"
+                  ><a href="tikz-paths#pgf.back/x">\x</a></span
+                >&numsp;<span class="textcolor" style="color: #000000"
+                  ><a href="library-edges#pgf.in">in</a></span
+                >
+                {<span class="textcolor" style="color: #000000">0</span>,<span
+                  class="textcolor"
+                  style="color: #000000"
+                  >3</span
+                >}{<br />
+                &numsp;&numsp;&numsp;&numsp;&numsp;&numsp;<span
+                  class="textcolor"
+                  style="color: #0000b2"
+                  ><a href="pgffor#pgf.back/foreach">\foreach</a></span
+                >&numsp;<span class="textcolor" style="color: #0000b2"
+                  ><a href="tikz-paths#pgf.back/y">\y</a></span
+                >&numsp;<span class="textcolor" style="color: #000000"
+                  ><a href="library-edges#pgf.in">in</a></span
+                >
+                {<span class="textcolor" style="color: #000000">0</span>,<span
+                  class="textcolor"
+                  style="color: #000000"
+                  >1</span
+                >}{<br />
+                &numsp;&numsp;&numsp;&numsp;&numsp;&numsp;&numsp;&numsp;<span
+                  class="textcolor"
+                  style="color: #0000b2"
+                  ><a href="tikz-actions#pgf.back/draw">\draw</a></span
+                >&numsp;<span class="textcolor" style="color: #800080"
+                  >(tpp cs:x=\x,y=\y,z=0)</span
+                >&numsp;<span class="textcolor" style="color: #000000"
+                  ><a href="tikz-paths#pgf.--">--</a></span
+                >
+                <span class="textcolor" style="color: #800080">(r.center)</span
+                >;}}<br />
+                &numsp;&numsp;<span class="textcolor" style="color: #000000"
+                  >\end</span
+                >{<span class="textcolor" style="color: #0000b2"
+                  ><a href="tikz-scopes#pgf.scope">scope</a></span
+                >}<br />
+                <span class="textcolor" style="color: #000000">\end</span>{<span
+                  class="textcolor"
+                  style="color: #0000b2"
+                  ><a href="tikz-scopes#pgf.tikzpicture">tikzpicture</a></span
+                >}<br />
+              </code>
+            </div>
+          </figure>
+        </section>
+      </main>
+
+      <footer>
+        <div class_="footer-left">
+          <a href="https://github.com/pgf-tikz/pgf">Github</a> &middot;
+          <a href="/license">License</a> &middot;
+          <a href="https://ctan.org/pkg/pgf">CTAN</a> &middot;
+          <a href="https://pgf-tikz.github.io/pgf/pgfmanual.pdf">PDF version</a>
+          &middot;
+          <a href="https://github.com/DominikPeters/pgf-tikz-html-manual"
+            >About this HTML version</a
+          >
+        </div>
+        <div class_="footer-right">
+          <em>Manual last updated: 2022-04-23</em>
+        </div>
+      </footer>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/@docsearch/js@alpha"></script>
+    <script>
+      docsearch({
+        apiKey: "ae66ec3fc9df4b52b4d6f24fc8508fd3",
+        indexName: "tikz.dev",
+        appId: "Q70NNMA9GC",
+        container: "#search",
+      });
+    </script>
+  </body>
+</html>

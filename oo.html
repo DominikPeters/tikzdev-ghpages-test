@@ -1,0 +1,2630 @@
+<!DOCTYPE html>
+<html lang="en-US">
+  <head>
+    <meta charset="utf-8" />
+    <meta content="LaTeX Lwarp package" name="generator" />
+    <meta content="width=device-width, initial-scale=1.0" name="viewport" />
+    <!--[if lt IE 9]>
+      <script src="http://html5shiv.googlecode.com/svn/trunk/html5.js"></script>
+    <![endif]-->
+    <title>Object-Oriented Programming - PGF/TikZ Manual</title>
+    <link href="style.css" rel="stylesheet" type="text/css" />
+
+    <script>
+      // Lwarp MathJax emulation code
+      //
+      // Based on code by Davide P. Cervone.
+      // Equation numbering: https://github.com/mathjax/MathJax/issues/2427
+      // Starred and ifnextchar macros: https://github.com/mathjax/MathJax/issues/2428
+      // \left, \right delimiters: https://github.com/mathjax/MathJax/issues/2535
+      //
+      // Modified by Brian Dunn to adjust equation numbering and add subequations.
+      //
+      // LaTeX can use \seteqnumber{subequations?}{section}{number} before each equation.
+      // subequations? is 0 usually, 1 if inside subequations.
+      // section is a string printed as-is, or empty.
+      // number is auto-incremented by MathJax between equations.
+      //
+      MathJax = {
+        subequations: "0",
+        section: "",
+        loader: {
+          load: ["[tex]/tagformat", "[tex]/textmacros"],
+        },
+        startup: {
+          ready() {
+            // These would be replaced by import commands if you wanted to make
+            // a proper extension.
+            const Configuration =
+              MathJax._.input.tex.Configuration.Configuration;
+            const CommandMap = MathJax._.input.tex.SymbolMap.CommandMap;
+            const Macro = MathJax._.input.tex.Symbol.Macro;
+            const TexError = MathJax._.input.tex.TexError.default;
+            const ParseUtil = MathJax._.input.tex.ParseUtil.default;
+            const expandable = MathJax._.util.Options.expandable;
+
+            // Insert the replacement string into the TeX string, and check
+            // that there haven't been too many maxro substitutions (prevents
+            // infinite loops).
+            const useArgument = (parser, text) => {
+              parser.string = ParseUtil.addArgs(
+                parser,
+                text,
+                parser.string.slice(parser.i)
+              );
+              parser.i = 0;
+              if (
+                ++parser.macroCount > parser.configuration.options.maxMacros
+              ) {
+                throw new TexError(
+                  "MaxMacroSub1",
+                  "MathJax maximum macro substitution count exceeded; " +
+                    "is there a recursive macro call?"
+                );
+              }
+            };
+
+            // Create the command map for:
+            // \ifstar, \ifnextchar, \ifblank, \ifstrequal, \seteqnumber
+            new CommandMap(
+              "Lwarp-macros",
+              {
+                ifstar: "IfstarFunction",
+                ifnextchar: "IfnextcharFunction",
+                ifblank: "IfblankFunction",
+                ifstrequal: "IfstrequalFunction",
+                seteqnumber: "SeteqnumberFunction",
+              },
+              {
+                // This function implements an ifstar macro.
+                IfstarFunction(parser, name) {
+                  const resultstar = parser.GetArgument(name);
+                  const resultnostar = parser.GetArgument(name);
+                  const star = parser.GetStar(); // true if there is a *
+                  useArgument(parser, star ? resultstar : resultnostar);
+                },
+
+                // This function implements an ifnextchar macro.
+                IfnextcharFunction(parser, name) {
+                  let whichchar = parser.GetArgument(name);
+                  if (whichchar.match(/^(?:0x[0-9A-F]+|[0-9]+)$/i)) {
+                    // $ syntax highlighting
+                    whichchar = String.fromCodePoint(parseInt(whichchar));
+                  }
+                  const resultnextchar = parser.GetArgument(name);
+                  const resultnotnextchar = parser.GetArgument(name);
+                  const gotchar = parser.GetNext() === whichchar;
+                  useArgument(
+                    parser,
+                    gotchar ? resultnextchar : resultnotnextchar
+                  );
+                },
+
+                // This function implements an ifblank macro.
+                IfblankFunction(parser, name) {
+                  const blankarg = parser.GetArgument(name);
+                  const resultblank = parser.GetArgument(name);
+                  const resultnotblank = parser.GetArgument(name);
+                  const isblank = blankarg.trim() == "";
+                  useArgument(parser, isblank ? resultblank : resultnotblank);
+                },
+
+                // This function implements an ifstrequal macro.
+                IfstrequalFunction(parser, name) {
+                  const strequalfirst = parser.GetArgument(name);
+                  const strequalsecond = parser.GetArgument(name);
+                  const resultequal = parser.GetArgument(name);
+                  const resultnotequal = parser.GetArgument(name);
+                  const isequal = strequalfirst == strequalsecond;
+                  useArgument(parser, isequal ? resultequal : resultnotequal);
+                },
+
+                // This function modifies the equation numbers.
+                SeteqnumberFunction(parser, name) {
+                  // Get the macro parameters
+                  const star = parser.GetStar(); // true if there is a *
+                  const optBrackets = parser.GetBrackets(name); // contents of optional brackets
+                  const newsubequations = parser.GetArgument(name); // the subequations argument
+                  const neweqsection = parser.GetArgument(name); // the eq section argument
+                  const neweqnumber = parser.GetArgument(name); // the eq number argument
+                  MathJax.config.subequations = newsubequations; // a string with boolean meaning
+                  MathJax.config.section = neweqsection; // a string with numeric meaning
+                  parser.tags.counter = parser.tags.allCounter = neweqnumber;
+                },
+              }
+            );
+
+            // Create the Lwarp-macros package
+            Configuration.create("Lwarp-macros", {
+              handler: { macro: ["Lwarp-macros"] },
+            });
+
+            MathJax.startup.defaultReady();
+
+            // For forward references:
+            MathJax.startup.input[0].preFilters.add(({ math }) => {
+              if (math.inputData.recompile) {
+                MathJax.config.subequations =
+                  math.inputData.recompile.subequations;
+                MathJax.config.section = math.inputData.recompile.section;
+              }
+            });
+            MathJax.startup.input[0].postFilters.add(({ math }) => {
+              if (math.inputData.recompile) {
+                math.inputData.recompile.subequations =
+                  MathJax.config.subequations;
+                math.inputData.recompile.section = MathJax.config.section;
+              }
+            });
+
+            // For \left, \right with unicode-math:
+            const { DelimiterMap } = MathJax._.input.tex.SymbolMap;
+            const { Symbol } = MathJax._.input.tex.Symbol;
+            const { MapHandler } = MathJax._.input.tex.MapHandler;
+            const delimiter = MapHandler.getMap("delimiter");
+            delimiter.add("\\lBrack", new Symbol("\\lBrack", "\u27E6"));
+            delimiter.add("\\rBrack", new Symbol("\\rBrack", "\u27E7"));
+            delimiter.add("\\lAngle", new Symbol("\\lAngle", "\u27EA"));
+            delimiter.add("\\rAngle", new Symbol("\\rAngle", "\u27EB"));
+            delimiter.add("\\lbrbrak", new Symbol("\\lbrbrak", "\u2772"));
+            delimiter.add("\\rbrbrak", new Symbol("\\rbrbrak", "\u2773"));
+            delimiter.add("\\lbag", new Symbol("\\lbag", "\u27C5"));
+            delimiter.add("\\rbag", new Symbol("\\rbag", "\u27C6"));
+            delimiter.add(
+              "\\llparenthesis",
+              new Symbol("\\llparenthesis", "\u2987")
+            );
+            delimiter.add(
+              "\\rrparenthesis",
+              new Symbol("\\rrparenthesis", "\u2988")
+            );
+            delimiter.add("\\llangle", new Symbol("\\llangle", "\u2989"));
+            delimiter.add("\\rrangle", new Symbol("\\rrangle", "\u298A"));
+            delimiter.add("\\Lbrbrak", new Symbol("\\Lbrbrak", "\u27EC"));
+            delimiter.add("\\Rbrbrak", new Symbol("\\Rbrbrak", "\u27ED"));
+            delimiter.add("\\lBrace", new Symbol("\\lBrace", "\u2983"));
+            delimiter.add("\\rBrace", new Symbol("\\rBrace", "\u2984"));
+            delimiter.add("\\lParen", new Symbol("\\lParen", "\u2985"));
+            delimiter.add("\\rParen", new Symbol("\\rParen", "\u2986"));
+            delimiter.add("\\lbrackubar", new Symbol("\\lbrackubar", "\u298B"));
+            delimiter.add("\\rbrackubar", new Symbol("\\rbrackubar", "\u298C"));
+            delimiter.add(
+              "\\lbrackultick",
+              new Symbol("\\lbrackultick", "\u298D")
+            );
+            delimiter.add(
+              "\\rbracklrtick",
+              new Symbol("\\rbracklrtick", "\u298E")
+            );
+            delimiter.add(
+              "\\lbracklltick",
+              new Symbol("\\lbracklltick", "\u298F")
+            );
+            delimiter.add(
+              "\\rbrackurtick",
+              new Symbol("\\rbrackurtick", "\u2990")
+            );
+            delimiter.add("\\langledot", new Symbol("\\langledot", "\u2991"));
+            delimiter.add("\\rangledot", new Symbol("\\rangledot", "\u2992"));
+            delimiter.add("\\lparenless", new Symbol("\\lparenless", "\u2993"));
+            delimiter.add("\\rparengtr", new Symbol("\\rparengtr", "\u2994"));
+            delimiter.add("\\Lparengtr", new Symbol("\\Lparengtr", "\u2995"));
+            delimiter.add("\\Rparenless", new Symbol("\\Rparenless", "\u2996"));
+            delimiter.add("\\lblkbrbrak", new Symbol("\\lblkbrbrak", "\u2997"));
+            delimiter.add("\\rblkbrbrak", new Symbol("\\rblkbrbrak", "\u2998"));
+            delimiter.add("\\lvzigzag", new Symbol("\\lvzigzag", "\u29D8"));
+            delimiter.add("\\rvzigzag", new Symbol("\\rvzigzag", "\u29D9"));
+            delimiter.add("\\Lvzigzag", new Symbol("\\Lvzigzag", "\u29DA"));
+            delimiter.add("\\Rvzigzag", new Symbol("\\Rvzigzag", "\u29DB"));
+            delimiter.add(
+              "\\lcurvyangle",
+              new Symbol("\\lcurvyangle", "\u29FC")
+            );
+            delimiter.add(
+              "\\rcurvyangle",
+              new Symbol("\\rcurvyangle", "\u29FD")
+            );
+            delimiter.add("\\Vvert", new Symbol("\\Vvert", "\u2980"));
+          }, // ready
+        }, // startup
+
+        tex: {
+          packages: { "[+]": ["tagformat", "Lwarp-macros", "textmacros"] },
+          tags: "ams",
+          tagformat: {
+            number: function (n) {
+              if (MathJax.config.subequations == 0)
+                return MathJax.config.section + n;
+              else return MathJax.config.section + String.fromCharCode(96 + n);
+            },
+          },
+        },
+      };
+    </script>
+
+    <script
+      async
+      id="MathJax-script"
+      src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-chtml.js"
+    ></script>
+
+    <script src="pgfmanual.js"></script>
+
+    <link href="https://unpkg.com/@docsearch/css@alpha" rel="stylesheet" />
+    <link href="/favicon-16x16.png" rel="icon" sizes="16x16" type="image/png" />
+    <link href="/favicon-32x32.png" rel="icon" sizes="32x32" type="image/png" />
+    <link
+      href="/apple-touch-icon.png"
+      rel="apple-touch-icon"
+      sizes="180x180"
+      type="image/png"
+    />
+    <link href="/site.webmanifest" rel="manifest" />
+  </head>
+  <body>
+    <a id="pgfmanual-autopage-7660"></a>
+
+    <div class="bodyandsidetoc grid-container">
+      <header>
+        <strong><a href="/">PGF/Ti<i>k</i>Z Manual</a></strong>
+        <div id="search"></div>
+      </header>
+      <div class="sidetoccontainer" id="local-toc-container">
+        <nav class="sidetoc">
+          <div class="sidetoctitle"><p>On this page</p></div>
+          <div class="sidetoccontents">
+            <p><a class="tocsubsection" href="#sec-97.1">Overview</a></p>
+            <p>
+              <a class="tocsubsection" href="#sec-97.2"
+                >A Running Example: The Stamp Class</a
+              >
+            </p>
+            <p><a class="tocsubsection" href="#sec-97.3">Classes</a></p>
+            <p><a class="tocsubsection" href="#sec-97.4">Objects</a></p>
+            <p><a class="tocsubsection" href="#sec-97.5">Methods</a></p>
+            <p><a class="tocsubsection" href="#sec-97.6">Attributes</a></p>
+            <p><a class="tocsubsection" href="#sec-97.7">Identities</a></p>
+            <p>
+              <a class="tocsubsection" href="#sec-97.8">The Object Class</a>
+            </p>
+            <p>
+              <a class="tocsubsection" href="#sec-97.9">The Signal Class</a>
+            </p>
+            <p>
+              <a class="tocsubsection" href="#sec-97.10"
+                >Implementation Notes</a
+              >
+            </p>
+          </div>
+        </nav>
+      </div>
+      <div class="sidetoccontainer" id="chapter-toc-container">
+        <nav class="sidetoc">
+          <div class="sidetoctitle">
+            <p>
+              <span class="sidetocthetitle"
+                >The <span class="tikzname">TikZ</span> and PGF Packages<br />
+                Manual for version 3.1.9a</span
+              >
+            </p>
+
+            <p>Contents</p>
+          </div>
+
+          <div class="sidetoccontents">
+            <p></p>
+
+            <p>
+              <a class="linkintro" href="/">Introduction</a>
+            </p>
+
+            <p>
+              <a class="tocpart" href="tutorials-guidelines"
+                >Tutorials and Guidelines</a
+              >
+            </p>
+
+            <p>
+              <a class="tocpart" href="install"
+                >Installation and Configuration</a
+              >
+            </p>
+
+            <p>
+              <a class="tocpart" href="tikz">Ti<em>k</em>Z</a>
+            </p>
+
+            <p>
+              <a class="tocpart" href="gd">Graph Drawing</a>
+            </p>
+
+            <p>
+              <a class="tocpart" href="libraries">Libraries</a>
+            </p>
+
+            <p>
+              <a class="tocpart" href="dv">Data Visualization</a>
+            </p>
+
+            <p>
+              <a class="tocpart" href="utilities">Utilities</a>
+            </p>
+
+            <p class="current-part">
+              <a class="tocpart" href="math"
+                >Mathematical and Object-Oriented Engines</a
+              >
+            </p>
+
+            <p class="current-part">
+              <a class="tocsection" href="math-design">Design Principles</a>
+            </p>
+
+            <p class="current-part">
+              <a class="tocsection" href="math-parsing"
+                >Mathematical Expressions</a
+              >
+            </p>
+
+            <p class="current-part">
+              <a class="tocsection" href="math-commands"
+                >Additional Mathematical Commands</a
+              >
+            </p>
+
+            <p class="current-part">
+              <a class="tocsection" href="math-algorithms"
+                >Customizing the Mathematical Engine</a
+              >
+            </p>
+
+            <p class="current-part">
+              <a class="tocsection" href="math-numberprinting"
+                >Number Printing</a
+              >
+            </p>
+
+            <p class="current current-part">
+              <a class="tocsection" href="oo">Object-Oriented Programming</a>
+            </p>
+
+            <p>
+              <a class="tocpart" href="base">The Basic Layer</a>
+            </p>
+
+            <p>
+              <a class="tocpart" href="pgfsys">The System Layer</a>
+            </p>
+          </div>
+        </nav>
+      </div>
+
+      <main class="bodycontainer">
+        <section class="textbody">
+          <h1>
+            The <span class="tikzname">TikZ</span> and PGF Packages<br />
+            Manual for version 3.1.9a
+          </h1>
+          <h2 class="inserted">Mathematical and Object-Oriented Engines</h2>
+
+          <!--MathJax customizations:-->
+
+          <div class="hidden">
+            \(\newcommand{\footnotename}{footnote}\) \(\def \LWRfootnote {1}\)
+            \(\newcommand {\footnote }[2][\LWRfootnote ]{{}^{\mathrm {#1}}}\)
+            \(\newcommand {\footnotemark }[1][\LWRfootnote ]{{}^{\mathrm
+            {#1}}}\) \(\let \LWRorighspace \hspace \) \(\renewcommand {\hspace
+            }{\ifstar \LWRorighspace \LWRorighspace }\) \(\newcommand
+            {\mathnormal }[1]{{#1}}\) \(\newcommand \ensuremath [1]{#1}\)
+            \(\newcommand {\LWRframebox }[2][]{\fbox {#2}} \newcommand
+            {\framebox }[1][]{\LWRframebox } \) \(\newcommand {\setlength
+            }[2]{}\) \(\newcommand {\addtolength }[2]{}\) \(\newcommand
+            {\setcounter }[2]{}\) \(\newcommand {\addtocounter }[2]{}\)
+            \(\newcommand {\arabic }[1]{}\) \(\newcommand {\number }[1]{}\)
+            \(\newcommand {\noalign }[1]{\text {#1}\notag \\}\) \(\newcommand
+            {\cline }[1]{}\) \(\newcommand {\directlua }[1]{\text
+            {(directlua)}}\) \(\newcommand {\luatexdirectlua }[1]{\text
+            {(directlua)}}\) \(\newcommand {\protect }{}\) \(\def
+            \LWRabsorbnumber #1 {}\) \(\def \LWRabsorbquotenumber "#1 {}\)
+            \(\newcommand {\LWRabsorboption }[1][]{}\) \(\newcommand
+            {\LWRabsorbtwooptions }[1][]{\LWRabsorboption }\) \(\def \mathchar
+            {\ifnextchar "\LWRabsorbquotenumber \LWRabsorbnumber }\) \(\def
+            \mathcode #1={\mathchar }\) \(\let \delcode \mathcode \) \(\let
+            \delimiter \mathchar \) \(\def \oe {\unicode {x0153}}\) \(\def \OE
+            {\unicode {x0152}}\) \(\def \ae {\unicode {x00E6}}\) \(\def \AE
+            {\unicode {x00C6}}\) \(\def \aa {\unicode {x00E5}}\) \(\def \AA
+            {\unicode {x00C5}}\) \(\def \o {\unicode {x00F8}}\) \(\def \O
+            {\unicode {x00D8}}\) \(\def \l {\unicode {x0142}}\) \(\def \L
+            {\unicode {x0141}}\) \(\def \ss {\unicode {x00DF}}\) \(\def \SS
+            {\unicode {x1E9E}}\) \(\def \dag {\unicode {x2020}}\) \(\def \ddag
+            {\unicode {x2021}}\) \(\def \P {\unicode {x00B6}}\) \(\def
+            \copyright {\unicode {x00A9}}\) \(\def \pounds {\unicode {x00A3}}\)
+            \(\let \LWRref \ref \) \(\renewcommand {\ref }{\ifstar \LWRref
+            \LWRref }\) \( \newcommand {\multicolumn }[3]{#3}\) \(\require
+            {textcomp}\) \( \newcommand {\meta }[1]{\langle \textit {#1}\rangle
+            } \) \(\newcommand {\intertext }[1]{\text {#1}\notag \\}\) \(\let
+            \Hat \hat \) \(\let \Check \check \) \(\let \Tilde \tilde \) \(\let
+            \Acute \acute \) \(\let \Grave \grave \) \(\let \Dot \dot \) \(\let
+            \Ddot \ddot \) \(\let \Breve \breve \) \(\let \Bar \bar \) \(\let
+            \Vec \vec \)
+          </div>
+
+          <p></p>
+          <h4 id="autosec-7661">
+            <a id="section-oop"></a
+            ><span class="sectionnumber">97&emsp;</span>Object-Oriented
+            Programming
+          </h4>
+          <a id="pgfmanual-autopage-7661"></a>
+          <a id="pgfmanual-autofile-105"></a>
+
+          <p>
+            This section describes the <span class="texttt">oo</span> module.
+          </p>
+
+          <div class="manualentry">
+            <div class="entryheadline">
+              <p>
+                <a id="pgf.oo"></a>
+                <span class="hl-def"
+                  ><kbd
+                    >\usepgfmodule{<span
+                      class="textcolor"
+                      style="color: #bf0000"
+                      >oo</span
+                    >} %
+                    <span class="latexlogofont"
+                      ><span class="latexlogo"
+                        >L<span class="latexlogosup">a</span>T<span
+                          class="latexlogosub"
+                          >e</span
+                        >X</span
+                      ></span
+                    >
+                    and plain
+                    <span class="latexlogofont"
+                      ><span class="latexlogo"
+                        >T<span class="latexlogosub">e</span>X</span
+                      ></span
+                    >
+                    and pure pgf</kbd
+                  ></span
+                >
+                <a class="anchor-link" href="#pgf.oo">&para;</a>
+              </p>
+            </div>
+
+            <div class="entryheadline">
+              <p>
+                <span class="hl-def"
+                  ><kbd
+                    >\usepgfmodule[<span
+                      class="textcolor"
+                      style="color: #bf0000"
+                      >oo</span
+                    >] % Con<span class="latexlogofont"
+                      ><span class="latexlogo"
+                        >T<span class="latexlogosub">e</span>X</span
+                      ></span
+                    >t and pure pgf</kbd
+                  ></span
+                >
+              </p>
+            </div>
+            <p>
+              This module defines a relatively small set of
+              <span class="latexlogofont"
+                ><span class="latexlogo"
+                  >T<span class="latexlogosub">e</span>X</span
+                ></span
+              >
+              commands for defining classes, methods, attributes and objects in
+              the sense of object-oriented programming.
+            </p>
+          </div>
+
+          <p>
+            In this chapter it is assumed that you are familiar with the basics
+            of a typical object-oriented programming language like Java, C++ or
+            Eiffel.
+          </p>
+          <h5 id="autosec-7663">
+            <span class="sectionnumber" id="sec-97.1">97.1&emsp;</span
+            >Overview<a class="anchor-link" href="#sec-97.1">&para;</a>
+          </h5>
+          <a id="pgfmanual-autopage-7663"></a>
+
+          <p>
+            <span class="latexlogofont"
+              ><span class="latexlogo"
+                >T<span class="latexlogosub">e</span>X</span
+              ></span
+            >
+            does not support object-oriented programming, presumably because it
+            was written at a time when this style of programming was not yet
+            &ldquo;en vogue&rdquo;. When one is used to the object-oriented
+            style of thinking, some programming constructs in
+            <span class="latexlogofont"
+              ><span class="latexlogo"
+                >T<span class="latexlogosub">e</span>X</span
+              ></span
+            >
+            often seem overly complicated. The object-oriented programming
+            module of <span class="textsc">pgf</span> may help here. It is
+            written completely using simple
+            <span class="latexlogofont"
+              ><span class="latexlogo"
+                >T<span class="latexlogosub">e</span>X</span
+              ></span
+            >
+            macros and is, thus, perfectly portable. This also means, however,
+            that it is not particularly fast (but not too slow either), so you
+            should use it only for non-time-critical things.
+          </p>
+
+          <p>
+            Basically, the oo-system supports <em>classes</em> (in the
+            object-oriented sense, this has nothing to do with
+            <span class="latexlogofont"
+              ><span class="latexlogo"
+                >L<span class="latexlogosup">a</span>T<span class="latexlogosub"
+                  >e</span
+                >X</span
+              ></span
+            >-classes), <em>methods</em>, <em>constructors</em>,
+            <em>attributes</em>, <em>objects</em>, <em>object identities</em>,
+            and (thanks to Sa&scaron;o &Zcaron;ivanovi&cacute;)
+            <em>inheritance</em> and <em>overloading.</em>
+          </p>
+
+          <p>
+            The first step is to define a class, using the macro
+            <span class="texttt">\pgfooclass</span> (all normal macros in
+            <span class="textsc">pgf</span>&rsquo;s object-oriented system start
+            with <span class="texttt">\pgfoo</span>). This macro gets the name
+            of a class and in its body a number of <em>methods</em> are defined.
+            These are defined using the
+            <span class="texttt">\method</span> macro (which is defined only
+            inside such a class definition) and they look a bit like method
+            definitions in, say, Java. Object attributes are declared using the
+            <span class="texttt">\attribute</span> command, which is also
+            defined only inside a class definition.
+          </p>
+
+          <p>
+            Once a class has been defined, you can create objects of this class.
+            Objects are created using <span class="texttt">\pgfoonew</span>.
+            Such an object has many characteristics of objects in a normal
+            object-oriented programming language: Each object has a
+            <em>unique identity</em>, so when you create another object, this
+            object is completely distinct from all other objects. Each object
+            also has a set of private attributes, which may change over time.
+            Suppose, for instance, that we have a
+            <span class="texttt">point</span> class. Then creating a new object
+            (called an instance) of this class would typically have an
+            <span class="texttt">x</span>-attribute and a
+            <span class="texttt">y</span>-attribute. These can be changed over
+            time. Creating another instance of the
+            <span class="texttt">point</span> class creates another object with
+            its own <span class="texttt">x</span>- and
+            <span class="texttt">y</span>-attributes.
+          </p>
+
+          <p>
+            Given an object, you can call a method for this object. Inside the
+            method the attributes of the object for which the method is being
+            called can be accessed.
+          </p>
+
+          <p>
+            The life of an object always ends with the end of the
+            <span class="latexlogofont"
+              ><span class="latexlogo"
+                >T<span class="latexlogosub">e</span>X</span
+              ></span
+            >
+            scope in which it was created. However, changes to attribute values
+            are not local to scopes, so when you change an attribute anywhere,
+            this change persists till the end of the life of the object or until
+            the attribute is changed again.
+          </p>
+          <h5 id="autosec-7664">
+            <span class="sectionnumber" id="sec-97.2">97.2&emsp;</span>A Running
+            Example: The Stamp Class<a class="anchor-link" href="#sec-97.2"
+              >&para;</a
+            >
+          </h5>
+          <a id="pgfmanual-autopage-7664"></a>
+
+          <p>
+            As a running example we will develop a
+            <span class="texttt">stamp</span> class and
+            <span class="texttt">stamp</span> objects. The idea is that a stamp
+            object is able to &ldquo;stamp something&rdquo; on a picture. This
+            means that a stamp object has an attribute storing the &ldquo;stamp
+            text&rdquo; and there is a method that asks the object to place this
+            text somewhere on a canvas. The method can be called repeatedly and
+            there can be several different stamp objects, each producing a
+            different text. Stamp objects can either be created dynamically when
+            needed or a library might define many such objects in an outer
+            scope.
+          </p>
+
+          <p>
+            Such stamps are similar to many things present in
+            <span class="textsc">pgf</span> such as arrow tips, patterns, or
+            shadings and, indeed, these could all have been implemented in this
+            object-oriented fashion (which might have been better, but the
+            object-oriented subsystem is a fairly new addition to
+            <span class="textsc">pgf</span>).
+          </p>
+          <h5 id="autosec-7665">
+            <span class="sectionnumber" id="sec-97.3">97.3&emsp;</span>Classes<a
+              class="anchor-link"
+              href="#sec-97.3"
+              >&para;</a
+            >
+          </h5>
+          <a id="pgfmanual-autopage-7665"></a>
+
+          <p>
+            We start with the definition of the
+            <span class="texttt">stamp</span> class. This is done using the
+            <span class="texttt">\pgfooclass</span> macro:
+          </p>
+
+          <div class="manualentry">
+            <div class="entryheadline">
+              <p>
+                <a id="pgf.back/pgfooclass"></a>
+                <span class="hl-def"
+                  ><span class="textcolor" style="color: #bf0000"
+                    ><kbd>\pgfooclass</kbd></span
+                  ><span class="textcolor" style="color: #008000"
+                    ><span class="texttt">(</span
+                    ><span class="angle">&langle;</span
+                    ><i>list of superclasses</i
+                    ><span class="angle">&rangle;</span
+                    ><span class="texttt">)</span></span
+                  >{<span class="angle">&langle;</span><i>class name</i
+                  ><span class="angle">&rangle;</span>}{<span class="angle"
+                    >&langle;</span
+                  ><i>body</i><span class="angle">&rangle;</span>}</span
+                >
+                <a class="anchor-link" href="#pgf.back/pgfooclass">&para;</a>
+              </p>
+            </div>
+            <p>
+              This command defines a class named
+              <span class="angle">&langle;</span><i>class name</i
+              ><span class="angle">&rangle;</span>. The name of the class can
+              contain spaces and most other characters, but no periods. So,
+              valid class names are <span class="texttt">MyClass</span> or
+              <span class="texttt">my class</span> or
+              <span class="texttt">Class_C++_emulation??1</span>. The
+              <span class="angle">&langle;</span><i>list of superclasses</i
+              ><span class="angle">&rangle;</span> is optional just like the
+              parenthesis around it.
+            </p>
+            <p>
+              The <span class="angle">&langle;</span><i>body</i
+              ><span class="angle">&rangle;</span> is actually just executed, so
+              any normal
+              <span class="latexlogofont"
+                ><span class="latexlogo"
+                  >T<span class="latexlogosub">e</span>X</span
+                ></span
+              >-code is permissible here. However, while the
+              <span class="angle">&langle;</span><i>body</i
+              ><span class="angle">&rangle;</span> is being executed, the macros
+              <span class="texttt">\method</span> and
+              <span class="texttt">\attribute</span> are set up so that they can
+              be used to define methods and attributes for this class (the
+              original meanings are restored afterward).
+            </p>
+            <p>
+              The definition of a class is local to the scope where the class
+              has been defined.
+            </p>
+
+            <figure class="example">
+              <div class="example-code">
+                <button class="clipboardButton" type="button">copy</button>
+                <code>
+                  <br />
+                  <span class="textcolor" style="color: #0000b2"
+                    ><a href="oo#pgf.back/pgfooclass">\pgfooclass</a></span
+                  >{<span class="textcolor" style="color: #000000">stamp</span
+                  >}{<br />
+                  &numsp;&numsp;<span class="example-code-comment"
+                    >% This is the class stamp</span
+                  ><br />
+                  <br />
+                  &numsp;&numsp;<span class="textcolor" style="color: #0000b2"
+                    ><a href="oo#pgf.back/attribute">\attribute</a></span
+                  >&numsp;<span class="textcolor" style="color: #000000"
+                    ><a href="tikz-shapes#pgf.text">text</a></span
+                  >;<br />
+                  &numsp;&numsp;<span class="textcolor" style="color: #0000b2"
+                    ><a href="oo#pgf.back/attribute">\attribute</a></span
+                  >&numsp;<span class="textcolor" style="color: #000000"
+                    >rotation</span
+                  >
+                  <span class="textcolor" style="color: #000000">angle=20</span
+                  >;<br />
+                  <br />
+                  &numsp;&numsp;<span class="textcolor" style="color: #0000b2"
+                    ><a href="oo#pgf.back/method">\method</a></span
+                  >&numsp;<span class="textcolor" style="color: #000000"
+                    >stamp</span
+                  ><span class="textcolor" style="color: #800080">(#1)</span
+                  >&numsp;{&numsp;<span class="example-code-comment"
+                    >% The constructor</span
+                  ><br />
+                  &numsp;&numsp;&numsp;&numsp;...<br />
+                  &numsp;&numsp;}<br />
+                  <br />
+                  &numsp;&numsp;<span class="textcolor" style="color: #0000b2"
+                    ><a href="oo#pgf.back/method">\method</a></span
+                  >&numsp;<span class="textcolor" style="color: #000000"
+                    >apply</span
+                  ><span class="textcolor" style="color: #800080">(#1,#2)</span
+                  >&numsp;{&numsp;<span class="example-code-comment"
+                    >% Causes the stamp to be shown at coordinate (#1,#2)</span
+                  ><br />
+                  &numsp;&numsp;&numsp;&numsp;...<br />
+                  &numsp;&numsp;}<br />
+                  }<br />
+                  <br />
+                  <span class="example-code-comment"
+                    >% We can now create objects of type "stamp"</span
+                  ><br />
+                </code>
+              </div>
+            </figure>
+            <p>
+              Concerning the list of base classes, the Method Resolution Order
+              (<span class="textsc">mro</span>) is computed using the C3
+              algorithm also used in Python, v2.3 and higher. The linearization
+              computed by the algorithm respects both local precedence ordering
+              and monotonicity. Resolution of both methods and attributes
+              depends on the <span class="textsc">mro</span>: when a method
+              method name is called on an object of class \(C\), the system
+              invokes method method name from the first class in the
+              <span class="textsc">mro</span> of \(C\) which defines method
+              method name; when an object is created, each attribute
+              <span class="texttt">attr</span> is initialized to the value
+              specified in the first class in the
+              <span class="textsc">mro</span> of \(C\) which declares attribute
+              <span class="texttt">attr</span>.
+            </p>
+          </div>
+
+          <p>
+            The <span class="angle">&langle;</span><i>body</i
+            ><span class="angle">&rangle;</span> of a class usually just
+            consists of calls to the macros
+            <span class="texttt">\attribute</span> and
+            <span class="texttt">\method</span>, which will be discussed in more
+            detail in later sections.
+          </p>
+          <h5 id="autosec-7666">
+            <span class="sectionnumber" id="sec-97.4">97.4&emsp;</span>Objects<a
+              class="anchor-link"
+              href="#sec-97.4"
+              >&para;</a
+            >
+          </h5>
+          <a id="pgfmanual-autopage-7666"></a>
+
+          <p>
+            Once a class has been declared, we can start creating objects for
+            this class. For this the
+            <span class="texttt">\pgfoonew</span> command can be used, which has
+            a peculiar syntax:
+          </p>
+
+          <div class="manualentry">
+            <div class="entryheadline">
+              <p>
+                <a id="pgf.back/pgfoonew"></a>
+                <span class="hl-def"
+                  ><span class="textcolor" style="color: #bf0000"
+                    ><kbd>\pgfoonew</kbd></span
+                  ><span class="textcolor" style="color: #008000"
+                    ><span class="angle">&langle;</span
+                    ><i>object handle or attribute</i
+                    ><span class="angle">&rangle;</span
+                    ><span class="texttt">=</span></span
+                  ><span class="texttt">new </span
+                  ><span class="angle">&langle;</span><i>class name</i
+                  ><span class="angle">&rangle;</span
+                  ><span class="texttt">(</span
+                  ><span class="angle">&langle;</span
+                  ><i>constructor arguments</i
+                  ><span class="angle">&rangle;</span
+                  ><span class="texttt">)</span></span
+                >
+                <a class="anchor-link" href="#pgf.back/pgfoonew">&para;</a>
+              </p>
+            </div>
+            <p>
+              Causes a new object to be created. The class of the object will be
+              <span class="angle">&langle;</span><i>class name</i
+              ><span class="angle">&rangle;</span>, which must previously have
+              been declared using <span class="texttt">\pgfooclass</span>. Once
+              the object has been created, the constructor method of the object
+              will be called with the parameter list set to
+              <span class="angle">&langle;</span><i>constructor arguments</i
+              ><span class="angle">&rangle;</span>.
+            </p>
+            <p>
+              The resulting object is stored internally and its lifetime will
+              end exactly at the end of the current scope.
+            </p>
+            <p>Here is an example in which three stamp objects are created.</p>
+
+            <figure class="example">
+              <div class="example-code">
+                <button class="clipboardButton" type="button">copy</button>
+                <code>
+                  <br />
+                  <span class="textcolor" style="color: #0000b2"
+                    ><a href="oo#pgf.back/pgfoonew">\pgfoonew</a></span
+                  >&numsp;<span class="textcolor" style="color: #0000b2"
+                    >\firststamp</span
+                  ><span class="textcolor" style="color: #000000">=new</span>
+                  <span class="textcolor" style="color: #000000">stamp</span
+                  ><span class="textcolor" style="color: #800080">()</span
+                  ><br />
+                  <span class="textcolor" style="color: #0000b2"
+                    ><a href="oo#pgf.back/pgfoonew">\pgfoonew</a></span
+                  >&numsp;<span class="textcolor" style="color: #0000b2"
+                    >\secondstamp</span
+                  ><span class="textcolor" style="color: #000000">=new</span>
+                  <span class="textcolor" style="color: #000000">stamp</span
+                  ><span class="textcolor" style="color: #800080">()</span
+                  ><br />
+                  {<br />
+                  &numsp;&numsp;<span class="textcolor" style="color: #0000b2"
+                    ><a href="oo#pgf.back/pgfoonew">\pgfoonew</a></span
+                  >&numsp;<span class="textcolor" style="color: #0000b2"
+                    >\thirdstamp</span
+                  ><span class="textcolor" style="color: #000000">=new</span>
+                  <span class="textcolor" style="color: #000000">stamp</span
+                  ><span class="textcolor" style="color: #800080">()</span
+                  ><br />
+                  &numsp;&numsp;...<br />
+                  }<br />
+                  <span class="example-code-comment"
+                    >% \thirdstamp no longer exists, but \firststamp and
+                    \secondstamp do</span
+                  ><br />
+                  <span class="example-code-comment"
+                    >% even if you try to store \thirdstamp in a global
+                    variable, trying</span
+                  ><br />
+                  <span class="example-code-comment"
+                    >% to access it will result in an error.</span
+                  ><br />
+                </code>
+              </div>
+            </figure>
+            <p>
+              The optional <span class="angle">&langle;</span
+              ><i>object handle or attribute</i
+              ><span class="angle">&rangle;</span> can either be an
+              <span class="angle">&langle;</span><i>object handle</i
+              ><span class="angle">&rangle;</span> or an
+              <span class="angle">&langle;</span><i>attribute</i
+              ><span class="angle">&rangle;</span>. When an
+              <span class="angle">&langle;</span><i>object handle</i
+              ><span class="angle">&rangle;</span> is given, it must be a normal
+              <span class="latexlogofont"
+                ><span class="latexlogo"
+                  >T<span class="latexlogosub">e</span>X</span
+                ></span
+              >
+              macro name that will &ldquo;point&rdquo; to the object (handles
+              are discussed in more detail in Section&nbsp;<a
+                href="oo#section-identities"
+                >97.7</a
+              >). You can use this macro to call methods of the object as
+              discussed in the following section. When an
+              <span class="angle">&langle;</span><i>attribute</i
+              ><span class="angle">&rangle;</span> is given, it must be given in
+              curly braces (the curly braces are used to detect the presence of
+              an attribute). In this case, a handle to the newly created object
+              is stored in this attribute.
+            </p>
+
+            <figure class="example">
+              <div class="example-code">
+                <button class="clipboardButton" type="button">copy</button>
+                <code>
+                  <br />
+                  <span class="textcolor" style="color: #0000b2"
+                    ><a href="oo#pgf.back/pgfooclass">\pgfooclass</a></span
+                  >{<span class="textcolor" style="color: #000000">foo</span
+                  >}<br />
+                  {<br />
+                  &numsp;&numsp;<span class="textcolor" style="color: #0000b2"
+                    ><a href="oo#pgf.back/attribute">\attribute</a></span
+                  >&numsp;<span class="textcolor" style="color: #000000"
+                    >stamp</span
+                  >
+                  <span class="textcolor" style="color: #000000">obj</span
+                  >;<br />
+                  &numsp;&numsp;<span class="textcolor" style="color: #0000b2"
+                    ><a href="oo#pgf.back/attribute">\attribute</a></span
+                  >&numsp;<span class="textcolor" style="color: #000000"
+                    >another</span
+                  >
+                  <span class="textcolor" style="color: #000000"
+                    ><a href="tikz-animations#pgf.object">object</a></span
+                  >;<br />
+                  <br />
+                  &numsp;&numsp;<span class="textcolor" style="color: #0000b2"
+                    ><a href="oo#pgf.back/method">\method</a></span
+                  >&numsp;<span class="textcolor" style="color: #000000"
+                    >foo</span
+                  ><span class="textcolor" style="color: #800080">()</span
+                  >&numsp;{<br />
+                  &numsp;&numsp;&numsp;&numsp;<span
+                    class="textcolor"
+                    style="color: #0000b2"
+                    ><a href="oo#pgf.back/pgfoonew">\pgfoonew</a></span
+                  >{<span class="textcolor" style="color: #000000">stamp</span>
+                  <span class="textcolor" style="color: #000000">obj</span
+                  >}<span class="textcolor" style="color: #000000">=new</span>
+                  <span class="textcolor" style="color: #000000">stamp</span
+                  ><span class="textcolor" style="color: #800080">()</span
+                  ><br />
+                  &numsp;&numsp;&numsp;&numsp;<span
+                    class="textcolor"
+                    style="color: #0000b2"
+                    ><a href="oo#pgf.back/pgfoonew">\pgfoonew</a></span
+                  >{<span class="textcolor" style="color: #000000"
+                    >another</span
+                  >
+                  <span class="textcolor" style="color: #000000"
+                    ><a href="tikz-animations#pgf.object">object</a></span
+                  >}<span class="textcolor" style="color: #000000">=new</span>
+                  <span class="textcolor" style="color: #000000">bar</span
+                  ><span class="textcolor" style="color: #800080">()</span
+                  ><br />
+                  &numsp;&numsp;}<br />
+                  &numsp;&numsp;...<br />
+                  }<br />
+                </code>
+              </div>
+            </figure>
+          </div>
+
+          <div class="manualentry">
+            <div class="entryheadline">
+              <p>
+                <a id="pgf.back/pgfoogc"></a>
+                <span class="hl-def"
+                  ><span class="textcolor" style="color: #bf0000"
+                    ><kbd>\pgfoogc</kbd></span
+                  ></span
+                >
+                <a class="anchor-link" href="#pgf.back/pgfoogc">&para;</a>
+              </p>
+            </div>
+            <p>
+              This command causes the &ldquo;garbage collector&rdquo; to be
+              invoked. The job of this garbage collector is to free the global
+              <span class="latexlogofont"
+                ><span class="latexlogo"
+                  >T<span class="latexlogosub">e</span>X</span
+                ></span
+              >-macros that are used by &ldquo;dead&rdquo; objects (objects
+              whose life-time has ended). This macro is called automatically
+              after every scope in which an object has been created, so you
+              normally do not need to call this macro yourself.
+            </p>
+          </div>
+          <h5 id="autosec-7667">
+            <span class="sectionnumber" id="sec-97.5">97.5&emsp;</span>Methods<a
+              class="anchor-link"
+              href="#sec-97.5"
+              >&para;</a
+            >
+          </h5>
+          <a id="pgfmanual-autopage-7667"></a>
+
+          <p>
+            Methods are defined inside the body of classes using the following
+            command:
+          </p>
+
+          <div class="manualentry">
+            <div class="entryheadline">
+              <p>
+                <a id="pgf.back/method"></a>
+                <span class="hl-def"
+                  ><span class="textcolor" style="color: #bf0000"
+                    ><kbd>\method</kbd></span
+                  ><span class="angle">&langle;</span><i>method name</i
+                  ><span class="angle">&rangle;</span
+                  ><span class="texttt">(</span
+                  ><span class="angle">&langle;</span><i>parameter list</i
+                  ><span class="angle">&rangle;</span
+                  ><span class="texttt">)</span>{<span class="angle"
+                    >&langle;</span
+                  ><i>method body</i><span class="angle">&rangle;</span>}</span
+                >
+                <a class="anchor-link" href="#pgf.back/method">&para;</a>
+              </p>
+            </div>
+            <p>
+              This macro, which is only defined inside a class definition,
+              defines a new method named <span class="angle">&langle;</span
+              ><i>method name</i><span class="angle">&rangle;</span>. Just like
+              class names, method names can contain spaces and other characters,
+              so <span class="angle">&langle;</span><i>method names</i
+              ><span class="angle">&rangle;</span> like
+              <span class="texttt">put_stamp_here</span> or
+              <span class="texttt">put stamp here</span> are both legal.
+            </p>
+            <p>
+              Three method names are special: First, a method having either the
+              same name as the class or having the name
+              <span class="texttt">init</span> is called the
+              <em>constructor</em> of the class. There are (currently) no
+              destructors; objects simply become &ldquo;undefined&rdquo; at the
+              end of the scope in which they have been created. The other two
+              methods are called <span class="texttt">get id</span> and
+              <span class="texttt">get handle</span>, which are always
+              automatically defined and which you cannot redefine. They are
+              discussed in Section&nbsp;<a href="oo#section-identities">97.7</a
+              >.
+            </p>
+            <p>
+              Overloading of methods by differing numbers of parameters is not
+              possible, that is, it is illegal to have two methods inside a
+              single class with the same name (despite possibly different
+              parameter lists). However, two different classes may contain a
+              method with the same name, that is, classes form namespaces for
+              methods. Also, a class can (re)implement a method from a
+              superclass.
+            </p>
+            <p>
+              The <span class="angle">&langle;</span><i>method name</i
+              ><span class="angle">&rangle;</span> must be followed by a
+              <span class="angle">&langle;</span><i>parameter list</i
+              ><span class="angle">&rangle;</span> in parentheses, which must be
+              present even when the <span class="angle">&langle;</span
+              ><i>parameter list</i><span class="angle">&rangle;</span> is
+              empty. The <span class="angle">&langle;</span><i>parameter list</i
+              ><span class="angle">&rangle;</span> is actually a normal
+              <span class="latexlogofont"
+                ><span class="latexlogo"
+                  >T<span class="latexlogosub">e</span>X</span
+                ></span
+              >
+              parameter list that will be matched against the parameters inside
+              the parentheses upon method invocation and, thus, could be
+              something like <span class="texttt">#1#2 foo #3 bar.</span>, but a
+              list like <span class="texttt">#1,#2,#3</span> is more customary.
+              By setting the parameter list to just
+              <span class="texttt">#1</span> and then calling, say,
+              <span class="texttt">\pgfkeys{#1}</span> at the beginning of a
+              method, you can implement Objective-C-like named parameters.
+            </p>
+            <p>
+              When a method is called, the <span class="angle">&langle;</span
+              ><i>body</i><span class="angle">&rangle;</span> of the method will
+              be executed. The main difference to a normal macro is that while
+              the <span class="angle">&langle;</span><i>body</i
+              ><span class="angle">&rangle;</span> is executed, a special macro
+              called <span class="texttt">\pgfoothis</span> is set up in such a
+              way that it references the object for which the method is
+              executed.
+            </p>
+          </div>
+
+          <p>
+            In order to call a method for an object, you first need to create
+            the object and you need a handle for this object. In order to invoke
+            a method for this object, a special syntax is used that is similar
+            to Java or C++ syntax:
+          </p>
+
+          <div class="manualentry">
+            <div class="entryheadline">
+              <p>
+                <span class="angle">&langle;</span><i>object handle</i
+                ><span class="angle">&rangle;</span
+                ><span class="textcolor" style="color: #008000"
+                  ><span class="texttt">.</span
+                  ><span class="angle">&langle;</span><i>super class</i
+                  ><span class="angle">&rangle;</span></span
+                ><span class="texttt">.</span><span class="angle">&langle;</span
+                ><i>method name</i><span class="angle">&rangle;</span
+                ><span class="texttt">(</span><span class="angle">&langle;</span
+                ><i>parameters</i><span class="angle">&rangle;</span
+                ><span class="texttt">)</span>
+              </p>
+            </div>
+            <p>
+              This causes the method <span class="angle">&langle;</span
+              ><i>method name</i><span class="angle">&rangle;</span> to be
+              called for the object referenced by the
+              <span class="angle">&langle;</span><i>object handle</i
+              ><span class="angle">&rangle;</span>. The method is the one
+              defined in the class of the object or, if it is not defined there,
+              the method defined in the superclasses of the object&rsquo;s class
+              (if there are several superclasses that define the same method,
+              the method resolution order is used to determine which one gets
+              called). If the optional <span class="angle">&langle;</span
+              ><i>super class</i><span class="angle">&rangle;</span> is
+              specified, the method implementation of that class will be used
+              rather than the implementation in the object&rsquo;s class. The
+              <span class="angle">&langle;</span><i>parameters</i
+              ><span class="angle">&rangle;</span> are matched against the
+              parameters of the method and, then, the method body is executed.
+              The execution of the method body is <em>not</em> done inside a
+              scope, so the effects of a method body persist.
+            </p>
+
+            <figure class="example">
+              <div class="example-code">
+                <button class="clipboardButton" type="button">copy</button>
+                <code>
+                  <br />
+                  <span class="textcolor" style="color: #0000b2"
+                    ><a href="oo#pgf.back/pgfooclass">\pgfooclass</a></span
+                  >{<span class="textcolor" style="color: #000000">stamp</span
+                  >}{<br />
+                  &numsp;&numsp;<span class="example-code-comment"
+                    >% This is the class stamp</span
+                  ><br />
+                  <br />
+                  &numsp;&numsp;<span class="textcolor" style="color: #0000b2"
+                    ><a href="oo#pgf.back/method">\method</a></span
+                  >&numsp;<span class="textcolor" style="color: #000000"
+                    >stamp</span
+                  ><span class="textcolor" style="color: #800080">()</span
+                  >&numsp;{&numsp;<span class="example-code-comment"
+                    >% The constructor</span
+                  ><br />
+                  &numsp;&numsp;}<br />
+                  <br />
+                  &numsp;&numsp;<span class="textcolor" style="color: #0000b2"
+                    ><a href="oo#pgf.back/method">\method</a></span
+                  >&numsp;<span class="textcolor" style="color: #000000"
+                    >apply</span
+                  ><span class="textcolor" style="color: #800080">(#1,#2)</span
+                  >&numsp;{&numsp;<span class="example-code-comment"
+                    >% Causes the stamp to be shown at coordinate (#1,#2)</span
+                  ><br />
+                  &numsp;&numsp;&numsp;&numsp;<span class="example-code-comment"
+                    >% Draw the stamp:</span
+                  ><br />
+                  &numsp;&numsp;&numsp;&numsp;<span
+                    class="textcolor"
+                    style="color: #0000b2"
+                    ><a href="tikz-shapes#pgf.back/node">\node</a></span
+                  >&numsp;[<span class="textcolor" style="color: #008000"
+                    ><a href="tikz-transformations#pgf.rotate">rotate</a></span
+                  >=<span class="textcolor" style="color: #008000">20</span
+                  >,<span class="textcolor" style="color: #008000"
+                    ><a href="tikz-shapes#pgf.font">font</a></span
+                  >=<span class="textcolor" style="color: #008000"
+                    ><span class="textcolor" style="color: #0000b2"
+                      >\huge</span
+                    ></span
+                  >]&numsp;<span class="textcolor" style="color: #000000"
+                    ><a href="tikz-paths#pgf.at">at</a></span
+                  >
+                  <span class="textcolor" style="color: #800080">(#1,#2)</span
+                  >&numsp;{<span class="textcolor" style="color: #000000"
+                    >Passed</span
+                  >};<br />
+                  &numsp;&numsp;}<br />
+                  }<br />
+                  <br />
+                  <span class="textcolor" style="color: #0000b2"
+                    ><a href="oo#pgf.back/pgfoonew">\pgfoonew</a></span
+                  >&numsp;<span class="textcolor" style="color: #0000b2"
+                    >\mystamp</span
+                  ><span class="textcolor" style="color: #000000">=new</span>
+                  <span class="textcolor" style="color: #000000">stamp</span
+                  ><span class="textcolor" style="color: #800080">()</span
+                  ><br />
+                  <br />
+                  <span class="textcolor" style="color: #000000">\begin</span
+                  >{<span class="textcolor" style="color: #0000b2"
+                    ><a href="tikz-scopes#pgf.tikzpicture">tikzpicture</a></span
+                  >}<br />
+                  &numsp;&numsp;<span class="textcolor" style="color: #0000b2"
+                    >\mystamp</span
+                  >.<span class="textcolor" style="color: #000000">apply</span
+                  ><span class="textcolor" style="color: #800080">(1,2)</span
+                  ><br />
+                  &numsp;&numsp;<span class="textcolor" style="color: #0000b2"
+                    >\mystamp</span
+                  >.<span class="textcolor" style="color: #000000">apply</span
+                  ><span class="textcolor" style="color: #800080">(3,4)</span
+                  ><br />
+                  <span class="textcolor" style="color: #000000">\end</span
+                  >{<span class="textcolor" style="color: #0000b2"
+                    ><a href="tikz-scopes#pgf.tikzpicture">tikzpicture</a></span
+                  >}<br />
+                </code>
+              </div>
+            </figure>
+            <p>
+              Inside a method, you can call other methods. If you have a handle
+              for another object, you can simply call it in the manner described
+              above. In order to call a method of the current object, you can
+              use the special object handle
+              <span class="texttt">\pgfoothis</span>.
+            </p>
+
+            <div class="manualentry">
+              <div class="entryheadline">
+                <p>
+                  <a id="pgf.back/pgfoothis"></a>
+                  <span class="hl-def"
+                    ><span class="textcolor" style="color: #bf0000"
+                      ><kbd>\pgfoothis</kbd></span
+                    ></span
+                  >
+                  <a class="anchor-link" href="#pgf.back/pgfoothis">&para;</a>
+                </p>
+              </div>
+              <p>
+                This object handle is well-defined only when a method is being
+                executed. There, it is then set to point to the object for which
+                the method is being called, which allows you to call another
+                method for the same object.
+              </p>
+
+              <figure class="example">
+                <div class="example-code">
+                  <button class="clipboardButton" type="button">copy</button>
+                  <code>
+                    <br />
+                    <span class="textcolor" style="color: #0000b2"
+                      ><a href="oo#pgf.back/pgfooclass">\pgfooclass</a></span
+                    >{<span class="textcolor" style="color: #000000">stamp</span
+                    >}{<br />
+                    &numsp;&numsp;<span class="example-code-comment"
+                      >% This is the class stamp</span
+                    ><br />
+                    <br />
+                    &numsp;&numsp;<span class="textcolor" style="color: #0000b2"
+                      ><a href="oo#pgf.back/method">\method</a></span
+                    >&numsp;<span class="textcolor" style="color: #000000"
+                      >stamp</span
+                    ><span class="textcolor" style="color: #800080">()</span
+                    >&numsp;{}<br />
+                    <br />
+                    &numsp;&numsp;<span class="textcolor" style="color: #0000b2"
+                      ><a href="oo#pgf.back/method">\method</a></span
+                    >&numsp;<span class="textcolor" style="color: #000000"
+                      >apply</span
+                    ><span class="textcolor" style="color: #800080"
+                      >(#1,#2)</span
+                    >&numsp;{<br />
+                    &numsp;&numsp;&numsp;&numsp;<span
+                      class="textcolor"
+                      style="color: #0000b2"
+                      ><a href="oo#pgf.back/pgfoothis">\pgfoothis</a></span
+                    >.<span class="textcolor" style="color: #000000"
+                      ><a href="tikz-transformations#pgf.shift">shift</a></span
+                    >
+                    <span class="textcolor" style="color: #000000"
+                      ><a href="base-animations#pgf.origin">origin</a></span
+                    ><span class="textcolor" style="color: #800080"
+                      >(#1,#2)</span
+                    ><br />
+                    <br />
+                    &numsp;&numsp;&numsp;&numsp;<span
+                      class="example-code-comment"
+                      >% Draw the stamp:</span
+                    ><br />
+                    &numsp;&numsp;&numsp;&numsp;<span
+                      class="textcolor"
+                      style="color: #0000b2"
+                      ><a href="tikz-shapes#pgf.back/node">\node</a></span
+                    >&numsp;[<span class="textcolor" style="color: #008000"
+                      ><a href="tikz-transformations#pgf.rotate"
+                        >rotate</a
+                      ></span
+                    >=<span class="textcolor" style="color: #008000">20</span
+                    >,<span class="textcolor" style="color: #008000"
+                      ><a href="tikz-shapes#pgf.font">font</a></span
+                    >=<span class="textcolor" style="color: #008000"
+                      ><span class="textcolor" style="color: #0000b2"
+                        >\huge</span
+                      ></span
+                    >]&numsp;{<span class="textcolor" style="color: #000000"
+                      >Passed</span
+                    >};<br />
+                    &numsp;&numsp;}<br />
+                    <br />
+                    &numsp;&numsp;<span class="example-code-comment"
+                      >% Private method:</span
+                    ><br />
+                    &numsp;&numsp;<span class="textcolor" style="color: #0000b2"
+                      ><a href="oo#pgf.back/method">\method</a></span
+                    >&numsp;<span class="textcolor" style="color: #000000"
+                      ><a href="tikz-transformations#pgf.shift">shift</a></span
+                    >
+                    <span class="textcolor" style="color: #000000"
+                      ><a href="base-animations#pgf.origin">origin</a></span
+                    ><span class="textcolor" style="color: #800080"
+                      >(#1,#2)</span
+                    >&numsp;{<br />
+                    &numsp;&numsp;&numsp;&numsp;<a
+                      href="tikz-scopes#pgf.back/tikzset"
+                      >\tikzset</a
+                    >{<span class="textcolor" style="color: #008000"
+                      ><a href="tikz-transformations#pgf.xshift"
+                        >xshift</a
+                      ></span
+                    >=<span class="textcolor" style="color: #008000">#1</span
+                    >,<span class="textcolor" style="color: #008000"
+                      ><a href="tikz-transformations#pgf.yshift"
+                        >yshift</a
+                      ></span
+                    >=<span class="textcolor" style="color: #008000">#2</span
+                    >}<br />
+                    &numsp;&numsp;}<br />
+                    }<br />
+                  </code>
+                </div>
+              </figure>
+            </div>
+          </div>
+
+          <div class="manualentry">
+            <div class="entryheadline">
+              <p>
+                <a id="pgf.back/pgfoosuper"></a>
+                <span class="hl-def"
+                  ><span class="textcolor" style="color: #bf0000"
+                    ><kbd>\pgfoosuper</kbd></span
+                  ><span class="texttt">(</span
+                  ><span class="angle">&langle;</span><i>class</i
+                  ><span class="angle">&rangle;</span>,<span class="angle"
+                    >&langle;</span
+                  ><i>object handle</i><span class="angle">&rangle;</span
+                  ><span class="texttt">).</span
+                  ><span class="angle">&langle;</span><i>method name</i
+                  ><span class="angle">&rangle;</span
+                  ><span class="texttt">(</span
+                  ><span class="angle">&langle;</span><i>arguments</i
+                  ><span class="angle">&rangle;</span
+                  ><span class="texttt">)</span></span
+                >
+                <a class="anchor-link" href="#pgf.back/pgfoosuper">&para;</a>
+              </p>
+            </div>
+            <p>
+              This macro gives you finer control over which method gets invoked
+              in case of multiple inheritance. This macro calls
+              <span class="angle">&langle;</span><i>method name</i
+              ><span class="angle">&rangle;</span> of the object specified by
+              <span class="angle">&langle;</span><i>object handle</i
+              ><span class="angle">&rangle;</span>, but which implementation of
+              the method is called is determined as follows: it will be the
+              implementation in the first class (in the method resolution order)
+              after <span class="angle">&langle;</span><i>class</i
+              ><span class="angle">&rangle;</span> that defines
+              <span class="angle">&langle;</span><i>method name</i
+              ><span class="angle">&rangle;</span>.
+            </p>
+          </div>
+          <h5 id="autosec-7668">
+            <span class="sectionnumber" id="sec-97.6">97.6&emsp;</span
+            >Attributes<a class="anchor-link" href="#sec-97.6">&para;</a>
+          </h5>
+          <a id="pgfmanual-autopage-7668"></a>
+
+          <p>
+            Every object has a set of attributes, which may change over time.
+            Attributes are declared using the
+            <span class="texttt">\attribute</span> command, which, like the
+            <span class="texttt">\method</span> command, is defined only inside
+            the scope of <span class="texttt">\pgfooclass</span>. Attributes can
+            be modified (only) by methods. To take the
+            <span class="texttt">stamp</span> example, an attribute of a
+            <span class="texttt">stamp</span> object might be the text that
+            should be stamped when the <span class="texttt">apply</span> method
+            is called.
+          </p>
+
+          <p>
+            When an attribute is changed, this change is <em>not</em> local to
+            the current
+            <span class="latexlogofont"
+              ><span class="latexlogo"
+                >T<span class="latexlogosub">e</span>X</span
+              ></span
+            >
+            group. Changes will persist till the end of the object&rsquo;s life
+            or until the attribute is changed once more.
+          </p>
+
+          <p>
+            To declare an attribute you should use the
+            <span class="texttt">\attribute</span> command:
+          </p>
+
+          <div class="manualentry">
+            <div class="entryheadline">
+              <p>
+                <a id="pgf.back/attribute"></a>
+                <span class="hl-def"
+                  ><span class="textcolor" style="color: #bf0000"
+                    ><kbd>\attribute</kbd></span
+                  ><span class="angle">&langle;</span><i>attribute name</i
+                  ><span class="angle">&rangle;</span
+                  ><span class="textcolor" style="color: #008000"
+                    ><span class="texttt">=</span
+                    ><span class="angle">&langle;</span><i>initial value</i
+                    ><span class="angle">&rangle;</span></span
+                  ><span class="texttt">;</span></span
+                >
+                <a class="anchor-link" href="#pgf.back/attribute">&para;</a>
+              </p>
+            </div>
+            <p>
+              This command can only be given inside the body of an
+              <span class="texttt">\pgfooclass</span> command. It declares the
+              attribute named <span class="angle">&langle;</span
+              ><i>attribute name</i><span class="angle">&rangle;</span>. This
+              name, like method or class names, can be quite arbitrary, but
+              should not contain periods. Valid names are
+              <span class="texttt">an_attribute?</span> or
+              <span class="texttt">my attribute</span>.
+            </p>
+            <p>
+              You can optionally specify an <span class="angle">&langle;</span
+              ><i>initial value</i><span class="angle">&rangle;</span> for the
+              attribute; if none is given, the empty string is used
+              automatically. The initial value is the value that the attribute
+              will have just after the object has been created and before the
+              constructor is called.
+            </p>
+
+            <figure class="example">
+              <div class="example-code">
+                <button class="clipboardButton" type="button">copy</button>
+                <code>
+                  <br />
+                  <span class="textcolor" style="color: #0000b2"
+                    ><a href="oo#pgf.back/pgfooclass">\pgfooclass</a></span
+                  >{<span class="textcolor" style="color: #000000">stamp</span
+                  >}{<br />
+                  &numsp;&numsp;<span class="example-code-comment"
+                    >% This is the class stamp</span
+                  ><br />
+                  <br />
+                  &numsp;&numsp;<span class="textcolor" style="color: #0000b2"
+                    ><a href="oo#pgf.back/attribute">\attribute</a></span
+                  >&numsp;<span class="textcolor" style="color: #000000"
+                    ><a href="tikz-shapes#pgf.text">text</a></span
+                  >;<br />
+                  &numsp;&numsp;<span class="textcolor" style="color: #0000b2"
+                    ><a href="oo#pgf.back/attribute">\attribute</a></span
+                  >&numsp;<span class="textcolor" style="color: #000000"
+                    >rotation</span
+                  >
+                  <span class="textcolor" style="color: #000000"
+                    ><a href="tikz-coordinates#pgf.angle">angle</a></span
+                  >
+                  <span class="textcolor" style="color: #000000">=</span>
+                  <span class="textcolor" style="color: #000000">20</span
+                  >;<br />
+                  <br />
+                  &numsp;&numsp;<span class="textcolor" style="color: #0000b2"
+                    ><a href="oo#pgf.back/method">\method</a></span
+                  >&numsp;<span class="textcolor" style="color: #000000"
+                    >stamp</span
+                  ><span class="textcolor" style="color: #800080">(#1)</span
+                  >&numsp;{<br />
+                  &numsp;&numsp;&numsp;&numsp;<span
+                    class="textcolor"
+                    style="color: #0000b2"
+                    ><a href="oo#pgf.back/pgfooset">\pgfooset</a></span
+                  >{<span class="textcolor" style="color: #000000"
+                    ><a href="tikz-shapes#pgf.text">text</a></span
+                  >}{<span class="textcolor" style="color: #000000">#1</span
+                  >}&numsp;<span class="example-code-comment"
+                    >% Set the text</span
+                  ><br />
+                  &numsp;&numsp;}<br />
+                  <br />
+                  &numsp;&numsp;<span class="textcolor" style="color: #0000b2"
+                    ><a href="oo#pgf.back/method">\method</a></span
+                  >&numsp;<span class="textcolor" style="color: #000000"
+                    >apply</span
+                  ><span class="textcolor" style="color: #800080">(#1,#2)</span
+                  >&numsp;{<br />
+                  &numsp;&numsp;&numsp;&numsp;<span
+                    class="textcolor"
+                    style="color: #0000b2"
+                    ><a href="oo#pgf.back/pgfoothis">\pgfoothis</a></span
+                  >.<span class="textcolor" style="color: #000000"
+                    ><a href="tikz-transformations#pgf.shift">shift</a></span
+                  >
+                  <span class="textcolor" style="color: #000000"
+                    ><a href="base-animations#pgf.origin">origin</a></span
+                  ><span class="textcolor" style="color: #800080">(#1,#2)</span
+                  ><br />
+                  <br />
+                  &numsp;&numsp;&numsp;&numsp;<span class="example-code-comment"
+                    >% Draw the stamp:</span
+                  ><br />
+                  &numsp;&numsp;&numsp;&numsp;<span
+                    class="textcolor"
+                    style="color: #0000b2"
+                    ><a href="tikz-shapes#pgf.back/node">\node</a></span
+                  >&numsp;[<span class="textcolor" style="color: #008000"
+                    ><a href="tikz-transformations#pgf.rotate">rotate</a></span
+                  >=<span class="textcolor" style="color: #008000"
+                    ><span class="textcolor" style="color: #0000b2"
+                      ><a href="oo#pgf.back/pgfoovalueof"
+                        >\pgfoovalueof</a
+                      ></span
+                    >{rotation
+                    <a href="tikz-coordinates#pgf.angle">angle</a>}</span
+                  >,<span class="textcolor" style="color: #008000"
+                    ><a href="tikz-shapes#pgf.font">font</a></span
+                  >=<span class="textcolor" style="color: #008000"
+                    ><span class="textcolor" style="color: #0000b2"
+                      >\huge</span
+                    ></span
+                  >]<br />
+                  &numsp;&numsp;&numsp;&numsp;&numsp;&numsp;{<span
+                    class="textcolor"
+                    style="color: #0000b2"
+                    ><a href="oo#pgf.back/pgfoovalueof">\pgfoovalueof</a></span
+                  >{<span class="textcolor" style="color: #000000"
+                    ><a href="tikz-shapes#pgf.text">text</a></span
+                  >}};<br />
+                  &numsp;&numsp;}<br />
+                  <br />
+                  &numsp;&numsp;<span class="textcolor" style="color: #0000b2"
+                    ><a href="oo#pgf.back/method">\method</a></span
+                  >&numsp;<span class="textcolor" style="color: #000000"
+                    ><a href="tikz-transformations#pgf.shift">shift</a></span
+                  >
+                  <span class="textcolor" style="color: #000000"
+                    ><a href="base-animations#pgf.origin">origin</a></span
+                  ><span class="textcolor" style="color: #800080">(#1,#2)</span
+                  >&numsp;{&numsp;...&numsp;}<br />
+                  <br />
+                  &numsp;&numsp;<span class="textcolor" style="color: #0000b2"
+                    ><a href="oo#pgf.back/method">\method</a></span
+                  >&numsp;<span class="textcolor" style="color: #000000"
+                    ><a href="tikz-graphs#pgf.set">set</a></span
+                  >
+                  <span class="textcolor" style="color: #000000">rotation</span>
+                  <span class="textcolor" style="color: #800080">(#1)</span
+                  >&numsp;{<br />
+                  &numsp;&numsp;&numsp;&numsp;<span
+                    class="textcolor"
+                    style="color: #0000b2"
+                    ><a href="oo#pgf.back/pgfooset">\pgfooset</a></span
+                  >{<span class="textcolor" style="color: #000000"
+                    >rotation</span
+                  >
+                  <span class="textcolor" style="color: #000000"
+                    ><a href="tikz-coordinates#pgf.angle">angle</a></span
+                  >}{<span class="textcolor" style="color: #000000">#1</span
+                  >}<br />
+                  &numsp;&numsp;}<br />
+                  }<br />
+                </code>
+              </div>
+            </figure>
+          </div>
+
+          <p>
+            Attributes can be set and read only inside methods, it is not
+            possible to do so using an object handle. Spoken in terms of
+            traditional object-oriented programming, attributes are always
+            private. You need to define getter and setter methods if you wish to
+            read or modify attributes.
+          </p>
+
+          <p>
+            Reading and writing attributes is not done using the
+            &ldquo;dot-notation&rdquo; that is used for method calls. This is
+            mostly due to efficiency reasons. Instead, a set of special macros
+            is used, all of which can <em>only be used inside methods</em>.
+          </p>
+
+          <div class="manualentry">
+            <div class="entryheadline">
+              <p>
+                <a id="pgf.back/pgfooset"></a>
+                <span class="hl-def"
+                  ><span class="textcolor" style="color: #bf0000"
+                    ><kbd>\pgfooset</kbd></span
+                  >{<span class="angle">&langle;</span><i>attribute</i
+                  ><span class="angle">&rangle;</span>}{<span class="angle"
+                    >&langle;</span
+                  ><i>value</i><span class="angle">&rangle;</span>}</span
+                >
+                <a class="anchor-link" href="#pgf.back/pgfooset">&para;</a>
+              </p>
+            </div>
+            <p>
+              Sets the <span class="angle">&langle;</span><i>attribute</i
+              ><span class="angle">&rangle;</span> of the current object to
+              <span class="angle">&langle;</span><i>value</i
+              ><span class="angle">&rangle;</span>.
+            </p>
+
+            <figure class="example">
+              <div class="example-code">
+                <button class="clipboardButton" type="button">copy</button>
+                <code>
+                  <br />
+                  <span class="textcolor" style="color: #0000b2"
+                    ><a href="oo#pgf.back/method">\method</a></span
+                  >&numsp;<span class="textcolor" style="color: #000000"
+                    ><a href="tikz-graphs#pgf.set">set</a></span
+                  >
+                  <span class="textcolor" style="color: #000000">rotation</span>
+                  <span class="textcolor" style="color: #800080">(#1)</span
+                  >&numsp;{<br />
+                  &numsp;&numsp;<span class="textcolor" style="color: #0000b2"
+                    ><a href="oo#pgf.back/pgfooset">\pgfooset</a></span
+                  >{<span class="textcolor" style="color: #000000"
+                    >rotation</span
+                  >
+                  <span class="textcolor" style="color: #000000"
+                    ><a href="tikz-coordinates#pgf.angle">angle</a></span
+                  >}{<span class="textcolor" style="color: #000000">#1</span
+                  >}<br />
+                  }<br />
+                </code>
+              </div>
+            </figure>
+          </div>
+
+          <div class="manualentry">
+            <div class="entryheadline">
+              <p>
+                <a id="pgf.back/pgfooeset"></a>
+                <span class="hl-def"
+                  ><span class="textcolor" style="color: #bf0000"
+                    ><kbd>\pgfooeset</kbd></span
+                  >{<span class="angle">&langle;</span><i>attribute</i
+                  ><span class="angle">&rangle;</span>}{<span class="angle"
+                    >&langle;</span
+                  ><i>value</i><span class="angle">&rangle;</span>}</span
+                >
+                <a class="anchor-link" href="#pgf.back/pgfooeset">&para;</a>
+              </p>
+            </div>
+            <p>
+              Performs the same action as
+              <span class="texttt">\pgfooset</span> but in an
+              <span class="texttt">\edef</span> full expansion context.
+            </p>
+          </div>
+
+          <div class="manualentry">
+            <div class="entryheadline">
+              <p>
+                <a id="pgf.back/pgfooappend"></a>
+                <span class="hl-def"
+                  ><span class="textcolor" style="color: #bf0000"
+                    ><kbd>\pgfooappend</kbd></span
+                  >{<span class="angle">&langle;</span><i>attribute</i
+                  ><span class="angle">&rangle;</span>}{<span class="angle"
+                    >&langle;</span
+                  ><i>value</i><span class="angle">&rangle;</span>}</span
+                >
+                <a class="anchor-link" href="#pgf.back/pgfooappend">&para;</a>
+              </p>
+            </div>
+            <p>
+              This method adds the given <span class="angle">&langle;</span
+              ><i>value</i><span class="angle">&rangle;</span> to the
+              <span class="angle">&langle;</span><i>attribute</i
+              ><span class="angle">&rangle;</span> at the end.
+            </p>
+          </div>
+
+          <div class="manualentry">
+            <div class="entryheadline">
+              <p>
+                <a id="pgf.back/pgfooprefix"></a>
+                <span class="hl-def"
+                  ><span class="textcolor" style="color: #bf0000"
+                    ><kbd>\pgfooprefix</kbd></span
+                  >{<span class="angle">&langle;</span><i>attribute</i
+                  ><span class="angle">&rangle;</span>}{<span class="angle"
+                    >&langle;</span
+                  ><i>value</i><span class="angle">&rangle;</span>}</span
+                >
+                <a class="anchor-link" href="#pgf.back/pgfooprefix">&para;</a>
+              </p>
+            </div>
+            <p>
+              This method adds the given <span class="angle">&langle;</span
+              ><i>value</i><span class="angle">&rangle;</span> to the
+              <span class="angle">&langle;</span><i>attribute</i
+              ><span class="angle">&rangle;</span> at the beginning.
+            </p>
+          </div>
+
+          <div class="manualentry">
+            <div class="entryheadline">
+              <p>
+                <a id="pgf.back/pgfoolet"></a>
+                <span class="hl-def"
+                  ><span class="textcolor" style="color: #bf0000"
+                    ><kbd>\pgfoolet</kbd></span
+                  >{<span class="angle">&langle;</span><i>attribute</i
+                  ><span class="angle">&rangle;</span>}{<span class="angle"
+                    >&langle;</span
+                  ><i>macro</i><span class="angle">&rangle;</span>}</span
+                >
+                <a class="anchor-link" href="#pgf.back/pgfoolet">&para;</a>
+              </p>
+            </div>
+            <p>
+              Sets the <span class="angle">&langle;</span><i>attribute</i
+              ><span class="angle">&rangle;</span> of the current value to the
+              current value of <span class="angle">&langle;</span><i>macro</i
+              ><span class="angle">&rangle;</span> using
+              <span class="latexlogofont"
+                ><span class="latexlogo"
+                  >T<span class="latexlogosub">e</span>X</span
+                ></span
+              >&rsquo;s <span class="texttt">\let</span> command.
+            </p>
+
+            <figure class="example">
+              <div class="example-code">
+                <button class="clipboardButton" type="button">copy</button>
+                <code>
+                  <br />
+                  <span class="textcolor" style="color: #0000b2"
+                    ><a href="oo#pgf.back/method">\method</a></span
+                  >&numsp;<span class="textcolor" style="color: #000000"
+                    >foo</span
+                  >
+                  <span class="textcolor" style="color: #800080">()</span
+                  >&numsp;{<br />
+                  &numsp;&numsp;<span class="textcolor" style="color: #0000b2"
+                    ><a href="oo#pgf.back/pgfoolet">\pgfoolet</a></span
+                  >{<span class="textcolor" style="color: #000000">my</span>
+                  <span class="textcolor" style="color: #000000">func</span
+                  >}<span class="textcolor" style="color: #0000b2">\myfunc</span
+                  ><br />
+                  &numsp;&numsp;<span class="example-code-comment"
+                    >% Changing \myfunc now has no effect on the value of
+                    attribute my func</span
+                  ><br />
+                  }<br />
+                </code>
+              </div>
+            </figure>
+          </div>
+
+          <div class="manualentry">
+            <div class="entryheadline">
+              <p>
+                <a id="pgf.back/pgfoovalueof"></a>
+                <span class="hl-def"
+                  ><span class="textcolor" style="color: #bf0000"
+                    ><kbd>\pgfoovalueof</kbd></span
+                  >{<span class="angle">&langle;</span><i>attribute</i
+                  ><span class="angle">&rangle;</span>}</span
+                >
+                <a class="anchor-link" href="#pgf.back/pgfoovalueof">&para;</a>
+              </p>
+            </div>
+            <p>
+              Expands (eventually) to the current value of
+              <span class="angle">&langle;</span><i>attribute</i
+              ><span class="angle">&rangle;</span> of the current object.
+            </p>
+
+            <figure class="example">
+              <div class="example-code">
+                <button class="clipboardButton" type="button">copy</button>
+                <code>
+                  <br />
+                  <span class="textcolor" style="color: #0000b2"
+                    ><a href="oo#pgf.back/method">\method</a></span
+                  >&numsp;<span class="textcolor" style="color: #000000"
+                    >apply</span
+                  ><span class="textcolor" style="color: #800080">(#1,#2)</span
+                  >&numsp;{<br />
+                  &numsp;&numsp;<span class="textcolor" style="color: #0000b2"
+                    ><a href="oo#pgf.back/pgfoothis">\pgfoothis</a></span
+                  >.<span class="textcolor" style="color: #000000"
+                    ><a href="tikz-transformations#pgf.shift">shift</a></span
+                  >
+                  <span class="textcolor" style="color: #000000"
+                    ><a href="base-animations#pgf.origin">origin</a></span
+                  ><span class="textcolor" style="color: #800080">(#1,#2)</span
+                  ><br />
+                  <br />
+                  &numsp;&numsp;<span class="textcolor" style="color: #0000b2"
+                    ><a href="tikz-shapes#pgf.back/node">\node</a></span
+                  >&numsp;[<span class="textcolor" style="color: #008000"
+                    ><a href="tikz-transformations#pgf.rotate">rotate</a></span
+                  >=<span class="textcolor" style="color: #008000"
+                    ><span class="textcolor" style="color: #0000b2"
+                      ><a href="oo#pgf.back/pgfoovalueof"
+                        >\pgfoovalueof</a
+                      ></span
+                    >{rotation
+                    <a href="tikz-coordinates#pgf.angle">angle</a>}</span
+                  >,<span class="textcolor" style="color: #008000"
+                    ><a href="tikz-shapes#pgf.font">font</a></span
+                  >=<span class="textcolor" style="color: #008000"
+                    ><span class="textcolor" style="color: #0000b2"
+                      >\huge</span
+                    ></span
+                  >]<br />
+                  &numsp;&numsp;&numsp;&numsp;{<span
+                    class="textcolor"
+                    style="color: #0000b2"
+                    ><a href="oo#pgf.back/pgfoovalueof">\pgfoovalueof</a></span
+                  >{<span class="textcolor" style="color: #000000"
+                    ><a href="tikz-shapes#pgf.text">text</a></span
+                  >}};<br />
+                  }<br />
+                </code>
+              </div>
+            </figure>
+          </div>
+
+          <div class="manualentry">
+            <div class="entryheadline">
+              <p>
+                <a id="pgf.back/pgfooget"></a>
+                <span class="hl-def"
+                  ><span class="textcolor" style="color: #bf0000"
+                    ><kbd>\pgfooget</kbd></span
+                  >{<span class="angle">&langle;</span><i>attribute</i
+                  ><span class="angle">&rangle;</span>}{<span class="angle"
+                    >&langle;</span
+                  ><i>macro</i><span class="angle">&rangle;</span>}</span
+                >
+                <a class="anchor-link" href="#pgf.back/pgfooget">&para;</a>
+              </p>
+            </div>
+            <p>
+              Reads the current value of <span class="angle">&langle;</span
+              ><i>attribute</i><span class="angle">&rangle;</span> and stores
+              the result in <span class="angle">&langle;</span><i>macro</i
+              ><span class="angle">&rangle;</span>.
+            </p>
+
+            <figure class="example">
+              <div class="example-code">
+                <button class="clipboardButton" type="button">copy</button>
+                <code>
+                  <br />
+                  ...<br />
+                  &numsp;&numsp;<span class="textcolor" style="color: #0000b2"
+                    ><a href="oo#pgf.back/method">\method</a></span
+                  >&numsp;<span class="textcolor" style="color: #000000"
+                    >get</span
+                  >
+                  <span class="textcolor" style="color: #000000">rotation</span>
+                  <span class="textcolor" style="color: #800080">(#1)</span
+                  >&numsp;{<br />
+                  &numsp;&numsp;&numsp;&numsp;<span
+                    class="textcolor"
+                    style="color: #0000b2"
+                    ><a href="oo#pgf.back/pgfooget">\pgfooget</a></span
+                  >{<span class="textcolor" style="color: #000000"
+                    >rotation</span
+                  >
+                  <span class="textcolor" style="color: #000000"
+                    ><a href="tikz-coordinates#pgf.angle">angle</a></span
+                  >}{<span class="textcolor" style="color: #000000">#1</span
+                  >}<br />
+                  &numsp;&numsp;}<br />
+                  ...<br />
+                  <br />
+                  <span class="textcolor" style="color: #0000b2">\mystamp</span
+                  >.<span class="textcolor" style="color: #000000">get</span>
+                  <span class="textcolor" style="color: #000000">rotation</span
+                  ><span class="textcolor" style="color: #800080"
+                    >(\therotation)</span
+                  ><br />
+                  <span class="textcolor" style="color: #000000">``</span
+                  ><span class="textcolor" style="color: #0000b2"
+                    >\therotation</span
+                  ><span class="textcolor" style="color: #000000">''</span>
+                  <span class="textcolor" style="color: #000000">is</span>
+                  <span class="textcolor" style="color: #000000">now</span>
+                  <span class="textcolor" style="color: #000000">``20''</span>
+                  <span class="textcolor" style="color: #800080"
+                    >(or whatever)</span
+                  >.<br />
+                </code>
+              </div>
+            </figure>
+          </div>
+          <h5 id="autosec-7669">
+            <a id="section-identities"></a
+            ><span class="sectionnumber" id="sec-97.7">97.7&emsp;</span
+            >Identities<a class="anchor-link" href="#sec-97.7">&para;</a>
+          </h5>
+          <a id="pgfmanual-autopage-7669"></a>
+
+          <p>
+            Every object has a unique identity, which is simply an integer. It
+            is possible to retrieve the object id using the
+            <span class="texttt">get id</span> method (discussed below), but
+            normally you will not need to do so because the id itself cannot be
+            used to access an object. Rather, you access objects via their
+            methods and these, in turn, can only be called via object handles.
+          </p>
+
+          <p>Object handles can be created in four ways:</p>
+          <ul style="list-style-type: none">
+            <li>
+              <p>
+                1. Calling <span class="texttt">\pgfoonew</span
+                ><span class="angle">&langle;</span><i>object handle</i
+                ><span class="angle">&rangle;</span
+                ><span class="texttt">=...</span> will cause
+                <span class="angle">&langle;</span><i>object handle</i
+                ><span class="angle">&rangle;</span> to be a handle to the newly
+                created object.
+              </p>
+            </li>
+            <li>
+              <p>
+                2. Using <span class="texttt">\let</span> to create an alias of
+                an existing object handle: If
+                <span class="texttt">\mystamp</span> is a handle, saying
+                <span class="texttt">\let\myotherstamp=\mystamp</span> creates a
+                second handle to the same object.
+              </p>
+            </li>
+            <li>
+              <p>
+                3. <span class="texttt">\pgfooobj</span>{<span class="angle"
+                  >&langle;</span
+                ><i>id</i><span class="angle">&rangle;</span>} can be used as an
+                object handle to the object with the given
+                <span class="angle">&langle;</span><i>id</i
+                ><span class="angle">&rangle;</span>.
+              </p>
+            </li>
+            <li>
+              <p>
+                4. Using the <span class="texttt">get handle</span> method to
+                create a handle to a given object.
+              </p>
+            </li>
+          </ul>
+
+          <p>Let us have a look at the last two methods.</p>
+
+          <div class="manualentry">
+            <div class="entryheadline">
+              <p>
+                <a id="pgf.back/pgfooobj"></a>
+                <span class="hl-def"
+                  ><span class="textcolor" style="color: #bf0000"
+                    ><kbd>\pgfooobj</kbd></span
+                  >{<span class="angle">&langle;</span><i>id</i
+                  ><span class="angle">&rangle;</span>}</span
+                >
+                <a class="anchor-link" href="#pgf.back/pgfooobj">&para;</a>
+              </p>
+            </div>
+            <p>
+              Provided that <span class="angle">&langle;</span><i>id</i
+              ><span class="angle">&rangle;</span> is the id of an existing
+              object (an object whose life-time has not expired), calling this
+              command yields a handle to this object. The handle can then be
+              used to call methods:
+            </p>
+
+            <figure class="example">
+              <div class="example-code">
+                <button class="clipboardButton" type="button">copy</button>
+                <code>
+                  <br />
+                  <span class="example-code-comment"
+                    >% Create a new object:</span
+                  ><br />
+                  <span class="textcolor" style="color: #0000b2"
+                    ><a href="oo#pgf.back/pgfoonew">\pgfoonew</a></span
+                  >&numsp;<span class="textcolor" style="color: #0000b2"
+                    >\mystamp</span
+                  ><span class="textcolor" style="color: #000000">=new</span>
+                  <span class="textcolor" style="color: #000000">stamp</span
+                  ><span class="textcolor" style="color: #800080">()</span
+                  ><br />
+                  <br />
+                  <span class="example-code-comment"
+                    >% Get the object's id and store it in \myid:</span
+                  ><br />
+                  <span class="textcolor" style="color: #0000b2">\mystamp</span
+                  >.<span class="textcolor" style="color: #000000">get</span>
+                  <span class="textcolor" style="color: #000000"
+                    ><a href="drivers#pgf.id">id</a></span
+                  ><span class="textcolor" style="color: #800080">(\myid)</span
+                  ><br />
+                  <br />
+                  <span class="example-code-comment"
+                    >% The following two calls have the same effect:</span
+                  ><br />
+                  <span class="textcolor" style="color: #0000b2">\mystamp</span
+                  >.<span class="textcolor" style="color: #000000">apply</span
+                  ><span class="textcolor" style="color: #800080">(1,1)</span
+                  ><br />
+                  <span class="textcolor" style="color: #0000b2"
+                    ><a href="oo#pgf.back/pgfooobj">\pgfooobj</a></span
+                  >{<span class="textcolor" style="color: #0000b2">\myid</span
+                  >}.<span class="textcolor" style="color: #000000">apply</span
+                  ><span class="textcolor" style="color: #800080">(1,1)</span
+                  ><br />
+                </code>
+              </div>
+            </figure>
+          </div>
+
+          <p>
+            The <span class="texttt">get id</span> method can be used to
+            retrieve the id of an object. This method is predefined for every
+            class and you should not try to define a method of this name
+            yourself.
+          </p>
+
+          <div class="manualentry">
+            <div class="entryheadline">
+              <p>
+                <a id="pgf.get:id"></a>
+                <span class="hl-def"
+                  >Method
+                  <span class="textcolor" style="color: #bf0000"
+                    ><kbd
+                      >&lt;&lt;&gt;&gt;/kbd/spanget id<kbd>(</kbd
+                      ><span class="angle">&langle;</span><i>macro</i
+                      ><span class="angle">&rangle;</span><kbd>)</kbd></kbd
+                    ></span
+                  >
+                  <span class="hl-default"
+                    >(predefined for all classes)</span
+                  > </span
+                ><a class="anchor-link" href="#pgf.get:id">&para;</a>
+              </p>
+            </div>
+            <p>
+              Calling <span class="angle">&langle;</span><i>obj</i
+              ><span class="angle">&rangle;</span
+              ><span class="texttt">.get id(</span
+              ><span class="angle">&langle;</span><i>macro</i
+              ><span class="angle">&rangle;</span
+              ><span class="texttt">)</span> stores the id
+              <span class="angle">&langle;</span><i>obj</i
+              ><span class="angle">&rangle;</span> in
+              <span class="angle">&langle;</span><i>macro</i
+              ><span class="angle">&rangle;</span>. This is mainly useful when
+              you wish to store an object for a longer time and you cannot
+              guarantee that any handle that you happen to have for this object
+              will be available later on.
+            </p>
+            <p>
+              The only way to use the retrieved id later on is to call
+              <span class="texttt">\pgfooobj</span>.
+            </p>
+            <p>
+              Different object that are alive (that are still within the scope
+              in which they were created) will always have different ids, so you
+              can use the id to test for equality of objects. However, after an
+              object has been destroyed because its scope has ended, the same id
+              may be used again for newly created objects.
+            </p>
+            <p>
+              Here is a typical application where you need to call this method:
+              You wish to collect a list of objects for which you wish to call a
+              specific method from time to time. For the collection process you
+              wish to offer a macro called
+              <span class="texttt">\addtoobjectlist</span>, which takes an
+              object handle as parameter. It is quite easy to store this handle
+              somewhere, but a handle is, well, just a handle. Typically,
+              shortly after the call to
+              <span class="texttt">\addtoobjectlist</span> the handle will no
+              longer be valid or even exist, even though the object still
+              exists. In this case, you wish to store the object id somewhere
+              instead of the handle. Thus, for the object passed to
+              <span class="texttt">\addtoobjectlist</span> you call the
+              <span class="texttt">get id</span> method and store the resulting
+              id, rather than the handle.
+            </p>
+          </div>
+
+          <p>
+            There is a second predefined method, called
+            <span class="texttt">get handle</span>, which is also used to create
+            object handles.
+          </p>
+
+          <div class="manualentry">
+            <div class="entryheadline">
+              <p>
+                <a id="pgf.get:handle"></a>
+                <span class="hl-def"
+                  >Method
+                  <span class="textcolor" style="color: #bf0000"
+                    ><kbd
+                      >&lt;&lt;&gt;&gt;/kbd/spanget handle<kbd>(</kbd>{<span
+                        class="angle"
+                        >&langle;</span
+                      ><i>macro name</i><span class="angle">&rangle;</span>}<kbd
+                        >)</kbd
+                      ></kbd
+                    ></span
+                  >
+                  <span class="hl-default"
+                    >(predefined for all classes)</span
+                  > </span
+                ><a class="anchor-link" href="#pgf.get:handle">&para;</a>
+              </p>
+            </div>
+            <p>
+              Calling this method for an object will cause
+              <span class="angle">&langle;</span><i>macro name</i
+              ><span class="angle">&rangle;</span> to become a handle to the
+              given object. For any object handle
+              <span class="texttt">\obj</span> &ndash; other than
+              <span class="texttt">\pgfoothis</span> &ndash; the following two
+              have the same effect:
+            </p>
+
+            <p>
+              1. <span class="texttt">\let</span
+              ><span class="angle">&langle;</span><i>macro name</i
+              ><span class="angle">&rangle;</span
+              ><span class="texttt">=\obj</span>
+            </p>
+
+            <p>
+              2. <span class="texttt">\obj.get handle(</span
+              ><span class="angle">&langle;</span><i>macro name</i
+              ><span class="angle">&rangle;</span><span class="texttt">)</span>
+            </p>
+
+            <p>
+              The first method is simpler and faster. However, for
+              <span class="texttt">\pgfoothis</span> there is a difference: The
+              call <span class="texttt">\pgfoothis.get handle(</span
+              ><span class="angle">&langle;</span><i>macro name</i
+              ><span class="angle">&rangle;</span
+              ><span class="texttt">)</span> will cause
+              <span class="angle">&langle;</span><i>macro name</i
+              ><span class="angle">&rangle;</span> to be an object handle to the
+              current object and will persist to be so even after the method is
+              done. By comparison, <span class="texttt">\let</span
+              ><span class="angle">&langle;</span><i>macro name</i
+              ><span class="angle">&rangle;</span
+              ><span class="texttt">=\pgfoothis</span> causes
+              <span class="texttt">\obj</span> to be the same as the very
+              special macro <span class="texttt">\pgfoothis</span>, so
+              <span class="texttt">\obj</span> will always refer to the current
+              object, which may change over time.
+            </p>
+          </div>
+          <h5 id="autosec-7670">
+            <a id="section-object"></a
+            ><span class="sectionnumber" id="sec-97.8">97.8&emsp;</span>The
+            Object Class<a class="anchor-link" href="#sec-97.8">&para;</a>
+          </h5>
+          <a id="pgfmanual-autopage-7670"></a>
+
+          <p>
+            The object-oriented module predefines a basic class
+            <span class="texttt">object</span> that can be used as a base class
+            in different context.
+          </p>
+
+          <div class="manualentry">
+            <div class="entryheadline">
+              <p>
+                <span class="hl-def"
+                  ><b>Class</b>
+                  <span class="textcolor" style="color: #bf0000"
+                    ><kbd>object</kbd></span
+                  ></span
+                >
+              </p>
+            </div>
+            <p>This class current only implements one method:</p>
+
+            <div class="manualentry">
+              <div class="entryheadline">
+                <p>
+                  <a id="pgf.copy"></a>
+                  <span class="hl-def"
+                    >Method
+                    <span class="textcolor" style="color: #bf0000"
+                      ><kbd
+                        >&lt;&lt;&gt;&gt;/kbd/spancopy<kbd>(</kbd
+                        ><span class="angle">&langle;</span><i>handle</i
+                        ><span class="angle">&rangle;</span><kbd>)</kbd></kbd
+                      ></span
+                    > </span
+                  ><a class="anchor-link" href="#pgf.copy">&para;</a>
+                </p>
+              </div>
+              <p>
+                Creates a new object and initializes the values of its
+                (declared) attributes to the values of the original. The method
+                takes one argument: a control sequence which receives the handle
+                of the copy.
+              </p>
+            </div>
+          </div>
+          <h5 id="autosec-7671">
+            <a id="section-signals"></a
+            ><span class="sectionnumber" id="sec-97.9">97.9&emsp;</span>The
+            Signal Class<a class="anchor-link" href="#sec-97.9">&para;</a>
+          </h5>
+          <a id="pgfmanual-autopage-7671"></a>
+
+          <p>
+            In addition to the basic mechanism for defining and using classes
+            and object, the class <span class="texttt">signal</span> is
+            predefined. It implements a so-called signal&ndash;slot mechanism.
+          </p>
+
+          <div class="manualentry">
+            <div class="entryheadline">
+              <p>
+                <span class="hl-def"
+                  ><b>Class</b>
+                  <span class="textcolor" style="color: #bf0000"
+                    ><kbd>signal</kbd></span
+                  ></span
+                >
+              </p>
+            </div>
+            <p>
+              This class is used to implement a simple signal&ndash;slot
+              mechanism. The idea is the following: From time to time special
+              things happen about which a number of objects need to be informed.
+              Different things can happen and different object will be
+              interested in these things. A
+              <span class="texttt">signal</span> object can be used to signal
+              that such special things of a certain kind have happened. For
+              example, one signal object might be used to signal the event that
+              &ldquo;a page has been shipped out&rdquo;. Another signal might be
+              used to signal that &ldquo;a figure is about to be typeset&rdquo;,
+              and so on.
+            </p>
+            <p>
+              Objects can &ldquo;tune in&rdquo; to signals. They do so by
+              <em>connecting</em> one of their methods (then called a
+              <em>slot</em>) to the signal. Then, whenever the signal is
+              <em>emitted</em>, the method of the connected object(s) get
+              called. Different objects can connect different slots to the same
+              signal as long as the argument lists will fit. For example, the
+              object that is used to signal the &ldquo;end of page has been
+              reached&rdquo; might emit signals that have, say, the box number
+              in which the finished page can be found as a parameter (actually,
+              the finished page is always in box 255). Then one object could
+              connect a method <span class="texttt">handle page(#1)</span> to
+              this signal, another might connect the method
+              <span class="texttt">emergency action(#1)</span> to this signal,
+              and so on.
+            </p>
+            <p>
+              Currently, it is not possible to &ldquo;unregister&rdquo; or
+              &ldquo;detach&rdquo; a slot from a signal, that is, once an object
+              has been connect to a signal, it will continue to receive
+              emissions of this signal till the end of the life-time of the
+              signal. This is even true when the object no longer exists (but
+              the signal does), so care must be taken that signal objects are
+              always created after the objects that are listening to them.
+            </p>
+
+            <div class="manualentry">
+              <div class="entryheadline">
+                <p>
+                  <span class="hl-def"
+                    >Constructor
+                    <span class="textcolor" style="color: #bf0000"
+                      ><kbd
+                        >&lt;&lt;&gt;&gt;/kbd/spansignal<kbd>(</kbd
+                        ><kbd>)</kbd></kbd
+                      ></span
+                    >
+                  </span>
+                </p>
+              </div>
+              <p>The constructor does nothing.</p>
+            </div>
+
+            <div class="manualentry">
+              <div class="entryheadline">
+                <p>
+                  <a id="pgf.connect"></a>
+                  <span class="hl-def"
+                    >Method
+                    <span class="textcolor" style="color: #bf0000"
+                      ><kbd
+                        >&lt;&lt;&gt;&gt;/kbd/spanconnect<kbd>(</kbd
+                        ><span class="angle">&langle;</span><i>object handle</i
+                        ><span class="angle">&rangle;</span>,<span class="angle"
+                          >&langle;</span
+                        ><i>method name</i><span class="angle">&rangle;</span
+                        ><kbd>)</kbd></kbd
+                      ></span
+                    > </span
+                  ><a class="anchor-link" href="#pgf.connect">&para;</a>
+                </p>
+              </div>
+              <p>
+                This method gets an <span class="angle">&langle;</span
+                ><i>object handle</i><span class="angle">&rangle;</span> as
+                parameter and a <span class="angle">&langle;</span
+                ><i>method name</i><span class="angle">&rangle;</span> of this
+                object. It will queue the object-method pair in an internal list
+                and each time the signal emits something, this object&rsquo;s
+                method is called.
+              </p>
+              <p>
+                Be careful not to pass <span class="texttt">\pgfoothis</span> as
+                <span class="angle">&langle;</span><i>object handle</i
+                ><span class="angle">&rangle;</span>. This would cause the
+                signal object to connect to itself. Rather, if you wish to
+                connect a signal to a method of the current object you first
+                need to create an alias using the
+                <span class="texttt">get handle</span> method:
+              </p>
+
+              <figure class="example">
+                <div class="example-code">
+                  <button class="clipboardButton" type="button">copy</button>
+                  <code>
+                    <br />
+                    <span class="textcolor" style="color: #0000b2"
+                      ><a href="oo#pgf.back/pgfooclass">\pgfooclass</a></span
+                    >{<span class="textcolor" style="color: #000000"
+                      ><a href="dv-axes#pgf.some">some</a></span
+                    >
+                    <span class="textcolor" style="color: #000000"
+                      ><a href="drivers#pgf.class">class</a></span
+                    >}{<br />
+                    &numsp;&numsp;<span class="textcolor" style="color: #0000b2"
+                      ><a href="oo#pgf.back/method">\method</a></span
+                    >&numsp;<span class="textcolor" style="color: #000000"
+                      ><a href="dv-axes#pgf.some">some</a></span
+                    >
+                    <span class="textcolor" style="color: #000000"
+                      ><a href="drivers#pgf.class">class</a></span
+                    ><span class="textcolor" style="color: #800080">()</span
+                    >&numsp;{<br />
+                    &numsp;&numsp;&numsp;&numsp;<span
+                      class="textcolor"
+                      style="color: #0000b2"
+                      ><a href="oo#pgf.back/pgfoothis">\pgfoothis</a></span
+                    >.<span class="textcolor" style="color: #000000">get</span>
+                    <span class="textcolor" style="color: #000000">handle</span
+                    ><span class="textcolor" style="color: #800080">(\me)</span
+                    ><br />
+                    &numsp;&numsp;&numsp;&numsp;<span
+                      class="textcolor"
+                      style="color: #0000b2"
+                      >\somesignal</span
+                    >.<span class="textcolor" style="color: #000000"
+                      ><a href="oo#pgf.connect">connect</a></span
+                    ><span class="textcolor" style="color: #800080"
+                      >(\me,foo)</span
+                    ><br />
+                    &numsp;&numsp;&numsp;&numsp;<span
+                      class="textcolor"
+                      style="color: #0000b2"
+                      >\anothersignal</span
+                    >.<span class="textcolor" style="color: #000000"
+                      ><a href="oo#pgf.connect">connect</a></span
+                    ><span class="textcolor" style="color: #800080"
+                      >(\me,bar)</span
+                    ><br />
+                    &numsp;&numsp;}<br />
+                    &numsp;&numsp;<span class="textcolor" style="color: #0000b2"
+                      ><a href="oo#pgf.back/method">\method</a></span
+                    >&numsp;<span class="textcolor" style="color: #000000"
+                      >foo</span
+                    >
+                    <span class="textcolor" style="color: #800080">()</span
+                    >&numsp;{}<br />
+                    &numsp;&numsp;<span class="textcolor" style="color: #0000b2"
+                      ><a href="oo#pgf.back/method">\method</a></span
+                    >&numsp;<span class="textcolor" style="color: #000000"
+                      >bar</span
+                    >
+                    <span class="textcolor" style="color: #800080">(#1,#2)</span
+                    >&numsp;{}<br />
+                    }<br />
+                    <span class="textcolor" style="color: #0000b2"
+                      ><a href="oo#pgf.back/pgfoonew">\pgfoonew</a></span
+                    >&numsp;<span class="textcolor" style="color: #0000b2"
+                      >\objA</span
+                    ><span class="textcolor" style="color: #000000">=new</span>
+                    <span class="textcolor" style="color: #000000"
+                      ><a href="dv-axes#pgf.some">some</a></span
+                    >
+                    <span class="textcolor" style="color: #000000"
+                      ><a href="drivers#pgf.class">class</a></span
+                    ><span class="textcolor" style="color: #800080">()</span
+                    ><br />
+                    <span class="textcolor" style="color: #0000b2"
+                      ><a href="oo#pgf.back/pgfoonew">\pgfoonew</a></span
+                    >&numsp;<span class="textcolor" style="color: #0000b2"
+                      >\objB</span
+                    ><span class="textcolor" style="color: #000000">=new</span>
+                    <span class="textcolor" style="color: #000000"
+                      ><a href="dv-axes#pgf.some">some</a></span
+                    >
+                    <span class="textcolor" style="color: #000000"
+                      ><a href="drivers#pgf.class">class</a></span
+                    ><span class="textcolor" style="color: #800080">()</span
+                    ><br />
+                  </code>
+                </div>
+              </figure>
+            </div>
+
+            <div class="manualentry">
+              <div class="entryheadline">
+                <p>
+                  <a id="pgf.emit"></a>
+                  <span class="hl-def"
+                    >Method
+                    <span class="textcolor" style="color: #bf0000"
+                      ><kbd
+                        >&lt;&lt;&gt;&gt;/kbd/spanemit<kbd>(</kbd
+                        ><span class="angle">&langle;</span><i>arguments</i
+                        ><span class="angle">&rangle;</span><kbd>)</kbd></kbd
+                      ></span
+                    > </span
+                  ><a class="anchor-link" href="#pgf.emit">&para;</a>
+                </p>
+              </div>
+              <p>
+                This method emits a signal to all connected slots. This means
+                that for all objects that have previously been connected via a
+                call of <span class="texttt">connect</span>, the method (slot)
+                that was specified during the call of
+                <span class="texttt">connect</span> is invoked with given
+                <span class="angle">&langle;</span><i>arguments</i
+                ><span class="angle">&rangle;</span>.
+              </p>
+
+              <figure class="example">
+                <div class="example-code">
+                  <button class="clipboardButton" type="button">copy</button>
+                  <code>
+                    <br />
+                    <span class="textcolor" style="color: #0000b2"
+                      >\anothersignal</span
+                    >.<span class="textcolor" style="color: #000000"
+                      ><a href="oo#pgf.emit">emit</a></span
+                    ><span class="textcolor" style="color: #800080">(1,2)</span
+                    ><br />
+                    <span class="example-code-comment"
+                      >% will call \objA.bar(1,2) and \objB.bar(1,2)</span
+                    ><br />
+                  </code>
+                </div>
+              </figure>
+            </div>
+          </div>
+          <h5 id="autosec-7672">
+            <span class="sectionnumber" id="sec-97.10">97.10&emsp;</span
+            >Implementation Notes<a class="anchor-link" href="#sec-97.10"
+              >&para;</a
+            >
+          </h5>
+          <a id="pgfmanual-autopage-7672"></a>
+
+          <p>
+            For the curious, here are some notes on how the oo-system is
+            implemented:
+          </p>
+          <ul style="list-style-type: none">
+            <li>
+              <p>
+                &bull; There is an object id counter that gets incremented each
+                time an object is created. However, this counter is local to the
+                current scope, which means that it is reset at the end of each
+                scope, corresponding to the fact that at the end of a scope all
+                objects created in this scope become invalid. Newly created
+                objects will then have the same id as &ldquo;deleted&rdquo;
+                objects.
+              </p>
+            </li>
+            <li>
+              <p>
+                &bull; Attributes are stored globally. For each attribute of
+                each object there is a macro whose name is composed of the
+                object&rsquo;s id and the attribute name. Changes to object
+                attributes are always global.
+              </p>
+            </li>
+            <li>
+              <p>
+                &bull; A call to the garbage collector causes a loop to be
+                executed that tries to find objects whose object number is
+                larger than the current maximum alive objects. The global
+                attributes of these objects are then freed (set to
+                <span class="texttt">\relax</span>) by calling a special
+                internal method of these (dead) objects.
+              </p>
+              <p>
+                The garbage collector is automatically called after each group
+                in which an object was created using
+                <span class="texttt">\aftergroup</span>.
+              </p>
+            </li>
+            <li>
+              <p>
+                &bull; When a method is called, before the method call some code
+                is executed that sets a global counter storing the current
+                object id to the object id of the object being called. After the
+                method call some code is inserted that restores the global
+                counter to its original value. This is done without scopes, so
+                some tricky <span class="texttt">\expandafter</span> magic is
+                needed. Note that, because of this process, you cannot use
+                commands like <span class="texttt">\pgfutil@ifnextchar</span> at
+                the end of a method.
+              </p>
+            </li>
+            <li>
+              <p>
+                &bull; An object handle contains just the code to set up and
+                restore the current object number to the number of the object
+                being called.
+              </p>
+            </li>
+          </ul>
+        </section>
+      </main>
+
+      <footer>
+        <div class_="footer-left">
+          <a href="https://github.com/pgf-tikz/pgf">Github</a> &middot;
+          <a href="/license">License</a> &middot;
+          <a href="https://ctan.org/pkg/pgf">CTAN</a> &middot;
+          <a href="https://pgf-tikz.github.io/pgf/pgfmanual.pdf">PDF version</a>
+          &middot;
+          <a href="https://github.com/DominikPeters/pgf-tikz-html-manual"
+            >About this HTML version</a
+          >
+        </div>
+        <div class_="footer-right">
+          <em>Manual last updated: 2022-04-23</em>
+        </div>
+      </footer>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/@docsearch/js@alpha"></script>
+    <script>
+      docsearch({
+        apiKey: "ae66ec3fc9df4b52b4d6f24fc8508fd3",
+        indexName: "tikz.dev",
+        appId: "Q70NNMA9GC",
+        container: "#search",
+      });
+    </script>
+  </body>
+</html>
